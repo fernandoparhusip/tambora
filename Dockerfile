@@ -15,7 +15,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build Vue application
+# Build Vue
 RUN npm run build
 
 
@@ -27,16 +27,14 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Install only what is needed to run Vite preview
-COPY package*.json ./
+# Install serve
+RUN npm install -g serve
 
-RUN npm ci --omit=dev
-
-# Copy build result
+# Copy hasil build
 COPY --from=builder /app/dist ./dist
 
-# Expose frontend port
+# Expose internal container port
 EXPOSE 9091
 
-# Run Vue/Vite preview
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "9091"]
+# Run Vue frontend
+CMD ["serve", "-s", "dist", "-l", "9091"]

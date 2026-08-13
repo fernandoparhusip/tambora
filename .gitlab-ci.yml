@@ -7,7 +7,10 @@ stages:
 # ============================================================
 
 variables:
-  DOCKER_IMAGE: "$CI_REGISTRY_IMAGE/frontend"
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE/frontend
+
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
 
 # ============================================================
 # BUILD DOCKER IMAGE
@@ -20,32 +23,23 @@ build:
 
   services:
     - name: docker:27-dind
-      alias: docker
-
-  variables:
-    DOCKER_HOST: "tcp://docker:2375"
-    DOCKER_TLS_CERTDIR: ""
 
   before_script:
     - echo "======================================"
     - echo "Docker Login"
     - echo "======================================"
 
-    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" \
-      -u "$CI_REGISTRY_USER" \
-      --password-stdin
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
 
   script:
     - echo "======================================"
     - echo "Building Frontend Docker Image"
     - echo "======================================"
 
-    - docker build \
-      -t "$DOCKER_IMAGE:$CI_COMMIT_SHA" \
-      .
+    - docker build -t "$DOCKER_IMAGE:$CI_COMMIT_SHA" .
 
     - echo "======================================"
-    - echo "Pushing Frontend Image"
+    - echo "Pushing Image"
     - echo "======================================"
 
     - docker push "$DOCKER_IMAGE:$CI_COMMIT_SHA"
@@ -54,14 +48,12 @@ build:
     - echo "Tagging Latest"
     - echo "======================================"
 
-    - docker tag \
-      "$DOCKER_IMAGE:$CI_COMMIT_SHA" \
-      "$DOCKER_IMAGE:latest"
+    - docker tag "$DOCKER_IMAGE:$CI_COMMIT_SHA" "$DOCKER_IMAGE:latest"
 
     - docker push "$DOCKER_IMAGE:latest"
 
     - echo "======================================"
-    - echo "Frontend Build Completed"
+    - echo "Build Completed"
     - echo "======================================"
 
   rules:
@@ -77,44 +69,14 @@ deploy:
   image: alpine:3.22
 
   before_script:
-    # ========================================================
-    # INSTALL SSH
-    # ========================================================
-
     - apk add --no-cache openssh-client
-
-    # ========================================================
-    # PREPARE SSH
-    # ========================================================
 
     - mkdir -p ~/.ssh
 
-    # ========================================================
-    # SSH PRIVATE KEY
-    #
-    # SSH_PRIVATE_KEY adalah GitLab Variable biasa
-    # bukan File Variable
-    # ========================================================
-
-    - printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+    # SSH_PRIVATE_KEY adalah File Variable
+    - cp "$SSH_PRIVATE_KEY" ~/.ssh/id_ed25519
 
     - chmod 600 ~/.ssh/id_ed25519
-
-    # ========================================================
-    # VALIDATE SSH KEY
-    # ========================================================
-
-    - echo "======================================"
-    - echo "Validating SSH Private Key"
-    - echo "======================================"
-
-    - ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null
-
-    - echo "SSH private key is valid"
-
-    # ========================================================
-    # VPS HOST KEY
-    # ========================================================
 
     - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
@@ -127,14 +89,10 @@ deploy:
     - echo "Testing SSH Connection"
     - echo "======================================"
 
-    - ssh \
-      -i ~/.ssh/id_ed25519 \
-      -o StrictHostKeyChecking=yes \
-      "root@$VPS_HOST" \
-      "echo 'SSH connection successful'"
+    - ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes "root@$VPS_HOST" "echo 'SSH connection successful'"
 
     # ========================================================
-    # START DEPLOYMENT
+    # DEPLOY
     # ========================================================
 
     - echo "======================================"
@@ -153,32 +111,14 @@ deploy:
          CI_COMMIT_SHA='$CI_COMMIT_SHA' \
          bash -s" << 'EOF'
 
-
       set -e
 
-
-      # ======================================================
-      # INFORMATION
-      # ======================================================
-
       echo "======================================"
-      echo "TAMBORA FRONTEND DEPLOYMENT"
+      echo "Frontend Deployment Information"
       echo "======================================"
 
       echo "Docker Image : $DOCKER_IMAGE"
       echo "Commit SHA   : $CI_COMMIT_SHA"
-      echo "Port         : 9091"
-
-
-      # ======================================================
-      # CHECK DOCKER
-      # ======================================================
-
-      echo "======================================"
-      echo "Checking Docker"
-      echo "======================================"
-
-      docker --version
 
 
       # ======================================================
@@ -258,7 +198,7 @@ deploy:
       # ======================================================
 
       echo "======================================"
-      echo "Frontend Container Status"
+      echo "Container Status"
       echo "======================================"
 
       docker ps \
@@ -266,55 +206,34 @@ deploy:
 
 
       # ======================================================
-      # VERIFY CONTAINER
-      # ======================================================
-
-      if [ -z "$(docker ps -q -f name=tambora-frontend)" ]; then
-
-        echo "======================================"
-        echo "ERROR: Frontend Container is NOT running"
-        echo "======================================"
-
-        docker logs --tail 100 tambora-frontend
-
-        exit 1
-
-      fi
-
-
-      # ======================================================
-      # LOGS
+      # PORT CHECK
       # ======================================================
 
       echo "======================================"
-      echo "Recent Frontend Logs"
+      echo "Port Mapping"
+      echo "======================================"
+
+      docker port tambora-frontend
+
+
+      # ======================================================
+      # CONTAINER LOGS
+      # ======================================================
+
+      echo "======================================"
+      echo "Recent Container Logs"
       echo "======================================"
 
       docker logs --tail 30 tambora-frontend
 
 
       # ======================================================
-      # CLEAN UNUSED IMAGES
+      # DEPLOYMENT FINISHED
       # ======================================================
 
       echo "======================================"
-      echo "Cleaning Docker Images"
+      echo "Frontend Deployment Completed"
       echo "======================================"
-
-      docker image prune -f
-
-
-      # ======================================================
-      # SUCCESS
-      # ======================================================
-
-      echo "======================================"
-      echo "FRONTEND DEPLOYMENT SUCCESSFUL"
-      echo "======================================"
-
-      echo "Container : tambora-frontend"
-      echo "Port      : 9091"
-
 
       EOF
 
