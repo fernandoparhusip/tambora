@@ -1,0 +1,632 @@
+/* ==========================================================
+   SIDEBAR
+========================================================== */
+
+.sidebar {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: 96px;
+  height: 100vh;
+
+  background: #ffffff;
+
+  border-right: 1px solid #e8edf7;
+
+  z-index: 1000;
+
+  overflow: hidden;
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+
+  transition:
+    width 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+
+/* ==========================================================
+   EXPANDED
+========================================================== */
+
+.sidebar.expanded {
+  width: 280px;
+
+  box-shadow:
+    10px 0 40px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ==========================================================
+   LOGO
+========================================================== */
+
+.logo-container {
+  height: 96px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+
+  flex-shrink: 0;
+}
+
+
+.logo {
+  display: block;
+
+  object-fit: contain;
+}
+
+
+.emblem-logo {
+  width: 62px;
+  height: 62px;
+}
+
+
+.full-logo {
+  width: 155px;
+  height: auto;
+
+  display: none;
+}
+
+
+.sidebar.expanded .emblem-logo {
+  display: none;
+}
+
+
+.sidebar.expanded .full-logo {
+  display: block;
+}
+
+
+/* ==========================================================
+   NAVIGATION
+========================================================== */
+
+.navigation {
+  padding: 18px 14px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+
+.navigation-group {
+  position: relative;
+}
+
+
+/* ==========================================================
+   ACTIVE GROUP
+========================================================== */
+
+.navigation-group.active > .menu-item {
+  background: #e8f1ff;
+
+  color: #1677e8;
+}
+
+
+.navigation-group.active > .menu-item::before {
+  content: '';
+
+  position: absolute;
+
+  left: 0;
+
+  top: 10px;
+  bottom: 10px;
+
+  width: 3px;
+
+  border-radius: 999px;
+
+  background: #1874df;
+}
+
+
+/* ==========================================================
+   MENU ITEM
+========================================================== */
+
+.menu-item {
+  width: 100%;
+  min-width: 0;
+
+  height: 56px;
+
+  border: 0;
+
+  background: transparent;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: flex-start;
+
+  padding: 0 16px;
+
+  border-radius: 12px;
+
+  color: #64748b;
+
+  cursor: pointer;
+
+  position: relative;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.menu-item:hover {
+  color: #1677e8;
+
+  background: #f2f7ff;
+
+  transform: translateX(1px);
+}
+
+
+.menu-item.active {
+  color: #1677e8;
+
+  background: #e8f1ff;
+}
+
+
+/* ==========================================================
+   ICON
+========================================================== */
+
+.menu-icon {
+  width: 36px;
+  min-width: 36px;
+
+  height: 36px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: transparent;
+}
+
+
+.menu-item:hover .menu-icon {
+  background: #eef5ff;
+}
+
+
+.menu-item.active .menu-icon {
+  background: #e1edff;
+}
+
+
+.menu-icon svg {
+  width: 22px;
+  height: 22px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.4;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+
+/* ==========================================================
+   LABEL
+========================================================== */
+
+.menu-label {
+  margin-left: 14px;
+
+  white-space: nowrap;
+
+  font-size: 15px;
+
+  font-weight: 500;
+
+  opacity: 0;
+
+  transform: translateX(-10px);
+
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s ease;
+}
+
+
+.sidebar.expanded .menu-label {
+  opacity: 1;
+
+  transform: translateX(0);
+}
+
+
+.sidebar:not(.expanded) .menu-label {
+  display: none;
+}
+
+
+/* ==========================================================
+   ARROW
+========================================================== */
+
+.arrow-icon {
+  width: 18px;
+  height: 18px;
+
+  margin-left: auto;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 2;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  opacity: 0;
+
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+
+.sidebar.expanded .arrow-icon {
+  opacity: 1;
+}
+
+
+.arrow-icon.rotated {
+  transform: rotate(180deg);
+}
+
+
+/* ==========================================================
+   NORMAL SUBMENU
+========================================================== */
+
+.submenu {
+  margin-left: 24px;
+
+  padding-left: 18px;
+
+  border-left: 3px solid #e2e8f0;
+
+  margin-top: 4px;
+
+  padding-bottom: 4px;
+}
+
+
+.navigation-group.active > .submenu {
+  border-color: #d6e7ff;
+}
+
+
+/* ==========================================================
+   SUBMENU ITEM
+========================================================== */
+
+.submenu-item {
+  display: flex;
+
+  align-items: center;
+
+  min-height: 46px;
+
+  padding: 0 20px;
+
+  margin: 4px 0;
+
+  border-radius: 12px;
+
+  color: #64748b;
+
+  text-decoration: none;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.submenu-item:hover {
+  color: #1677e8;
+
+  background: #f2f7ff;
+}
+
+
+.active-submenu {
+  color: #1677e8;
+
+  background: #e8f1ff;
+
+  font-weight: 600;
+}
+
+
+/* ==========================================================
+   DISABLED SUBMENU
+========================================================== */
+
+.disabled {
+  cursor: default;
+
+  color: #64748b;
+}
+
+
+.disabled:hover {
+  color: #64748b;
+
+  background: transparent;
+}
+
+
+/* ==========================================================
+   NESTED MENU
+   TRANSAKSI > OPERASI
+========================================================== */
+
+.nested-menu {
+  margin: 4px 0;
+}
+
+
+/* ==========================================================
+   OPERASI PARENT
+========================================================== */
+
+.submenu-parent {
+  width: 100%;
+
+  min-height: 50px;
+
+  border: 0;
+
+  background: transparent;
+
+  border-radius: 12px;
+
+  padding: 0 20px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  color: #64748b;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.submenu-parent:hover {
+  color: #1677e8;
+
+  background: #f2f7ff;
+}
+
+
+.submenu-parent.active {
+  color: #1677e8;
+
+  background: #e8f1ff;
+
+  font-weight: 600;
+}
+
+
+/* ==========================================================
+   NESTED ARROW
+========================================================== */
+
+.nested-arrow {
+  width: 17px;
+  height: 17px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 2;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  transition: transform 0.2s ease;
+}
+
+
+.nested-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+
+/* ==========================================================
+   NESTED SUBMENU
+========================================================== */
+
+.nested-submenu {
+  margin-left: 45px;
+
+  padding-left: 14px;
+
+  border-left: 3px solid #e2e8f0;
+}
+
+
+.nested-submenu-item {
+  display: flex;
+
+  align-items: center;
+
+  min-height: 46px;
+
+  padding: 0 20px;
+
+  margin: 4px 0;
+
+  border-radius: 12px;
+
+  color: #64748b;
+
+  text-decoration: none;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.nested-submenu-item:hover {
+  color: #1677e8;
+
+  background: #f2f7ff;
+}
+
+
+.active-nested-item {
+  color: #1677e8;
+
+  background: #e8f1ff;
+
+  font-weight: 600;
+}
+
+
+/* ==========================================================
+   COLLAPSED STATE
+========================================================== */
+
+.sidebar:not(.expanded) .submenu {
+  display: none;
+}
+
+
+.sidebar:not(.expanded) .nested-submenu {
+  display: none;
+}
+
+
+.sidebar:not(.expanded) .menu-item {
+  justify-content: center;
+
+  padding: 0;
+}
+
+
+.sidebar:not(.expanded) .menu-label {
+  display: none;
+}
+
+
+.sidebar:not(.expanded) .arrow-icon {
+  display: none;
+}
+
+
+/* ==========================================================
+   SCROLLBAR
+========================================================== */
+
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #d9e2ef;
+
+  border-radius: 10px;
+}
+
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #b9c8db;
+}
+
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width: 700px) {
+
+  .sidebar {
+    width: 76px;
+  }
+
+
+  .sidebar.expanded {
+    width: min(350px, 88vw);
+  }
+
+
+  .navigation {
+    padding: 14px 12px;
+  }
+
+
+  .emblem-logo {
+    width: 55px;
+    height: 55px;
+  }
+
+}
