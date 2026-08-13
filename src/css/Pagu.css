@@ -1,0 +1,887 @@
+/* =========================================================
+   PAGU PAGE
+========================================================= */
+
+.pagu-page {
+  min-height: 100vh;
+  background: #f5faff;
+  color: #333;
+}
+
+
+/* =========================================================
+   TOP HEADER
+========================================================= */
+
+.pagu-top-header {
+  height: 68px;
+  background: #ffffff;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 28px;
+
+  position: relative;
+  z-index: 5;
+}
+
+
+/* BREADCRUMB */
+
+.pagu-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.breadcrumb-link {
+  color: #1677e8;
+  font-weight: 500;
+}
+
+.breadcrumb-arrow {
+  color: #9ca3af;
+}
+
+.breadcrumb-current {
+  color: #777;
+}
+
+
+/* HEADER RIGHT */
+
+.pagu-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+
+/* NOTIFICATION */
+
+.pagu-header-icon {
+  width: 34px;
+  height: 34px;
+
+  border: none;
+  background: transparent;
+
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  color: #64748b;
+}
+
+.pagu-header-icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+.notification-dot {
+  position: absolute;
+
+  width: 8px;
+  height: 8px;
+
+  background: #ff5b61;
+
+  border-radius: 50%;
+
+  top: 3px;
+  right: 3px;
+
+  border: 1px solid white;
+}
+
+
+/* APPS */
+
+.pagu-apps-button {
+  width: 34px;
+  height: 34px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #f1f3f5;
+
+  display: grid;
+
+  grid-template-columns: repeat(3, 4px);
+  grid-template-rows: repeat(3, 4px);
+
+  gap: 3px;
+
+  align-content: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+.pagu-apps-button span {
+  width: 4px;
+  height: 4px;
+
+  background: #777;
+
+  border-radius: 50%;
+}
+
+
+/* USER */
+
+.pagu-user-avatar {
+  width: 32px;
+  height: 32px;
+
+  border-radius: 50%;
+
+  background: #d9f1e8;
+
+  color: #3c836c;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+}
+
+.pagu-user-name {
+  color: #4b4b4b;
+  font-size: 16px;
+}
+
+.pagu-user-arrow {
+  width: 20px;
+  height: 20px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #edf0f3;
+
+  color: #64748b;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   PAGE HEADER
+========================================================= */
+
+.pagu-page-header {
+  height: 76px;
+
+  background: #ffffff;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 30px;
+
+  border-bottom: 1px solid #f0f1f2;
+}
+
+.pagu-page-header h1 {
+  margin: 0;
+
+  font-size: 30px;
+  font-weight: 600;
+
+  color: #4e638a;
+}
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.pagu-content {
+  min-height: calc(100vh - 144px);
+
+  background: #f4faff;
+
+  padding: 28px 30px;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.pagu-card {
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  padding: 18px 20px 24px;
+
+  min-height: 565px;
+
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+
+/* =========================================================
+   TOOLBAR
+========================================================= */
+
+.pagu-toolbar {
+  display: flex;
+  align-items: center;
+
+  gap: 18px;
+
+  width: 100%;
+
+  margin-bottom: 18px;
+}
+
+
+/* SEARCH */
+
+.pagu-search {
+  width: 290px;
+  height: 58px;
+
+  border: 1px solid #e0e4e8;
+
+  border-radius: 9px;
+
+  display: flex;
+  align-items: center;
+
+  position: relative;
+
+  background: #ffffff;
+}
+
+.pagu-search input {
+  width: 100%;
+  height: 100%;
+
+  border: none;
+  outline: none;
+
+  padding: 0 50px 0 18px;
+
+  font-size: 16px;
+
+  color: #333;
+
+  background: transparent;
+}
+
+.pagu-search input::placeholder {
+  color: #a1a1a1;
+}
+
+.pagu-search svg {
+  width: 22px;
+  height: 22px;
+
+  position: absolute;
+
+  right: 15px;
+
+  color: #1478e8;
+}
+
+
+/* DATE */
+
+.pagu-date {
+  width: 240px;
+  height: 58px;
+
+  border: 1px solid #e0e4e8;
+
+  border-radius: 9px;
+
+  display: flex;
+  align-items: center;
+
+  position: relative;
+
+  background: white;
+}
+
+.pagu-date input {
+  width: 100%;
+  height: 100%;
+
+  border: none;
+  outline: none;
+
+  padding: 0 48px 0 18px;
+
+  font-size: 16px;
+
+  color: #444;
+
+  background: transparent;
+}
+
+.pagu-date svg {
+  width: 23px;
+  height: 23px;
+
+  position: absolute;
+
+  right: 15px;
+
+  color: #1478e8;
+
+  pointer-events: none;
+}
+
+
+/* EXPORT */
+
+.pagu-export-button {
+  height: 58px;
+
+  min-width: 150px;
+
+  border: 1px solid #e0e4e8;
+
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 14px;
+
+  cursor: pointer;
+}
+
+.excel-box {
+  width: 34px;
+  height: 34px;
+
+  background: #168a48;
+
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 4px;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.export-label {
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  line-height: 1.2;
+
+  font-size: 15px;
+
+  color: #777;
+}
+
+.export-label strong {
+  color: #333;
+
+  font-size: 16px;
+}
+
+
+/* RIGHT */
+
+.pagu-toolbar-right {
+  margin-left: auto;
+
+  display: flex;
+  align-items: center;
+
+  gap: 28px;
+}
+
+
+/* FILTER */
+
+.pagu-filter {
+  height: 58px;
+
+  background: #f1f2f4;
+
+  border-radius: 12px;
+
+  padding: 5px;
+
+  display: flex;
+  align-items: center;
+}
+
+.filter-option {
+  height: 48px;
+
+  min-width: 66px;
+
+  padding: 0 15px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: #777;
+
+  font-size: 16px;
+
+  cursor: pointer;
+}
+
+.filter-option.active {
+  background: #ffffff;
+
+  color: #536a92;
+
+  font-weight: 600;
+
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+
+/* ADD DATA */
+
+.pagu-add-button {
+  height: 58px;
+
+  padding: 0 22px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: #2678dc;
+
+  color: white;
+
+  display: flex;
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.pagu-add-button:hover {
+  background: #1769cb;
+}
+
+.pagu-add-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.pagu-table-wrapper {
+  width: 100%;
+
+  border: 1px solid #dfe3e7;
+
+  border-radius: 9px;
+
+  overflow: hidden;
+
+  min-height: 390px;
+}
+
+.pagu-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  table-layout: fixed;
+}
+
+
+/* HEADER */
+
+.pagu-table thead {
+  background: #ffffff;
+}
+
+.pagu-table th {
+  height: 55px;
+
+  padding: 0 14px;
+
+  text-align: left;
+
+  color: #4f648b;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  border-bottom: 2px solid #e2e5e8;
+}
+
+.pagu-table th:nth-child(1) {
+  width: 55px;
+}
+
+.pagu-table th:nth-child(2) {
+  width: 55%;
+}
+
+.pagu-table th:nth-child(3) {
+  width: 16%;
+}
+
+.pagu-table th:nth-child(4) {
+  width: 13%;
+}
+
+.pagu-table th:nth-child(5) {
+  width: 10%;
+}
+
+
+/* EMPTY */
+
+.pagu-empty-cell {
+  height: 330px;
+
+  text-align: center;
+
+  vertical-align: middle;
+
+  border: none;
+}
+
+.pagu-empty {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+.pagu-empty-icon {
+  width: 32px;
+  height: 32px;
+
+  margin-bottom: 8px;
+
+  color: #999;
+}
+
+.pagu-empty-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pagu-empty h3 {
+  margin: 0 0 8px;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  color: #333;
+}
+
+.pagu-empty p {
+  margin: 0;
+
+  font-size: 13px;
+
+  color: #aaa;
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.pagu-footer {
+  min-height: 65px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 10px 18px 0;
+}
+
+
+/* INFORMATION */
+
+.pagu-information {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  font-size: 16px;
+
+  color: #444;
+}
+
+.pagu-information select {
+  width: 38px;
+  height: 38px;
+
+  border: 1px solid #edf0f2;
+
+  border-radius: 7px;
+
+  background: white;
+
+  text-align: center;
+
+  outline: none;
+
+  color: #555;
+
+  font-size: 15px;
+}
+
+.pagu-information strong {
+  font-weight: 600;
+}
+
+
+/* PAGINATION */
+
+.pagu-pagination {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+.pagination-arrow {
+  width: 36px;
+  height: 36px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #2678dc;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+.pagination-arrow svg {
+  width: 21px;
+  height: 21px;
+}
+
+.pagination-arrow:disabled {
+  color: #a7adb3;
+
+  cursor: default;
+}
+
+.pagination-number {
+  width: 38px;
+  height: 38px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #444;
+
+  font-size: 16px;
+
+  cursor: pointer;
+}
+
+.pagination-number.active {
+  background: #2678dc;
+
+  color: #ffffff;
+}
+
+.pagination-ellipsis {
+  width: 25px;
+
+  text-align: center;
+
+  color: #555;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1200px) {
+
+  .pagu-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .pagu-toolbar-right {
+    margin-left: 0;
+
+    width: 100%;
+
+    justify-content: flex-end;
+  }
+
+}
+
+
+@media (max-width: 900px) {
+
+  .pagu-top-header {
+    padding: 0 18px;
+  }
+
+  .pagu-page-header {
+    padding: 0 20px;
+  }
+
+  .pagu-content {
+    padding: 20px;
+  }
+
+  .pagu-user-name {
+    display: none;
+  }
+
+  .pagu-toolbar-right {
+    justify-content: space-between;
+  }
+
+  .pagu-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .pagu-table {
+    min-width: 850px;
+  }
+
+}
+
+
+@media (max-width: 650px) {
+
+  .pagu-top-header {
+    height: 60px;
+  }
+
+  .pagu-breadcrumb {
+    font-size: 14px;
+  }
+
+  .pagu-page-header {
+    height: 68px;
+  }
+
+  .pagu-page-header h1 {
+    font-size: 25px;
+  }
+
+  .pagu-content {
+    padding: 12px;
+  }
+
+  .pagu-card {
+    padding: 12px;
+  }
+
+  .pagu-toolbar {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .pagu-search,
+  .pagu-date,
+  .pagu-export-button {
+    width: 100%;
+  }
+
+  .pagu-toolbar-right {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 12px;
+  }
+
+  .pagu-filter {
+    width: 100%;
+  }
+
+  .filter-option {
+    flex: 1;
+  }
+
+  .pagu-add-button {
+    width: 100%;
+  }
+
+  .pagu-footer {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 15px;
+  }
+
+  .pagu-pagination {
+    width: 100%;
+
+    justify-content: flex-end;
+  }
+
+}
