@@ -1,0 +1,103 @@
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_IMAGE: "$CI_REGISTRY_IMAGE/frontend"
+
+# =========================
+# TEST
+# =========================
+test:
+  stage: test
+  image: node:22-alpine
+
+  script:
+    - npm ci
+    - npm run lint
+    - npm run build
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# =========================
+# BUILD DOCKER IMAGE
+# =========================
+build:
+  stage: build
+  image: docker:27
+
+  services:
+    - name: docker:27-dind
+      alias: docker
+
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+
+  script:
+    - docker build -t "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA" .
+    - docker tag "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA" "$DOCKER_IMAGE:latest"
+    - docker push "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$DOCKER_IMAGE:latest"
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# =========================
+# DEPLOY TO VPS
+# =========================
+deploy:
+  stage: deploy
+  image: alpine:3.22
+
+  before_script:
+    - apk add --no-cache openssh-client
+
+    - mkdir -p ~/.ssh
+
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+
+    - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+  script:
+    - |
+      ssh -i ~/.ssh/id_ed25519 root@$VPS_HOST << EOF
+
+      echo "Login VPS berhasil"
+
+      docker login $CI_REGISTRY \
+        -u $CI_REGISTRY_USER \
+        -p $CI_REGISTRY_PASSWORD
+
+      echo "Pull frontend image..."
+
+      docker pull $DOCKER_IMAGE:latest
+
+      echo "Stop container lama..."
+
+      docker stop tambora-frontend || true
+      docker rm tambora-frontend || true
+
+      echo "Start container baru..."
+
+      docker run -d \
+        --name tambora-frontend \
+        --restart unless-stopped \
+        -p 9091:3000 \
+        --env-file /opt/tambora/frontend/.env \
+        $DOCKER_IMAGE:latest
+
+      echo "Deployment frontend selesai"
+
+      docker ps
+
+      EOF
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'

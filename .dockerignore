@@ -1,0 +1,12 @@
+node_modules
+.nuxt
+.output
+.git
+.gitlab
+.vscode
+.idea
+npm-debug.log
+yarn-error.log
+.DS_Store
+.env
+.env.*
