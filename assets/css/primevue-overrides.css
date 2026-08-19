@@ -1,0 +1,237 @@
+/* ── PrimeVue DatePicker Panel — Global Light Theme Override ──
+   Panel is teleported to <body>, so scoped CSS can't reach it.
+   Targets PrimeVue 5 class names.
+──────────────────────────────────────────────────────────────── */
+
+/* Panel container */
+.p-datepicker-panel,
+.p-datepicker {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(229, 231, 235, 0.9) !important;
+  border-radius: 0.75rem !important;
+  color: #374151 !important;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.p-datepicker-header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+  padding: 0.625rem 0.75rem !important;
+}
+
+/* Header Title Container */
+.p-datepicker-title,
+.p-datepicker-header-title,
+[data-pc-section="title"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  color: #111827 !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  gap: 0.25rem !important;
+}
+
+/* Month / Year clickable header buttons (July / 2026) */
+.p-datepicker-select-month,
+.p-datepicker-select-year,
+.p-datepicker-title button,
+.p-datepicker-title span,
+.p-datepicker-header button.p-datepicker-select-month,
+.p-datepicker-header button.p-datepicker-select-year,
+[data-pc-section="selectmonth"],
+[data-pc-section="selectyear"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #111827 !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  white-space: nowrap !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 0.375rem !important;
+  cursor: pointer !important;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease !important;
+}
+
+.p-datepicker-select-month:hover,
+.p-datepicker-select-year:hover,
+.p-datepicker-title button:hover,
+[data-pc-section="selectmonth"]:hover,
+[data-pc-section="selectyear"]:hover {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+/* Prev / Next arrows */
+.p-datepicker-prev-button,
+.p-datepicker-next-button,
+.p-datepicker-prev,
+.p-datepicker-next {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #6b7280 !important;
+  border-radius: 0.375rem !important;
+  cursor: pointer !important;
+}
+
+.p-datepicker-prev-button:hover,
+.p-datepicker-next-button:hover,
+.p-datepicker-prev:hover,
+.p-datepicker-next:hover {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+/* ── Calendar Grid ────────────────────────────────────────── */
+.p-datepicker-calendar-container,
+.p-datepicker-calendar,
+.p-datepicker-table {
+  background-color: #ffffff !important;
+}
+
+/* Day-of-week labels */
+.p-datepicker-weekday,
+.p-datepicker-weekday-cell,
+.p-datepicker-day-view th {
+  color: #9ca3af !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  background: transparent !important;
+}
+
+/* Day cells — reset dark backgrounds */
+.p-datepicker-day,
+.p-datepicker-day-cell button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #374151 !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.8rem !important;
+  cursor: pointer !important;
+}
+
+.p-datepicker-day:hover,
+.p-datepicker-day-cell button:hover {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+/* Other-month days (dimmed) */
+.p-datepicker-other-month .p-datepicker-day,
+.p-datepicker-day-cell.p-datepicker-other-month button,
+[data-p-other-month="true"] button {
+  color: #d1d5db !important;
+  cursor: default !important;
+}
+
+/* ── Today Date (Outlined Circle, NO Dark Fill) ──────────── */
+.p-datepicker-today .p-datepicker-day,
+.p-datepicker-day-cell.p-datepicker-today button,
+td.p-datepicker-today > button,
+td.p-datepicker-today > span,
+.p-datepicker-day.p-datepicker-today,
+[data-p-today="true"] button,
+button[data-p-today="true"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #2563eb !important;
+  border: 1.5px solid #2563eb !important;
+  font-weight: 700 !important;
+  border-radius: 50% !important;
+}
+
+/* ── Selected Date (Filled Blue Circle) ──────────────────── */
+.p-datepicker-day-selected,
+.p-datepicker-day.p-datepicker-day-selected,
+.p-datepicker-day[aria-selected="true"],
+.p-datepicker-day.p-highlight,
+[data-p-selected="true"] button,
+button[data-p-selected="true"] {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 50% !important;
+  font-weight: 600 !important;
+}
+
+/* ── Month & Year Picker Grid Overlay ─────────────────────── */
+.p-datepicker-month-view,
+.p-datepicker-year-view {
+  background-color: #ffffff !important;
+  padding: 0.5rem !important;
+}
+
+.p-datepicker-month,
+.p-datepicker-year {
+  color: #374151 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0.375rem !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  padding: 0.5rem !important;
+  cursor: pointer !important;
+}
+
+.p-datepicker-month:hover,
+.p-datepicker-year:hover {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+.p-datepicker-month-selected,
+.p-datepicker-year-selected,
+[data-p-selected="true"].p-datepicker-month,
+[data-p-selected="true"].p-datepicker-year {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* ── Today + Clear Button Bar ────────────────────────────── */
+.p-datepicker-buttonbar {
+  background-color: #f9fafb !important;
+  border-top: 1px solid #f3f4f6 !important;
+  padding: 0.5rem 0.75rem !important;
+}
+
+.p-datepicker-today-button,
+.p-datepicker-clear-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #2563eb !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+}
+
+.p-datepicker-today-button:hover,
+.p-datepicker-clear-button:hover {
+  color: #1d4ed8 !important;
+}
+
+/* ── PrimeVue ToggleSwitch Green Accent & White Knob Override ───────── */
+.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider,
+[data-p-checked="true"] .p-toggleswitch-slider {
+  background-color: #22c55e !important;
+}
+
+.p-toggleswitch-handle,
+.p-toggleswitch-slider::before,
+.p-toggleswitch .p-toggleswitch-handle,
+[data-pc-section="handle"] {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
