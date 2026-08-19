@@ -3,10 +3,17 @@ import { defineStore } from 'pinia'
 import { useCookie, navigateTo } from '#app'
 
 export interface UserSession {
+  id?: string
   nama: string
-  role: string
+  full_name?: string
+  username?: string
+  role?: string
   email?: string
   level_id?: string
+  organization?: string
+  nip?: string
+  prnr?: string
+  status?: number | string
 }
 
 export interface AuthSession {
@@ -59,6 +66,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (found) {
       setSession({
         nama: found.nama,
+        full_name: found.nama,
+        username: found.username,
         role: found.role,
         email: found.username,
         level_id: found.level_id

@@ -119,8 +119,8 @@ const carouselConfig = {
             :src="image"
             alt="Slider Image"
             class="w-full h-full object-cover"
-          />
-          <div class="absolute inset-0 bg-black/30"></div>
+          >
+          <div class="absolute inset-0 bg-black/30"/>
         </div>
       </Slide>
 

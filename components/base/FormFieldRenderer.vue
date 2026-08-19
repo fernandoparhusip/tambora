@@ -219,7 +219,7 @@ const onDateSelect = (
           :disabled="field.disabled"
           class="w-4 h-4 accent-blue-600 border-gray-300 cursor-pointer"
           style="accent-color: #2563eb"
-        />
+        >
         <span>{{ opt.label }}</span>
       </label>
     </div>
@@ -267,7 +267,7 @@ const onDateSelect = (
         ]"
         :value="phoneInputValue"
         @input="onPhoneInput"
-      />
+      >
     </div>
 
     <!-- Multi Select Field (or Searchable Multi Select) -->
@@ -348,7 +348,7 @@ const onDateSelect = (
                 @click.stop
                 @mousedown.stop
                 @keydown.space.stop
-              />
+              >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-3.5 h-3.5 text-gray-400 absolute right-4 pointer-events-none"
@@ -379,7 +379,7 @@ const onDateSelect = (
                     type="checkbox"
                     :checked="isMultiSelected(opt.value)"
                     class="w-3.5 h-3.5 text-blue-600 rounded-xs border-gray-300 pointer-events-none"
-                  />
+                  >
                   <span>{{ opt.label }}</span>
                 </div>
               </button>
@@ -465,7 +465,7 @@ const onDateSelect = (
                 @click.stop
                 @mousedown.stop
                 @keydown.space.stop
-              />
+              >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-3.5 h-3.5 text-gray-400 absolute right-4 pointer-events-none"
@@ -597,7 +597,7 @@ const onDateSelect = (
           field.disabled ? 'bg-[#E2E8F0] text-gray-600 cursor-not-allowed' : '',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
-      />
+      >
     </div>
 
     <!-- Textarea Field -->
@@ -648,7 +648,7 @@ const onDateSelect = (
             : 'bg-white text-gray-700 border border-gray-200/80',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
-      />
+      >
     </div>
 
     <!-- Help Text under input -->

@@ -191,7 +191,7 @@ onBeforeUnmount(() => {
           :src="item.icon"
           :alt="item.label || item.key"
           class="w-5 h-5"
-        />
+        >
         <p
           v-else
           class="flex justify-center whitespace-nowrap text-[14px] font-medium transition-colors duration-300"

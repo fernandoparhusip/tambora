@@ -2,6 +2,8 @@ import { defineNuxtConfig } from "nuxt/config";
 import { useNuxt } from "@nuxt/kit";
 import Aura from "@primeuix/themes/aura";
 
+const apiBackend = process.env.NUXT_BACKEND_URL || 'http://88.222.242.143:9090';
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default (defineNuxtConfig as (config: any) => any)({
   compatibilityDate: "2026-07-21",
@@ -9,10 +11,15 @@ export default (defineNuxtConfig as (config: any) => any)({
   experimental: {
     appManifest: false,
   },
+  routeRules: {
+    '/api/v1/**': {
+      proxy: `${apiBackend}/api/v1/**`,
+    },
+  },
   runtimeConfig: {
     public: {
-      apiBaseUrl: ''
-    }
+      apiBaseUrl: '/api/v1',
+    },
   },  
   modules: [
     "@nuxt/ui",
@@ -69,7 +76,23 @@ export default (defineNuxtConfig as (config: any) => any)({
   },
   vite: {
     optimizeDeps: {
-      include: ["ol"],
+      include: [
+        "ol",
+        "ol/Map",
+        "ol/View",
+        "ol/layer/Tile",
+        "ol/source/XYZ",
+        "ol/layer/Vector",
+        "ol/source/Vector",
+        "ol/Feature",
+        "ol/geom/Point",
+        "ol/proj",
+        "ol/style",
+        "ol/Overlay",
+        "echarts",
+        "vue-echarts",
+        "dayjs",
+      ],
     },
   },
   hooks: {

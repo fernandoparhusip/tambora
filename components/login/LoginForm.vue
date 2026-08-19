@@ -34,7 +34,7 @@ const iconFullPln = LogoFullPLN;
 
 const route = useRoute();
 const authStore = useAuthStore();
-const { forgotPassword, unlockUser, getSSOUrl, verifyRedirectToken, logout } =
+const { login, forgotPassword, unlockUser, getSSOUrl, verifyRedirectToken, logout } =
   useAuth();
 const toast = useToast();
 
@@ -224,19 +224,18 @@ async function performLogin() {
   isLoading.value = true;
   errorMessage.value = "";
 
-  // Simulate brief loading delay then validate credentials
-  await new Promise((resolve) => setTimeout(resolve, 600));
-
-  const success = authStore.login(email.value, password.value);
-
-  if (success) {
+  try {
+    await login({
+      email: email.value,
+      password: password.value,
+    });
     await navigateTo("/home");
-  } else {
-    errorMessage.value = "Email atau password yang dimasukkan salah.";
+  } catch (err: any) {
+    errorMessage.value = err?.message || "Email atau password yang dimasukkan salah.";
     nextTick(() => triggerForgotPasswordGuide());
+  } finally {
+    isLoading.value = false;
   }
-
-  isLoading.value = false;
 }
 
 async function handleCaptchaSuccess() {
@@ -418,7 +417,7 @@ function onCopy(e: ClipboardEvent) {
   <!-- Forgot Password Modal -->
   <VueFinalModal
     v-model="showForgotModal"
-    overlayTransition="vfm-fade"
+    overlay-transition="vfm-fade"
     content-transition="vfm-fade"
     class="flex justify-center items-center z-[9999]"
     overlay-class="z-[9998]"
@@ -427,7 +426,7 @@ function onCopy(e: ClipboardEvent) {
   >
     <div class="flex justify-between items-center px-6 pt-4 pb-2">
       <div class="flex">
-        <img :src="iconLupaPassword" class="h-4 w-auto mb-4 mr-2" />
+        <img :src="iconLupaPassword" class="h-4 w-auto mb-4 mr-2" >
         <p class="text-xs text-[#8181A5]">Lupa Password</p>
       </div>
       <button
@@ -451,7 +450,7 @@ function onCopy(e: ClipboardEvent) {
     </div>
     <div class="px-6 pb-6">
       <div class="flex flex-col items-center text-center mb-6">
-        <img :src="iconPasswordKonfirmasi" class="h-40 w-auto mb-4 mr-2" />
+        <img :src="iconPasswordKonfirmasi" class="h-40 w-auto mb-4 mr-2" >
         <p class="text-xl font-semibold text-gray-800 mb-1">Lupa Password?</p>
         <p class="text-sm text-gray-500">
           Demi keamanan, silakan masukkan email terdaftar untuk menerima
@@ -463,7 +462,7 @@ function onCopy(e: ClipboardEvent) {
           <div
             class="absolute inset-y-0 left-0 pl-4 pr-2 flex items-center pointer-events-none z-10 border-r-2 my-3"
           >
-            <img :src="iconEmail" class="w-4 h-4" />
+            <img :src="iconEmail" class="w-4 h-4" >
           </div>
           <input
             v-model="forgotEmail"
@@ -472,7 +471,7 @@ function onCopy(e: ClipboardEvent) {
             class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
             :class="{ 'border-red-500': forgotEmailError }"
             @keyup.enter="handleForgotSubmit"
-          />
+          >
         </div>
         <p v-if="forgotEmailError" class="mt-1 text-xs text-red-500">
           {{ forgotEmailError }}
@@ -498,12 +497,12 @@ function onCopy(e: ClipboardEvent) {
             r="10"
             stroke="currentColor"
             stroke-width="4"
-          ></circle>
+          />
           <path
             class="opacity-75"
             fill="currentColor"
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+          />
         </svg>
         <span>Kirim</span>
       </button>
@@ -513,7 +512,7 @@ function onCopy(e: ClipboardEvent) {
   <!-- Unlock User Modal -->
   <VueFinalModal
     v-model="showUnlockModal"
-    overlayTransition="vfm-fade"
+    overlay-transition="vfm-fade"
     content-transition="vfm-fade"
     class="flex justify-center items-center z-[9999]"
     overlay-class="z-[9998]"
@@ -546,7 +545,7 @@ function onCopy(e: ClipboardEvent) {
     </div>
     <div class="px-6 pb-6">
       <div class="flex flex-col items-center text-center mb-6">
-        <img :src="iconPasswordKonfirmasi" class="h-40 w-auto mb-4 mr-2" />
+        <img :src="iconPasswordKonfirmasi" class="h-40 w-auto mb-4 mr-2" >
         <p class="text-xl font-semibold text-gray-800 mb-1">Unlock User</p>
         <p class="text-sm text-gray-500">
           Masukkan email yang ingin di unlock.
@@ -558,7 +557,7 @@ function onCopy(e: ClipboardEvent) {
             <div
               class="absolute inset-y-0 left-0 pl-4 pr-2 flex items-center pointer-events-none z-10 border-r-2 my-3"
             >
-              <img :src="iconEmail" class="w-4 h-4" />
+              <img :src="iconEmail" class="w-4 h-4" >
             </div>
             <input
               v-model="unlockEmail"
@@ -567,7 +566,7 @@ function onCopy(e: ClipboardEvent) {
               class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
               :class="{ 'border-red-500': unlockEmailError }"
               @keyup.enter="handleUnlockSubmit"
-            />
+            >
           </div>
           <p v-if="unlockEmailError" class="mt-1 text-xs text-red-500">
             {{ unlockEmailError }}
@@ -594,12 +593,12 @@ function onCopy(e: ClipboardEvent) {
             r="10"
             stroke="currentColor"
             stroke-width="4"
-          ></circle>
+          />
           <path
             class="opacity-75"
             fill="currentColor"
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+          />
         </svg>
         <span>Unlock</span>
       </button>
@@ -609,7 +608,7 @@ function onCopy(e: ClipboardEvent) {
   <div class="flex h-full min-h-0 flex-col select-none">
     <LoginSliderCaptcha
       v-if="showCaptcha"
-      :onCaptchaSuccess="handleCaptchaSuccess"
+      :on-captcha-success="handleCaptchaSuccess"
       @close="showCaptcha = false"
     />
 
@@ -626,7 +625,7 @@ function onCopy(e: ClipboardEvent) {
         >
           <!-- Logos -->
           <div class="flex items-center gap-4 mb-[45px]">
-            <img :src="iconFullPln" class="h-[32px]" />
+            <img :src="iconFullPln" class="h-[32px]" >
           </div>
           <!-- <div v-if="logo81K" class="absolute -top-1 -right-7">
             <img :src="logo81K" />
@@ -676,7 +675,7 @@ function onCopy(e: ClipboardEvent) {
             <div
               class="absolute inset-y-0 left-0 pl-4 pr-2 flex items-center pointer-events-none z-10 border-r-2 my-4"
             >
-              <img :src="iconEmail" class="w-4 h-4" />
+              <img :src="iconEmail" class="w-4 h-4" >
             </div>
             <input
               v-model="email"
@@ -685,7 +684,7 @@ function onCopy(e: ClipboardEvent) {
               class="w-full pl-12 pr-4 py-4 !bg-white border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
               :class="{ 'border-red-500': emailError }"
               @keyup.enter="handleLogin"
-            />
+            >
           </div>
           <p class="mb-[20px] text-red-500 text-xs mt-1">
             {{ emailError }}
@@ -698,7 +697,7 @@ function onCopy(e: ClipboardEvent) {
             <div
               class="absolute inset-y-0 left-0 pl-4 pr-2 flex items-center pointer-events-none z-10 border-r-2 my-4"
             >
-              <img :src="iconPassword" class="w-4 h-4" />
+              <img :src="iconPassword" class="w-4 h-4" >
             </div>
             <input
               v-model="password"
@@ -709,13 +708,13 @@ function onCopy(e: ClipboardEvent) {
               @keyup.enter="handleLogin"
               @paste="onPaste"
               @copy="onCopy"
-            />
+            >
 
             <!-- Toggle Password Icon -->
             <button
               type="button"
-              @click="togglePassword"
               class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none z-10"
+              @click="togglePassword"
             >
               <svg
                 v-if="!showPassword"
@@ -782,9 +781,9 @@ function onCopy(e: ClipboardEvent) {
           <!-- Login Button -->
           <button
             type="button"
-            @click="handleLogin"
             :disabled="isLoading"
             class="relative z-10 w-full bg-[#2671D9] hover:bg-[#2671D9] disabled:bg-[#2671D9]/70 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex justify-center items-center"
+            @click="handleLogin"
           >
             <svg
               v-if="isLoading"
@@ -800,12 +799,12 @@ function onCopy(e: ClipboardEvent) {
                 r="10"
                 stroke="currentColor"
                 stroke-width="4"
-              ></circle>
+              />
               <path
                 class="opacity-75"
                 fill="currentColor"
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
+              />
             </svg>
             {{ isLoading ? "Masuk ke Aplikasi" : "Masuk ke Aplikasi" }}
           </button>
@@ -818,10 +817,10 @@ function onCopy(e: ClipboardEvent) {
           <!-- SSO Button -->
           <button
             type="button"
-            @click="goToSSOUrl"
             class="relative z-10 w-full bg-white border border-[#2D74C2] text-blue-600 hover:bg-[#fde8e9] font-medium py-3 rounded-lg transition duration-300 flex justify-center items-center gap-2"
+            @click="goToSSOUrl"
           >
-            <img :src="iconPln" class="h-[16px]" />
+            <img :src="iconPln" class="h-[16px]" >
             <p class="text-[#2D74C2]">Masuk ke SSO ( IAM PLN )</p>
           </button>
         </div>
@@ -830,7 +829,7 @@ function onCopy(e: ClipboardEvent) {
 
     <!--Footer-->
     <div class="mt-5 p-3 flex items-center bg-[#EEEEEE] rounded-[24px]">
-      <img :src="iconHelpdesk" class="h-[48px] pr-[10px]" />
+      <img :src="iconHelpdesk" class="h-[48px] pr-[10px]" >
       <div class="h-[40px] text-xs text-gray-600 flex flex-col justify-between">
         <p class="font-bold">
           Aplikasi PLN

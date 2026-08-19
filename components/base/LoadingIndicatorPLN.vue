@@ -4,7 +4,7 @@
   <div class="w-20 h-20 relative flex items-center justify-center">
     <div
       class="h-12 w-12 bg-pln bg-contain bg-center bg-no-repeat rounded-full"
-    ></div>
+    />
     <svg
       viewBox="0 0 100 100"
       preserveAspectRatio="xMidYMid"
@@ -26,7 +26,7 @@
           dur="1s"
           values="0 50 50;360 50 50"
           keyTimes="0;1"
-        ></animateTransform>
+        />
       </circle>
     </svg>
   </div>

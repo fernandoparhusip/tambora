@@ -1,5 +1,11 @@
+<script setup lang="ts">
+import { ModalsContainer } from 'vue-final-modal'
+import Toast from 'primevue/toast'
+</script>
+
 <template>
   <div class="text-gray-900 font-sans">
+    <Toast position="top-right" />
     <ClientOnly>
       <ModalsContainer />
     </ClientOnly>
@@ -8,10 +14,6 @@
     </NuxtLayout>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ModalsContainer } from 'vue-final-modal'
-</script>
 
 <style>
 /* Hide PrimeUI License badge and any bottom-right license notice */

@@ -7,11 +7,35 @@ export interface LoginPayload {
   password: string
 }
 
+export interface BackendUser {
+  id?: string
+  email?: string
+  username?: string
+  full_name?: string
+  organization?: string
+  nip?: string
+  prnr?: string
+  status?: number | string
+  created_at?: string
+  role?: string
+  level_id?: string
+}
+
 export interface AuthResponse {
   message?: string
+  status?: boolean | number | string
+  token?: string
+  access_token?: string
   data?: {
+    access_token?: string
+    refresh_token?: string
+    token_type?: string
+    expires_at?: string
+    session_uuid?: string
     token?: string
+    user?: BackendUser
     nama?: string
+    name?: string
     role?: string
     level_id?: string
     menu?: string[]
@@ -29,24 +53,38 @@ export const useAuth = () => {
     errorMessage.value = ''
     
     try {
-      // Attempt backend API call using Nuxt built-in $fetch
+      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
 
       const response = await $fetch<AuthResponse>(
-        `${config.public.apiBaseUrl}/api/auth/login`,
+        `${baseUrl}/auth/login`,
         {
           method: 'POST',
-          body: payload
+          body: {
+            email: payload.email,
+            password: payload.password
+          }
         }
       )
-      if (response?.data?.token) {
+
+      const token = response?.data?.access_token || response?.data?.token || response?.token || response?.access_token
+      const userData = response?.data?.user
+
+      if (token) {
         authStore.setSession(
           {
-            nama: response.data.nama || 'Pengguna PLN',
-            role: response.data.role || 'Operator',
-            level_id: response.data.level_id || '1',
-            email: payload.email
+            id: userData?.id,
+            nama: userData?.full_name || userData?.username || 'User Example',
+            full_name: userData?.full_name || userData?.username || 'User Example',
+            username: userData?.username || '',
+            role: userData?.organization || 'Admin',
+            email: userData?.email || payload.email,
+            organization: userData?.organization,
+            nip: userData?.nip,
+            prnr: userData?.prnr,
+            status: userData?.status,
+            level_id: userData?.level_id || '1'
           },
-          response.data.token
+          token
         )
       }
 
@@ -56,7 +94,7 @@ export const useAuth = () => {
       const rawEmail = decryptAes256(payload.email) || payload.email
       const rawPassword = decryptAes256(payload.password) || payload.password
 
-      // Fallback mock authentication if backend endpoint is not yet connected
+      // Fallback mock authentication if backend endpoint is not reachable in dev
       const isMockSuccess = authStore.login(rawEmail, rawPassword)
 
       if (isMockSuccess) {
@@ -71,7 +109,7 @@ export const useAuth = () => {
         }
       }
 
-      const msg = e.data?.message || e.message || 'Username atau password salah.'
+      const msg = e.data?.message || e.message || 'Email atau password salah.'
       errorMessage.value = msg
       throw new Error(msg)
     } finally {

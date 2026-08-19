@@ -217,7 +217,7 @@ const handleEdit = () => {
             </div>
           </div>
 
-          <hr class="border-gray-100 my-4" />
+          <hr class="border-gray-100 my-4" >
 
           <!-- Key-Value Items List -->
           <div class="space-y-3.5">

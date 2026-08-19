@@ -242,11 +242,6 @@ async function stopDrag() {
   const distance = Math.abs(pieceX.value - targetX.value);
   debugInfo.value.lastDistance = distance;
 
-  if (props.debug) {
-    console.log("Distance from target:", distance, "Tolerance:", tolerance);
-    console.log("Debug info:", debugInfo.value);
-  }
-
   // Implementasi algoritma verifikasi yang lebih akurat
   // Jika jarak sangat dekat (dalam 10px), anggap sebagai match sempurna
   // Jika jarak dalam toleransi, anggap sebagai match yang cukup baik
@@ -270,8 +265,8 @@ async function stopDrag() {
 
       // Tunggu sebentar untuk UX yang lebih baik
       await new Promise((resolve) => setTimeout(resolve, 200));
-    } catch (error) {
-      console.error("Error in captcha success handler:", error);
+    } catch {
+      // Captcha handler error fallback
     } finally {
       // Matikan loading dan tutup modal
       isLoading.value = false;
@@ -332,15 +327,6 @@ function calculateDimensions() {
     // Update targetX position to ensure consistency
     targetX.value = targetPosition();
     debugInfo.value.targetUpdates++;
-
-    if (props.debug) {
-      console.log(
-        "Dimensions updated - Image width:",
-        imageWidth.value,
-        "Target position:",
-        targetX.value,
-      );
-    }
   }
 }
 
@@ -382,7 +368,7 @@ function handleKeyDown(e) {
     class="flex justify-center items-center z-[9999]"
     content-class="relative w-full max-w-md mx-4 bg-white rounded-xl shadow-[2px_0px_25px_0px_rgba(0,67,101,0.1)] overflow-hidden border border-gray-100 z-[9999]"
     overlay-class="bg-black bg-opacity-50 z-[9998]"
-    :lockScroll="true"
+    :lock-scroll="true"
     overlay-transition="vfm-fade"
     content-transition="vfm-fade"
     @update:model-value="
@@ -406,9 +392,9 @@ function handleKeyDown(e) {
         <span class="text-[#8181A5] font-medium">Verifikasi Captcha</span>
       </div>
       <button
-        @click="$emit('close')"
         class="text-gray-400 hover:text-gray-600 transition-colors duration-200 focus:outline-none"
         aria-label="Tutup"
+        @click="$emit('close')"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -436,7 +422,7 @@ function handleKeyDown(e) {
         >
           <div
             class="w-6 h-6 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"
-          ></div>
+          />
         </div>
         <img
           :src="imageSrc"
@@ -446,7 +432,7 @@ function handleKeyDown(e) {
           loading="eager"
           @load="onImageLoad"
           @error="onImageError"
-        />
+        >
 
         <!-- Puzzle piece shadow -->
         <div
@@ -491,9 +477,9 @@ function handleKeyDown(e) {
       <!-- Slider control -->
       <div class="flex items-center gap-3 mt-6">
         <button
-          @click="reset"
           class="text-gray-400 hover:text-gray-600 p-2 rounded-full transition-all duration-300 focus:outline-none"
           title="Muat ulang gambar"
+          @click="reset"
         >
           <RefreshCcw class="w-4 h-4" />
         </button>
@@ -510,7 +496,7 @@ function handleKeyDown(e) {
                 ? 'width 0.05s cubic-bezier(0.16, 1, 0.3, 1)'
                 : 'width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }"
-          ></div>
+          />
 
           <!-- Slider handle -->
           <div

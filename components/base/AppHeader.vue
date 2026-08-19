@@ -47,7 +47,7 @@ const handleLogout = async () => {
   await authStore.logout();
 };
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
+// ─── Avatar & User Display ───────────────────────────────────────────────────
 const AVATAR_COLORS = [
   "#4F46E5",
   "#0891B2",
@@ -59,17 +59,43 @@ const AVATAR_COLORS = [
   "#2563EB",
 ];
 
-const cachedName = ref(authStore.user?.nama ?? "User");
+const cachedFullName = ref(authStore.user?.full_name || authStore.user?.nama || "");
+const cachedUsername = ref(authStore.user?.username || "");
+const cachedOrg = ref(authStore.user?.organization || authStore.user?.role || "");
+
 watch(
-  () => authStore.user?.nama,
+  () => authStore.user,
   (newVal) => {
-    if (newVal) cachedName.value = newVal;
+    if (newVal) {
+      if (newVal.full_name || newVal.nama) cachedFullName.value = newVal.full_name || newVal.nama;
+      if (newVal.username) cachedUsername.value = newVal.username;
+      if (newVal.organization || newVal.role) cachedOrg.value = newVal.organization || newVal.role || "";
+    }
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 
+const username = computed(() => {
+  return authStore.user?.username || cachedUsername.value || authStore.user?.email?.split("@")[0] || "User";
+});
+
+const fullName = computed(() => {
+  return authStore.user?.full_name || authStore.user?.nama || cachedFullName.value || "User";
+});
+
+const organization = computed(() => {
+  return authStore.user?.organization || authStore.user?.role || cachedOrg.value || "";
+});
+
 const initials = computed(() => {
-  const nama = authStore.user?.nama || cachedName.value;
+  const u = username.value;
+  if (u && u.length >= 2) {
+    return u.slice(0, 2).toUpperCase();
+  }
+  if (u && u.length === 1) {
+    return u.toUpperCase();
+  }
+  const nama = fullName.value;
   return nama
     .split(" ")
     .slice(0, 2)
@@ -78,8 +104,8 @@ const initials = computed(() => {
 });
 
 const avatarColor = computed(() => {
-  const nama = authStore.user?.nama || cachedName.value;
-  const idx = nama.charCodeAt(0) % AVATAR_COLORS.length;
+  const str = username.value || fullName.value;
+  const idx = str.charCodeAt(0) % AVATAR_COLORS.length;
   return AVATAR_COLORS[idx];
 });
 
@@ -205,18 +231,18 @@ const breadcrumbs = computed<Crumb[]>(() => {
           class="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full hover:bg-gray-100 transition-colors group"
           @click="toggleDropdown"
         >
-          <!-- Avatar circle dengan inisial -->
+          <!-- Avatar circle dengan inisial 2 huruf dari username -->
           <div
             class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
             :style="{ backgroundColor: avatarColor }"
           >
             {{ initials }}
           </div>
-          <!-- Inisial teks kecil di sebelah avatar -->
+          <!-- Username di sebelah avatar -->
           <span
             class="text-xs font-semibold text-gray-600 group-hover:text-gray-900"
           >
-            {{ initials }}
+            {{ username }}
           </span>
           <!-- Chevron -->
           <svg
@@ -252,10 +278,10 @@ const breadcrumbs = computed<Crumb[]>(() => {
             <!-- Info user -->
             <div class="px-4 py-2.5 border-b border-gray-100">
               <p class="text-sm font-semibold text-gray-800 truncate">
-                {{ authStore.user?.nama }}
+                {{ fullName }}
               </p>
               <p class="text-xs text-gray-400 truncate">
-                {{ authStore.user?.role }}
+                {{ organization }}
               </p>
             </div>
 

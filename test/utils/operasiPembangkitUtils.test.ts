@@ -46,19 +46,26 @@ describe("operasiPembangkitUtils", () => {
     },
   ];
 
-  it("getStatusMeta returns correct metadata for status", () => {
+  it("getStatusMeta returns correct metadata for status and handles unknown fallback", () => {
     const meta = getStatusMeta("gangguan");
     expect(meta.label).toBe("Gangguan");
     expect(meta.hexColor).toBe("#EF4444");
+
+    // Unknown status fallback
+    const fallback = getStatusMeta("unknown_status" as any);
+    expect(fallback.key).toBe("operasi");
   });
 
-  it("filterSentralByStatus filters items accurately", () => {
+  it("filterSentralByStatus filters items accurately and handles empty filter", () => {
     const filtered = filterSentralByStatus(dummySentrals, "gangguan");
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].name).toBe("PLTMG Sumbawa");
+    expect(filtered[0]?.name).toBe("PLTMG Sumbawa");
 
     const all = filterSentralByStatus(dummySentrals, "semua");
     expect(all).toHaveLength(3);
+
+    const empty = filterSentralByStatus(dummySentrals, "");
+    expect(empty).toHaveLength(3);
   });
 
   it("calculateStatusCounts counts status occurrences accurately", () => {

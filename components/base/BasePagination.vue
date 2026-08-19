@@ -152,7 +152,7 @@ const visiblePages = computed(() => {
             @input="handleInput"
             @blur="handleBlur"
             @focus="showDropdown = true"
-          />
+          >
           <button
             type="button"
             class="pr-1.5 pl-0.5 text-gray-400 hover:text-blue-600 focus:outline-none cursor-pointer"

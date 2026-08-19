@@ -183,7 +183,7 @@ const handleMouseLeave = () => {
             ? 'opacity-0 scale-90 pointer-events-none'
             : 'opacity-100 scale-100'
         "
-      />
+      >
       <!-- Full logo PLN (expanded) -->
       <img
         :src="LogoFullPLN"
@@ -194,7 +194,7 @@ const handleMouseLeave = () => {
             ? 'opacity-100 scale-100'
             : 'opacity-0 scale-95 pointer-events-none'
         "
-      />
+      >
     </div>
 
     <!-- ── Navigation Items ───────────────────────────────────── -->
@@ -378,6 +378,7 @@ const handleMouseLeave = () => {
                       v-for="leaf in subItem.children"
                       :key="leaf.path"
                       :to="leaf.path"
+                      prefetch
                       class="relative flex items-center px-3.5 py-2.5 rounded-xl text-[13px] transition-all duration-150 whitespace-nowrap overflow-hidden"
                       :class="
                         isChildActive(leaf.path)
@@ -402,6 +403,7 @@ const handleMouseLeave = () => {
               <template v-else>
                 <NuxtLink
                   :to="subItem.path || '/home'"
+                  prefetch
                   class="relative flex items-center px-4 py-2.5 rounded-xl text-[12px] transition-all duration-150 whitespace-nowrap overflow-hidden"
                   :class="
                     isChildActive(subItem.path || '')

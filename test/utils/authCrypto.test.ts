@@ -27,10 +27,32 @@ describe('authCrypto utilities', () => {
     expect(getQueryValue(undefined)).toBe('')
   })
 
-  it('should resolve target route properly', () => {
+  it('should resolve target route properly for all branches', () => {
     expect(resolveTargetRoute('Home', '1', [])).toEqual({ name: 'Home' })
     expect(resolveTargetRoute('Overview', '2', ['Overview'])).toEqual({ name: 'Overview' })
+    expect(resolveTargetRoute('', '2', ['/overview'])).toEqual({ name: 'Overview' })
+    expect(resolveTargetRoute('Dashboard', '1', ['Dashboard'])).toEqual({ name: 'Dashboard' })
     expect(resolveTargetRoute('', '3', [])).toEqual({ name: 'Home' })
     expect(resolveTargetRoute('', '1', [])).toEqual({ name: 'Overview' })
+  })
+
+  it('should fallback to Buffer when btoa and atob are undefined (Node environment)', () => {
+    const originalBtoa = globalThis.btoa
+    const originalAtob = globalThis.atob
+
+    // @ts-expect-error mocking undefined
+    delete globalThis.btoa
+    // @ts-expect-error mocking undefined
+    delete globalThis.atob
+
+    const str = 'pln_node_env'
+    const enc = encryptAes256(str)
+    expect(enc).toBeTruthy()
+    const dec = decryptAes256(enc)
+    expect(dec).toBe(str)
+
+    // Restore
+    globalThis.btoa = originalBtoa
+    globalThis.atob = originalAtob
   })
 })
