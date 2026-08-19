@@ -19,6 +19,7 @@
     "@primeuix/themes": "^3.0.0",
     "@vee-validate/zod": "^4.13.2",
     "@vueuse/core": "^10.11.0",
+    "chart.js": "^4.5.1",
     "dayjs": "^1.11.11",
     "driver.js": "^1.8.0",
     "echarts": "^5.5.1",
