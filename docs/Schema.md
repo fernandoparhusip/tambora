@@ -69,6 +69,33 @@ export interface Keuntungan {
 }
 ```
 
+### 1.5. Autentikasi & User Session (`UserSession` & `AuthResponse`)
+```typescript
+export interface UserSession {
+  id?: string;
+  nama: string;           // full_name
+  full_name?: string;
+  username?: string;
+  role?: string;          // e.g. "Admin"
+  email?: string;
+  level_id?: string;
+  organization?: string;  // e.g. "PLN Pusat"
+  nip?: string;
+  prnr?: string;
+  status?: number | string;
+}
+
+export interface AuthResponse {
+  message?: string;
+  data?: {
+    access_token?: string;
+    refresh_token?: string;
+    token_type?: string;
+    user?: UserSession;
+  };
+}
+```
+
 ---
 
 ## 2. Generic Config Schemas

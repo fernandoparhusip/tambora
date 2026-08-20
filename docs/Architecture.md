@@ -49,9 +49,13 @@
    - **`/composables`**: State reaktif, business logic, dan orkestrasi data fetching (`useFetch` / `$fetch`).
    - **`/config`**: Definisi declarative untuk tabel (`TableColumn[]`) dan form (`FormFieldConfig[]`).
    - **`/utils`**: Pure functions tanpa side-effects (mudah di-unit test secara terisolasi).
-2. **Data Fetching Standards**:
-   - Wajib menggunakan bawaan Nuxt (`useFetch` / `$fetch`). Dilarang memakai `axios`.
-   - Error handling terpusat di composable / global error handler.
+2. **Data Fetching & Proxy Standards**:
+   - Wajib menggunakan composable terpusat `useApi()` atau bawaan Nuxt (`$fetch` / `useFetch`). Dilarang memakai `axios`.
+   - Menggunakan dynamic Nitro reverse proxy (`/api/v1/**`) di `nuxt.config.ts` untuk menangani routing backend dan bypass CORS.
+   - Error handling terpusat otomatis memicu notifikasi Toast PrimeVue dan auto-logout saat 401 Unauthorized.
 3. **Quality & Maintainability**:
    - Code Duplication dijaga di bawah 3% sesuai aturan SonarQube.
-   - Semua fungsi `utils` wajib memiliki unit test di folder `test/`.
+   - Semua fungsi `utils` wajib memiliki unit test di folder `test/` (Target Coverage > 80%).
+4. **Performance & Bundling**:
+   - Library berat (OpenLayers GIS `ol/*` & Apache ECharts) di-prebundle melalui `vite.optimizeDeps` untuk menjamin navigasi instan.
+   - Sidebar navigasi menggunakan `prefetch` pada `<NuxtLink>` untuk asynchronous chunk loading.
