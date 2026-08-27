@@ -93,7 +93,7 @@ onBeforeUnmount(() => {
           ref="subtitleRef"
           class="text-xs sm:text-[13px] text-gray-500 font-normal tracking-wide opacity-0"
         >
-          Selamat Datang di Aplikasi MAPP TAMBORA
+          Selamat Datang di Aplikasi TAMBORA WEB APP
         </p>
       </div>
     </div>

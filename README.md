@@ -8,7 +8,7 @@
 
 [![Nuxt 4](https://img.shields.io/badge/Framework-Nuxt_4.5.0-00DC82?style=for-the-badge&logo=nuxt.js&logoColor=white)](https://nuxt.com/)
 [![Vue 3](https://img.shields.io/badge/Core-Vue_3.4-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
-[![PrimeVue 5](https://img.shields.io/badge/UI_Library-PrimeVue_5-10B981?style=for-the-badge&logo=primefaces&logoColor=white)](https://primevue.org/)
+[![PrimeVue 4](https://img.shields.io/badge/UI_Library-PrimeVue_4-10B981?style=for-the-badge&logo=primefaces&logoColor=white)](https://primevue.org/)
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
