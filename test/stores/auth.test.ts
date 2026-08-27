@@ -21,38 +21,50 @@ describe('Auth Pinia Store', () => {
     expect(authStore.user).toBeNull()
   })
 
-  it('should reject login for invalid credentials', () => {
+  it('should update user with setUser', () => {
     const authStore = useAuthStore()
-    const success = authStore.login('admin', 'wrong_pass')
-    expect(success).toBe(false)
-    expect(authStore.isLoggedIn).toBe(false)
-    expect(authStore.user).toBeNull()
+    authStore.setUser({ nama: 'Updated User', role: 'Staff', email: 'staff@example.com' })
+    expect(authStore.user?.nama).toBe('Updated User')
+    expect(authStore.user?.role).toBe('Staff')
   })
 
-  it('should log in successfully for valid credentials', () => {
+  it('should set error and message states', () => {
     const authStore = useAuthStore()
-    const success = authStore.login('admin', 'admin123')
-    expect(success).toBe(true)
-    expect(authStore.isLoggedIn).toBe(true)
-    expect(authStore.user?.nama).toBe('Admin PLN')
-    expect(authStore.user?.role).toBe('Admin')
+    authStore.setError(true)
+    authStore.setMessage('Test error message')
+    expect(authStore.isError).toBe(true)
+    expect(authStore.message).toBe('Test error message')
   })
 
-  it('should setSession correctly', () => {
+  it('should setSession correctly with tokens', () => {
     const authStore = useAuthStore()
-    authStore.setSession({ nama: 'Test User', role: 'Operator', level_id: '2' }, 'test_token')
+    authStore.setSession(
+      { nama: 'Test User', role: 'Operator', level_id: '2' },
+      'test_access_token',
+      'test_refresh_token'
+    )
     expect(authStore.isLoggedIn).toBe(true)
-    expect(authStore.token).toBe('test_token')
-    expect(authStore.user).toEqual({ nama: 'Test User', role: 'Operator', level_id: '2' })
+    expect(authStore.token).toBe('test_access_token')
+    expect(authStore.refreshToken).toBe('test_refresh_token')
+    expect(authStore.user?.nama).toBe('Test User')
+  })
+
+  it('should update tokens with setTokens', () => {
+    const authStore = useAuthStore()
+    authStore.setTokens('new_access_token', 'new_refresh_token')
+    expect(authStore.token).toBe('new_access_token')
+    expect(authStore.refreshToken).toBe('new_refresh_token')
   })
 
   it('should reset state on logout', () => {
     const authStore = useAuthStore()
-    authStore.login('admin', 'admin123')
+    authStore.setSession({ nama: 'Admin User', role: 'Admin' }, 'token_123', 'refresh_123')
     expect(authStore.isLoggedIn).toBe(true)
 
     authStore.logout()
     expect(authStore.isLoggedIn).toBe(false)
     expect(authStore.user).toBeNull()
+    expect(authStore.token).toBeNull()
+    expect(authStore.refreshToken).toBeNull()
   })
 })

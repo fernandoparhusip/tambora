@@ -68,9 +68,30 @@ const loginFitScale = ref(1);
 
 const welcomeDescriptionText =
   "Mendukung proses bisnis pembangkitan di Indonesia, mencakup pencatatan operasi harian, indikator kinerja, serta monitoring aset dan kondisi pembangkit secara real-time di seluruh Indonesia.";
-const welcomeDescriptionWords = welcomeDescriptionText.split(" ");
+const typedDescription = ref("");
+const isDescriptionTyping = ref(false);
+let descriptionTypeTimeout: any = null;
 let welcomeAnimationContext: gsap.Context | null = null;
 let loginPanelResizeObserver: ResizeObserver | null = null;
+
+function startDescriptionTypewriter() {
+  const target = welcomeDescriptionText;
+  let index = 0;
+  typedDescription.value = "";
+  isDescriptionTyping.value = true;
+
+  const typeNextChar = () => {
+    if (index < target.length) {
+      typedDescription.value += target.charAt(index);
+      index++;
+      descriptionTypeTimeout = setTimeout(typeNextChar, 18);
+    } else {
+      isDescriptionTyping.value = false;
+    }
+  };
+
+  typeNextChar();
+}
 
 const loginFitStyle = computed(() => ({
   transform: `translateX(-50%) scale(${loginFitScale.value})`,
@@ -264,10 +285,6 @@ function animateWelcomeSection() {
   if (!welcomeSection.value) return;
 
   welcomeAnimationContext = gsap.context(() => {
-    const descriptionWords = welcomeDescription.value
-      ? Array.from(welcomeDescription.value.querySelectorAll("[data-word]"))
-      : [];
-
     const titleItems = [welcomeTitleTop.value, welcomeTitleBottom.value].filter(
       Boolean,
     );
@@ -285,24 +302,17 @@ function animateWelcomeSection() {
       .to(welcomeTitleTop.value, {
         autoAlpha: 1,
         y: 0,
-        duration: 0.7,
+        duration: 0.6,
       })
       .to(
         welcomeTitleBottom.value,
         {
           autoAlpha: 1,
           y: 0,
-          duration: 0.75,
-        },
-        "-=0.42",
-      )
-      .from(
-        descriptionWords,
-        {
-          opacity: 0,
-          duration: 2,
-          ease: "sine.out",
-          stagger: 0.1,
+          duration: 0.65,
+          onComplete: () => {
+            startDescriptionTypewriter();
+          },
         },
         "-=0.35",
       );
@@ -357,6 +367,9 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  if (descriptionTypeTimeout) {
+    clearTimeout(descriptionTypeTimeout);
+  }
   welcomeAnimationContext?.revert();
   loginPanelResizeObserver?.disconnect();
   if (import.meta.client) {
@@ -655,16 +668,13 @@ function onCopy(e: ClipboardEvent) {
             </h1>
             <p
               ref="welcomeDescription"
-              class="text-[14px] text-[#818286] text-justify font-lato"
+              class="text-[14px] text-[#818286] text-justify font-lato min-h-[60px]"
             >
+              <span>{{ typedDescription }}</span>
               <span
-                v-for="(word, index) in welcomeDescriptionWords"
-                :key="`${word}-${index}`"
-                data-word
-                class="inline-block mr-[0.25em]"
-              >
-                {{ word }}
-              </span>
+                v-if="isDescriptionTyping"
+                class="inline-block w-[2px] h-3.5 bg-blue-600 ml-0.5 align-middle animate-pulse"
+              />
             </p>
           </div>
 

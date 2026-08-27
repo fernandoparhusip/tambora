@@ -33,7 +33,7 @@ interface Props {
   maxZoom?: number;
   /** Array of marker items to render */
   markers?: MapMarkerItem[];
-  /** Tile server URL template */
+  /** Tile server URL template (default: MapTiler streets / CartoDB) */
   tileUrl?: string;
   /** Custom marker color function or static color */
   markerColor?: string | ((item: any) => string);
@@ -49,12 +49,36 @@ const props = withDefaults(defineProps<Props>(), {
   minZoom: 3,
   maxZoom: 18,
   markers: () => [],
-  tileUrl:
-    "https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png",
+  tileUrl: "",
   markerColor: "#2563EB",
   markerRadius: 8,
   showZoomControls: true,
   showFullscreenControl: true,
+});
+
+const DEFAULT_MAPTILER_KEY = "vAiwKNYltLbMYEotSzTT";
+
+const config = useRuntimeConfig();
+const maptilerKey = computed(() => {
+  const k = (config.public as any)?.maptilerKey;
+  return (k && String(k).trim()) ? String(k).trim() : DEFAULT_MAPTILER_KEY;
+});
+
+const resolvedTileUrl = computed(() => {
+  if (props.tileUrl && props.tileUrl.trim()) {
+    // If parent passed a maptiler URL without key, automatically append it
+    if (props.tileUrl.includes("maptiler.com") && !props.tileUrl.includes("key=")) {
+      const sep = props.tileUrl.includes("?") ? "&" : "?";
+      return `${props.tileUrl}${sep}key=${maptilerKey.value}`;
+    }
+    return props.tileUrl;
+  }
+
+  if (maptilerKey.value) {
+    return `https://api.maptiler.com/maps/positron/{z}/{x}/{y}.png?key=${maptilerKey.value}`;
+  }
+
+  return "https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png";
 });
 
 const emit = defineEmits<{
@@ -73,11 +97,21 @@ const isFullscreen = ref<boolean>(false);
 const isMapLoading = ref<boolean>(true);
 
 let map: Map | null = null;
+let rasterLayer: TileLayer<any> | null = null;
 let vectorSource: VectorSource | null = null;
 let overlay: Overlay | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
 // 2. Watchers for reactive props
+watch(
+  resolvedTileUrl,
+  (newUrl) => {
+    if (rasterLayer && newUrl) {
+      rasterLayer.setSource(new XYZ({ url: newUrl, maxZoom: props.maxZoom }));
+    }
+  }
+);
+
 watch(
   () => props.markers,
   () => {
@@ -174,9 +208,9 @@ const initMap = async () => {
     source: vectorSource,
   });
 
-  const rasterLayer = new TileLayer({
+  rasterLayer = new TileLayer({
     source: new XYZ({
-      url: props.tileUrl,
+      url: resolvedTileUrl.value,
       maxZoom: props.maxZoom,
     }),
   });

@@ -2,7 +2,7 @@ import { defineNuxtConfig } from "nuxt/config";
 import { useNuxt } from "@nuxt/kit";
 import Aura from "@primeuix/themes/aura";
 
-const apiBackend = process.env.NUXT_BACKEND_URL || 'http://88.222.242.143:9090';
+const apiBackend = process.env.NUXT_BACKEND_URL;
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default (defineNuxtConfig as (config: any) => any)({
@@ -19,6 +19,7 @@ export default (defineNuxtConfig as (config: any) => any)({
   runtimeConfig: {
     public: {
       apiBaseUrl: '/api/v1',
+      maptilerKey: process.env.NUXT_PUBLIC_MAPTILER_KEY || process.env.VITE_MAPTILER_KEY || 'vAiwKNYltLbMYEotSzTT',
     },
   },  
   modules: [
@@ -58,6 +59,7 @@ export default (defineNuxtConfig as (config: any) => any)({
     "~/assets/css/primevue-overrides.css",
   ],
   tailwindcss: {
+    viewer: false,
     config: {
       theme: {
         extend: {

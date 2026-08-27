@@ -61,13 +61,20 @@ const loadingOptions = computed(() => ({
 <template>
   <div class="relative w-full min-h-[200px]" :class="height">
     <!-- Chart Container -->
-    <v-chart
-      class="w-full h-full"
-      :option="option"
-      :loading="loading"
-      :loading-options="loadingOptions"
-      :autoresize="true"
-    />
+    <ClientOnly>
+      <v-chart
+        class="w-full h-full"
+        :option="option"
+        :loading="loading"
+        :loading-options="loadingOptions"
+        :autoresize="true"
+      />
+      <template #fallback>
+        <div class="w-full h-full flex items-center justify-center bg-slate-50/60 rounded-lg">
+          <span class="text-xs text-slate-400">Menyiapkan grafik...</span>
+        </div>
+      </template>
+    </ClientOnly>
 
     <!-- Empty/No Data overlay -->
     <div

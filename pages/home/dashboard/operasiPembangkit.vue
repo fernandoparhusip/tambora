@@ -6,7 +6,6 @@ import {
   type SentralItem,
 } from "~/utils/operasiPembangkitUtils";
 import LoadingIndicatorPLN from "~/components/base/LoadingIndicatorPLN.vue";
-import BaseChart from "~/components/base/BaseChart.vue";
 import FormFieldRenderer from "~/components/base/FormFieldRenderer.vue";
 import BaseTabFilter, {
   type TabItem,
@@ -510,7 +509,7 @@ const getMarkerColor = (item: SentralItem) => {
         <!-- Generation MW ECharts Stacked Area Chart -->
         <div class="flex-1 min-h-[380px] w-full pt-1">
           <ClientOnly>
-            <BaseChart
+            <LazyBaseChart
               :option="energiGenerationChartOption"
               height="h-full min-h-[360px]"
             />
@@ -617,7 +616,7 @@ const getMarkerColor = (item: SentralItem) => {
           class="bg-white rounded-lg p-4 border border-slate-100 shadow-xs flex items-center justify-center relative min-h-[210px] shrink-0"
         >
           <ClientOnly>
-            <BaseChart :option="energiDonutChartOption" height="h-[190px]" />
+            <LazyBaseChart :option="energiDonutChartOption" height="h-[190px]" />
             <template #fallback>
               <div
                 class="w-full h-[190px] flex items-center justify-center text-xs text-slate-400"

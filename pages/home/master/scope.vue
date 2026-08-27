@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { useRole } from "~/composables/master/useRole";
-import type { RoleItem, TableColumn, FormSectionConfig } from "~/types";
+import { useScope } from "~/composables/master/useScope";
+import type { ScopeItem, TableColumn, FormSectionConfig } from "~/types";
 
-const { roles, loading, fetchRoles, createRole, deleteRole } = useRole();
+const { scopes, loading, fetchScopes, createScope, deleteScope } = useScope();
 
 const searchQuery = ref("");
 const currentPage = ref(1);
@@ -12,56 +12,42 @@ const isModalOpen = ref(false);
 const isSuccessModalOpen = ref(false);
 const isSubmitting = ref(false);
 
-const masterRoleColumns: TableColumn[] = [
+const scopeColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "code", label: "Kode Role" },
-  { key: "name", label: "Nama Role" },
+  { key: "code", label: "Kode Scope" },
+  { key: "name", label: "Nama Scope" },
+  { key: "scope_type_name", label: "Tipe Scope" },
   { key: "description", label: "Deskripsi" },
-  { key: "is_system", label: "Tipe" },
   { key: "actions", label: "Aksi" }
 ];
 
-const masterRoleFormConfig: FormSectionConfig[] = [
+const scopeFormSections: FormSectionConfig[] = [
   {
     fields: [
       {
         key: "code",
-        label: "Kode Role",
+        label: "Kode Scope",
         type: "text",
-        placeholder: "Contoh: OPERATOR_UNIT, SUPERVISOR_HARIAN",
+        placeholder: "Contoh: ORG-PLANT-C, REGIONAL-NTB",
         required: true,
         colSpan: 12
       },
       {
         key: "name",
-        label: "Nama Role",
+        label: "Nama Scope",
         type: "text",
-        placeholder: "Contoh: Operator Unit Pembangkit",
+        placeholder: "Contoh: Plant C Tambora",
         required: true,
         colSpan: 12
       },
       {
         key: "description",
-        label: "Deskripsi Role",
+        label: "Deskripsi",
         type: "textarea",
-        placeholder: "Masukkan deskripsi dan tanggung jawab role ini...",
+        placeholder: "Masukkan deskripsi cakupan wilayah scope ini...",
         required: true,
         colSpan: 12,
         rows: 3
-      },
-      {
-        key: "levelRole",
-        label: "Level Jabatan (Opsional)",
-        type: "searchable-select",
-        placeholder: "Pilih Level Jabatan",
-        required: false,
-        colSpan: 12,
-        options: [
-          { label: "Wilayah / Unit Induk", value: "Wilayah/Unit Induk" },
-          { label: "Unit Pelaksana (UP3 / UPK)", value: "UPK" },
-          { label: "Sentral Pembangkit", value: "Sentral" },
-          { label: "Pengatur Beban (Dispatcher)", value: "Pengatur Beban" }
-        ]
       }
     ]
   }
@@ -70,27 +56,25 @@ const masterRoleFormConfig: FormSectionConfig[] = [
 const formData = ref<Record<string, any>>({
   code: "",
   name: "",
-  description: "",
-  levelRole: ""
+  description: ""
 });
 
 onMounted(async () => {
-  await fetchRoles();
+  await fetchScopes();
 });
 
-// Reset pagination when searching
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
 
 const filteredRows = computed(() => {
-  if (!searchQuery.value) return roles.value;
+  if (!searchQuery.value) return scopes.value;
   const q = searchQuery.value.toLowerCase();
-  return roles.value.filter(
-    (r) =>
-      r.code.toLowerCase().includes(q) ||
-      r.name.toLowerCase().includes(q) ||
-      (r.description && r.description.toLowerCase().includes(q))
+  return scopes.value.filter(
+    (s) =>
+      s.code.toLowerCase().includes(q) ||
+      s.name.toLowerCase().includes(q) ||
+      (s.description && s.description.toLowerCase().includes(q))
   );
 });
 
@@ -99,16 +83,11 @@ const paginatedRows = computed(() => {
   return filteredRows.value.slice(start, start + pageSize.value);
 });
 
-const handleExport = () => {
-  alert("Mengunduh data Role ke .xls...");
-};
-
 const openModal = () => {
   formData.value = {
     code: "",
     name: "",
-    description: "",
-    levelRole: ""
+    description: ""
   };
   isModalOpen.value = true;
 };
@@ -119,17 +98,16 @@ const closeModal = () => {
 
 const handleSave = async () => {
   if (!formData.value.code || !formData.value.name) {
-    alert("Mohon lengkapi Kode Role dan Nama Role.");
+    alert("Mohon lengkapi Kode Scope dan Nama Scope.");
     return;
   }
 
   isSubmitting.value = true;
   try {
-    await createRole({
-      code: formData.value.code.toUpperCase().replace(/\s+/g, "_"),
+    await createScope({
+      code: formData.value.code.toUpperCase().replace(/\s+/g, "-"),
       name: formData.value.name,
-      description: formData.value.description || formData.value.name,
-      permissions: []
+      description: formData.value.description || formData.value.name
     });
 
     isModalOpen.value = false;
@@ -137,18 +115,18 @@ const handleSave = async () => {
       isSuccessModalOpen.value = true;
     }, 150);
   } catch (err: any) {
-    alert("Gagal membuat role: " + (err?.message || err));
+    alert("Gagal membuat scope: " + (err?.message || err));
   } finally {
     isSubmitting.value = false;
   }
 };
 
-const handleDelete = async (row: RoleItem) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus role "${row.name}" (${row.code})?`)) {
+const handleDelete = async (row: ScopeItem) => {
+  if (confirm(`Apakah Anda yakin ingin menghapus scope "${row.name}" (${row.code})?`)) {
     try {
-      await deleteRole(row.id);
+      await deleteScope(row.id);
     } catch (err: any) {
-      alert("Gagal menghapus role: " + (err?.message || err));
+      alert("Gagal menghapus scope: " + (err?.message || err));
     }
   }
 };
@@ -157,7 +135,7 @@ const handleDelete = async (row: RoleItem) => {
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-[#F4F7FE]">
     <!-- Top White Page Header -->
-    <BasePageHeader title="Role & Hak Akses" />
+    <BasePageHeader title="Master Scope (Wilayah / Unit)" />
 
     <!-- Container Padding -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
@@ -170,23 +148,22 @@ const handleDelete = async (row: RoleItem) => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-5"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Kode atau Nama Role" />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" placeholder="Cari Kode atau Nama Scope..." />
           </div>
           <BaseCreateButton label="TAMBAH DATA" @click="openModal" />
         </div>
 
-        <!-- Role Data Table -->
+        <!-- Scope Table -->
         <BaseTable
-          :columns="masterRoleColumns"
+          :columns="scopeColumns"
           :rows="paginatedRows"
           :loading="loading"
           class="flex-1 min-h-0"
         >
           <template #no-data="{ index }">
-            <span class="text-xs text-gray-700 font-medium"
-              >{{ (currentPage - 1) * pageSize + index + 1 }}.</span
-            >
+            <span class="text-xs text-gray-700 font-medium">
+              {{ (currentPage - 1) * pageSize + index + 1 }}.
+            </span>
           </template>
 
           <template #code-data="{ row }">
@@ -196,29 +173,26 @@ const handleDelete = async (row: RoleItem) => {
           </template>
 
           <template #name-data="{ row }">
-            <span class="text-xs text-gray-900 font-medium">{{
-              row.name
-            }}</span>
+            <span class="text-xs text-gray-900 font-medium">{{ row.name }}</span>
           </template>
 
-          <template #description-data="{ row }">
-            <span class="text-xs text-gray-600 font-normal truncate max-w-xs block" :title="row.description">{{
-              row.description || '-'
-            }}</span>
-          </template>
-
-          <template #is_system-data="{ row }">
-            <BaseBadge :variant="row.is_system ? 'system' : 'success'">
-              {{ row.is_system ? 'System' : 'Custom' }}
+          <template #scope_type_name-data="{ row }">
+            <BaseBadge variant="info">
+              {{ row.scope_type_name || row.scope_type_code || 'Organization' }}
             </BaseBadge>
           </template>
 
+          <template #description-data="{ row }">
+            <span class="text-xs text-gray-600 font-normal">
+              {{ row.description || '-' }}
+            </span>
+          </template>
+
           <template #actions-data="{ row }">
-            <div class="flex items-center justify-end gap-1.5">
+            <div class="flex items-center justify-end">
               <BaseActionButton
-                v-if="!row.is_system"
                 type="delete"
-                title="Hapus Role"
+                title="Hapus Scope"
                 @click="handleDelete(row)"
               />
             </div>
@@ -235,13 +209,13 @@ const handleDelete = async (row: RoleItem) => {
       </div>
     </div>
 
-    <!-- Centered Form Modal for Tambah Data Role -->
+    <!-- Centered Form Modal for Tambah Scope -->
     <BaseFormModal
       v-model:is-open="isModalOpen"
       v-model:form-data="formData"
-      title="Tambah Data Role"
-      subtitle="Form Tambah Data Role"
-      :sections="masterRoleFormConfig"
+      title="Tambah Data Scope"
+      subtitle="Form Tambah Scope Regional / Unit"
+      :sections="scopeFormSections"
       variant="centered"
       :submitting="isSubmitting"
       @submit="handleSave"

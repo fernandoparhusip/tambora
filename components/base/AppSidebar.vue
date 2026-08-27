@@ -42,14 +42,44 @@ const menuItems: MenuItem[] = [
         path: "/home/master/user",
       },
       {
-        key: "level-role",
-        label: "Level Role",
-        path: "/home/master/level-role",
-      },
-      {
         key: "role",
         label: "Role",
         path: "/home/master/role",
+      },
+      {
+        key: "permission",
+        label: "Permission",
+        path: "/home/master/permission",
+      },
+      {
+        key: "scope",
+        label: "Scope",
+        path: "/home/master/scope",
+      },
+      {
+        key: "pengemudi",
+        label: "Pengemudi",
+        path: "/home/master/driver",
+      },
+      {
+        key: "organization",
+        label: "Organisasi",
+        path: "/home/master/organization",
+      },
+      {
+        key: "system",
+        label: "Sistem",
+        path: "/home/master/system",
+      },
+      {
+        key: "asset",
+        label: "Aset Mesin",
+        path: "/home/master/asset",
+      },
+      {
+        key: "machine-condition",
+        label: "Kondisi Mesin",
+        path: "/home/master/machine-condition",
       },
     ],
   },

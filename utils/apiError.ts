@@ -10,14 +10,40 @@ export interface ApiErrorResult {
   statusCode?: number
 }
 
+function extractBackendMessage(responseData: any): string | null {
+  if (!responseData) return null
+  if (typeof responseData === 'string') return responseData
+
+  // 1. Direct message or detail string
+  if (typeof responseData.message === 'string' && responseData.message) return responseData.message
+  if (typeof responseData.detail === 'string' && responseData.detail) return responseData.detail
+  if (typeof responseData.error === 'string' && responseData.error) return responseData.error
+  if (typeof responseData.error_description === 'string' && responseData.error_description) return responseData.error_description
+
+  // 2. Nested data.message
+  if (typeof responseData.data?.message === 'string' && responseData.data.message) return responseData.data.message
+
+  // 3. Validation errors object e.g. { errors: { email: ['invalid email'] } } or { errors: ['error1', 'error2'] }
+  if (responseData.errors) {
+    if (Array.isArray(responseData.errors)) {
+      return responseData.errors.join(', ')
+    }
+    if (typeof responseData.errors === 'object') {
+      const messages = Object.values(responseData.errors)
+        .flatMap((err: any) => (Array.isArray(err) ? err : [err]))
+        .filter(Boolean)
+      if (messages.length > 0) return messages.join(', ')
+    }
+  }
+
+  return null
+}
+
 export function parseApiError(error: any): ApiErrorResult {
   const status = error?.response?.status || error?.status || error?.statusCode
   const responseData = error?.response?._data || error?.data || error?.response?.data
 
-  const backendMessage =
-    responseData?.message ||
-    responseData?.error ||
-    (typeof responseData === 'string' ? responseData : null)
+  const backendMessage = extractBackendMessage(responseData)
 
   switch (status) {
     case 400:

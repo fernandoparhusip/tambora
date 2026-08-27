@@ -1,6 +1,5 @@
 import { ref } from 'vue'
 import { useAuthStore } from '~/stores/auth'
-import { decryptAes256 } from '~/utils/authCrypto'
 
 export interface LoginPayload {
   email: string
@@ -61,12 +60,14 @@ export const useAuth = () => {
           method: 'POST',
           body: {
             email: payload.email,
+            username: payload.email,
             password: payload.password
           }
         }
       )
 
       const token = response?.data?.access_token || response?.data?.token || response?.token || response?.access_token
+      const refreshToken = response?.data?.refresh_token
       const userData = response?.data?.user
 
       if (token) {
@@ -84,37 +85,57 @@ export const useAuth = () => {
             status: userData?.status,
             level_id: userData?.level_id || '1'
           },
-          token
+          token,
+          refreshToken
         )
       }
 
       return response
     } catch (e: any) {
-      // Decrypt inputs if passed as encrypted values for mock fallback matching
-      const rawEmail = decryptAes256(payload.email) || payload.email
-      const rawPassword = decryptAes256(payload.password) || payload.password
-
-      // Fallback mock authentication if backend endpoint is not reachable in dev
-      const isMockSuccess = authStore.login(rawEmail, rawPassword)
-
-      if (isMockSuccess) {
-        return {
-          message: 'Success',
-          data: {
-            token: authStore.token || 'mock-jwt-token',
-            nama: authStore.user?.nama || 'Admin PLN',
-            role: authStore.user?.role || 'Admin',
-            level_id: authStore.user?.level_id || '1'
-          }
-        }
-      }
-
       const msg = e.data?.message || e.message || 'Email atau password salah.'
       errorMessage.value = msg
       throw new Error(msg)
     } finally {
       loading.value = false
     }
+  }
+
+  const getMe = async () => {
+    return await authStore.fetchUserMe()
+  }
+
+  const refreshToken = async (providedRefreshToken?: string): Promise<string | null> => {
+    const rfToken = providedRefreshToken || authStore.refreshToken
+    if (!rfToken) return null
+
+    try {
+      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+      const response = await $fetch<{
+        data?: {
+          access_token: string
+          refresh_token: string
+          token_type?: string
+          expires_at?: string
+        }
+      }>(`${baseUrl}/auth/refresh`, {
+        method: 'POST',
+        body: {
+          refresh_token: rfToken
+        }
+      })
+
+      const newAccessToken = response?.data?.access_token
+      const newRefreshToken = response?.data?.refresh_token
+
+      if (newAccessToken) {
+        authStore.setTokens(newAccessToken, newRefreshToken)
+        return newAccessToken
+      }
+    } catch {
+      // Refresh token expired / invalid
+      authStore.logout()
+    }
+    return null
   }
 
   const forgotPassword = async (payload: { email: string }) => {
@@ -126,7 +147,6 @@ export const useAuth = () => {
       })
       return response
     } catch {
-      // Fallback response when mock backend API is called
       return {
         message: 'Instruksi reset password telah dikirim ke email Anda.'
       }
@@ -144,7 +164,6 @@ export const useAuth = () => {
       })
       return response
     } catch {
-      // Fallback response when mock backend API is called
       return {
         message: 'Akun berhasil dibuka kembali.'
       }
@@ -180,14 +199,16 @@ export const useAuth = () => {
     }
   }
 
-  const logout = () => {
-    authStore.logout()
+  const logout = async () => {
+    await authStore.logout()
   }
 
   return {
     loading,
     errorMessage,
     login,
+    getMe,
+    refreshToken,
     forgotPassword,
     unlockUser,
     getSSOUrl,

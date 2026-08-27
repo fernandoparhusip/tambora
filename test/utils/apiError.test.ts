@@ -54,6 +54,39 @@ describe('API Error Parser Utility', () => {
     expect(result.summary).toBe('Gangguan Server')
   })
 
+  it('should parse 422 validation error with object errors', () => {
+    const err = {
+      response: {
+        status: 422,
+        _data: {
+          errors: {
+            email: ['Email is invalid'],
+            password: ['Password too short']
+          }
+        }
+      }
+    }
+    const result = parseApiError(err)
+    expect(result.statusCode).toBe(422)
+    expect(result.severity).toBe('warn')
+    expect(result.summary).toBe('Validasi Gagal')
+    expect(result.detail).toBe('Email is invalid, Password too short')
+  })
+
+  it('should parse 422 validation error with array errors', () => {
+    const err = {
+      response: {
+        status: 422,
+        _data: {
+          errors: ['Field A required', 'Field B invalid']
+        }
+      }
+    }
+    const result = parseApiError(err)
+    expect(result.statusCode).toBe(422)
+    expect(result.detail).toBe('Field A required, Field B invalid')
+  })
+
   it('should fallback gracefully for network / unhandled errors', () => {
     const err = new Error('Network timeout')
     const result = parseApiError(err)
