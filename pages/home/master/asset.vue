@@ -2,10 +2,13 @@
 import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
 import type { TableColumn, FormSectionConfig, AssetItem } from "~/types";
+import { getAssetFormSections } from "~/schemas/master/asset.schema";
 import { useAsset } from "~/composables/master/useAsset";
 import { useSystem } from "~/composables/master/useSystem";
 import { useMachineCondition } from "~/composables/master/useMachineCondition";
 import { formatNumber } from "~/utils/formatNumber";
+import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
+import { exportToExcel } from "~/utils/exportExcel";
 
 const { assets, loading, fetchAssets, createAsset, updateAsset, deleteAsset } = useAsset();
 const { systems, fetchSystems } = useSystem();
@@ -22,6 +25,9 @@ const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
 const isDetailModalOpen = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<AssetItem | null>(null);
+const isDeleting = ref(false);
 const detailRecord = ref<AssetItem | null>(null);
 
 const assetColumns: TableColumn[] = [
@@ -37,12 +43,12 @@ const assetColumns: TableColumn[] = [
 ];
 
 const systemOptions = computed(() =>
-  systems.value.map((s) => ({ label: `${s.name} (${s.code})`, value: s.id }))
+  systems.value.map((s: any) => ({ label: `${s.name} (${s.code})`, value: s.id }))
 );
 
 const conditionOptions = computed(() => {
   if (machineConditions.value.length > 0) {
-    return machineConditions.value.map((c) => ({ label: c.name, value: c.name }));
+    return machineConditions.value.map((c: any) => ({ label: c.name, value: c.name }));
   }
   return [
     { label: "Beroperasi", value: "Beroperasi" },
@@ -53,200 +59,12 @@ const conditionOptions = computed(() => {
   ];
 });
 
-const formSections = computed<FormSectionConfig[]>(() => [
-  {
-    title: "1. Identitas Mesin & Sistem",
-    fields: [
-      {
-        key: "kode_mesin",
-        label: "Kode Mesin",
-        type: "text",
-        placeholder: "Contoh: 1010111",
-        required: true,
-        colSpan: 6
-      },
-      {
-        key: "nama_mesin",
-        label: "Nama Mesin Pembangkit",
-        type: "text",
-        placeholder: "Contoh: PLTD BIMA #07 (CATERPILLAR)",
-        required: true,
-        colSpan: 6
-      },
-      {
-        key: "serial_number",
-        label: "Nomor Seri (Serial Number)",
-        type: "text",
-        placeholder: "Contoh: 28617",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "system_id",
-        label: "Sistem Pembangkit",
-        type: "searchable-select",
-        placeholder: "Pilih Sistem Pembangkit",
-        options: systemOptions.value,
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "kondisi_mesin",
-        label: "Kondisi Mesin",
-        type: "searchable-select",
-        placeholder: "Pilih Kondisi Mesin",
-        options: conditionOptions.value,
-        required: true,
-        colSpan: 6
-      },
-      {
-        key: "kode_bahan_bakar",
-        label: "Bahan Bakar",
-        type: "searchable-select",
-        placeholder: "Pilih Jenis Bahan Bakar",
-        options: [
-          { label: "101 - HSD (High Speed Diesel)", value: "101 - HSD" },
-          { label: "102 - MFO (Marine Fuel Oil)", value: "102 - MFO" },
-          { label: "103 - B30 / B35 Biosolar", value: "103 - B30" },
-          { label: "201 - Gas Alam (LNG/CNG)", value: "201 - GAS" },
-          { label: "301 - Batubara (Coal)", value: "301 - BATUBARA" },
-          { label: "401 - Tenaga Surya (PLTS)", value: "401 - SURYA" },
-          { label: "501 - Tenaga Air (PLTA/PLTM)", value: "501 - AIR" }
-        ],
-        required: false,
-        colSpan: 6
-      }
-    ]
-  },
-  {
-    title: "2. Spesifikasi Daya & Kelistrikan",
-    fields: [
-      {
-        key: "daya_terpasang",
-        label: "Daya Terpasang (kW)",
-        type: "number",
-        placeholder: "Contoh: 3231",
-        required: true,
-        colSpan: 4
-      },
-      {
-        key: "daya_mampu_netto",
-        label: "Daya Mampu Netto / DMN (kW)",
-        type: "number",
-        placeholder: "Contoh: 3131",
-        required: true,
-        colSpan: 4
-      },
-      {
-        key: "daya_mampu_pasok",
-        label: "Daya Mampu Pasok / DMP (kW)",
-        type: "number",
-        placeholder: "Contoh: 3000",
-        required: true,
-        colSpan: 4
-      },
-      {
-        key: "merk_mesin",
-        label: "Merk Mesin (Engine)",
-        type: "text",
-        placeholder: "Contoh: Caterpillar, Niigata, Daihatsu",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "tipe_mesin",
-        label: "Tipe Mesin",
-        type: "text",
-        placeholder: "Contoh: 3156B-DITA",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "merk_generator",
-        label: "Merk Generator",
-        type: "text",
-        placeholder: "Contoh: HYUNDAI, Leroy Somer",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "nama_trafo",
-        label: "Nama Trafo",
-        type: "text",
-        placeholder: "Contoh: Sintra, Bambang Djaja",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "jenis_tegangan",
-        label: "Jenis Tegangan",
-        type: "searchable-select",
-        placeholder: "Pilih Jenis Tegangan",
-        options: [
-          { label: "Tegangan Menengah (TM 20 kV)", value: "Tegangan Menengah" },
-          { label: "Tegangan Rendah (TR 380V / 400V)", value: "Tegangan Rendah" },
-          { label: "Tegangan Tinggi (TT 150 kV)", value: "Tegangan Tinggi" }
-        ],
-        required: false,
-        colSpan: 4
-      },
-      {
-        key: "tegangan_hv",
-        label: "Tegangan HV (kV)",
-        type: "number",
-        placeholder: "Contoh: 20",
-        required: false,
-        colSpan: 4
-      },
-      {
-        key: "tegangan_lv",
-        label: "Tegangan LV (kV)",
-        type: "number",
-        placeholder: "Contoh: 0.4",
-        required: false,
-        colSpan: 4
-      }
-    ]
-  },
-  {
-    title: "3. Kepemilikan & Operasional",
-    fields: [
-      {
-        key: "status_kepemilikan_mesin",
-        label: "Status Kepemilikan Mesin",
-        type: "searchable-select",
-        placeholder: "Pilih Kepemilikan Mesin",
-        options: [
-          { label: "PLN Holding (Aset Sendiri)", value: "PLN Holding" },
-          { label: "Sewa (IPP / Rental Mitra)", value: "Sewa" },
-          { label: "Kerjasama Operasi (KSO)", value: "KSO" }
-        ],
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "status_kepemilikan_kwh",
-        label: "Status Kepemilikan kWh",
-        type: "searchable-select",
-        placeholder: "Pilih Kepemilikan kWh",
-        options: [
-          { label: "Produksi Sendiri", value: "Produksi Sendiri" },
-          { label: "Beli Listrik (IPP)", value: "Beli Listrik" }
-        ],
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "tahun_operasi",
-        label: "Tahun Mulai Operasi (COD)",
-        type: "number",
-        placeholder: "Contoh: 2021",
-        required: false,
-        colSpan: 12
-      }
-    ]
-  }
-]);
+const formSections = computed<FormSectionConfig[]>(() =>
+  getAssetFormSections({
+    systemOptions: systemOptions.value,
+    conditionOptions: conditionOptions.value,
+  })
+);
 
 onMounted(async () => {
   await Promise.allSettled([fetchAssets(), fetchSystems(), fetchMachineConditions()]);
@@ -260,7 +78,7 @@ const filteredData = computed(() => {
   if (!searchQuery.value) return assets.value;
   const q = searchQuery.value.toLowerCase();
   return assets.value.filter(
-    (a) =>
+    (a: AssetItem) =>
       (a.kode_mesin && a.kode_mesin.toLowerCase().includes(q)) ||
       (a.nama_mesin && a.nama_mesin.toLowerCase().includes(q)) ||
       (a.merk_mesin && a.merk_mesin.toLowerCase().includes(q)) ||
@@ -324,13 +142,22 @@ const handleEdit = (row: AssetItem) => {
   modalOpen.value = true;
 };
 
-const handleDelete = async (row: AssetItem) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus aset mesin "${row.nama_mesin}" (${row.kode_mesin})?`)) {
-    try {
-      await deleteAsset(row.id);
-    } catch (err: any) {
-      alert("Gagal menghapus aset mesin: " + (err?.message || err));
-    }
+const handleDelete = (row: AssetItem) => {
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
+  try {
+    await deleteAsset(deleteTarget.value.id);
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
+  } catch (err: any) {
+    // Handled by useApi
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -388,7 +215,9 @@ const handleSave = async () => {
 };
 
 const handleExport = () => {
-  alert("Mengunduh data Aset Mesin ke .xls...");
+  exportToExcel(assetColumns, filteredData.value, {
+    fileName: "Data_Aset_Pembangkit_PLN",
+  });
 };
 
 const getConditionBadgeVariant = (kondisi?: string) => {
@@ -526,6 +355,15 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       :submitting="submitting"
       @submit="handleSave"
       @cancel="modalOpen = false"
+    />
+
+    <!-- Confirm Delete Dialog -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Aset Mesin"
+      :message="`Apakah Anda yakin ingin menghapus aset '${deleteTarget?.nama_mesin || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
     />
 
     <!-- Success Modal Popup -->

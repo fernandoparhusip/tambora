@@ -2,8 +2,11 @@
 import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
 import type { TableColumn, FormSectionConfig, SystemItem } from "~/types";
+import { getSystemFormSections } from "~/schemas/master/system.schema";
 import { useSystem } from "~/composables/master/useSystem";
 import { useOrganization } from "~/composables/master/useOrganization";
+import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
+import { exportToExcel } from "~/utils/exportExcel";
 
 const {
   systems,
@@ -27,6 +30,9 @@ const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
 const isDetailModalOpen = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<SystemItem | null>(null);
+const isDeleting = ref(false);
 const detailRecord = ref<SystemItem | null>(null);
 
 const systemColumns: TableColumn[] = [
@@ -40,77 +46,12 @@ const systemColumns: TableColumn[] = [
 ];
 
 const orgOptions = computed(() =>
-  organizations.value.map((o) => ({ label: `${o.nama} (${o.kode})`, value: o.id }))
+  organizations.value.map((o: any) => ({ label: `${o.nama} (${o.kode})`, value: o.id }))
 );
 
-const formSections = computed<FormSectionConfig[]>(() => [
-  {
-    fields: [
-      {
-        key: "code",
-        label: "Kode Sistem",
-        type: "text",
-        placeholder: "Contoh: SYS-LBK, SYS-SBW, SYS-BIMA",
-        required: true,
-        colSpan: 6
-      },
-      {
-        key: "name",
-        label: "Nama Sistem Pembangkit",
-        type: "text",
-        placeholder: "Contoh: Sistem Lombok, Sistem Sumbawa",
-        required: true,
-        colSpan: 6
-      },
-      {
-        key: "system_type",
-        label: "Tipe Sistem",
-        type: "searchable-select",
-        placeholder: "Pilih Tipe Sistem",
-        options: [
-          { label: "Sistem Besar (Interkoneksi)", value: "BESAR" },
-          { label: "Sistem Kecil (Isolated)", value: "KECIL" }
-        ],
-        required: true,
-        colSpan: 6
-      },
-      {
-        key: "upk_id",
-        label: "Unit Pelaksana (UPK / Organisasi)",
-        type: "searchable-select",
-        placeholder: "Pilih UPK Pengelola",
-        options: orgOptions.value,
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "latitude",
-        label: "Latitude",
-        type: "text",
-        placeholder: "Contoh: -8.583333",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "longitude",
-        label: "Longitude",
-        type: "text",
-        placeholder: "Contoh: 116.116667",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "description",
-        label: "Deskripsi Sistem",
-        type: "textarea",
-        placeholder: "Jelaskan wilayah jangkauan transmisi & distribusi sistem ini...",
-        required: false,
-        colSpan: 12,
-        rows: 3
-      }
-    ]
-  }
-]);
+const formSections = computed<FormSectionConfig[]>(() =>
+  getSystemFormSections({ orgOptions: orgOptions.value })
+);
 
 onMounted(async () => {
   await Promise.allSettled([fetchSystems(), fetchOrganizations()]);
@@ -176,13 +117,22 @@ const handleEdit = (row: SystemItem) => {
   modalOpen.value = true;
 };
 
-const handleDelete = async (row: SystemItem) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus sistem "${row.name}" (${row.code})?`)) {
-    try {
-      await deleteSystem(row.id);
-    } catch (err: any) {
-      alert("Gagal menghapus sistem: " + (err?.message || err));
-    }
+const handleDelete = (row: SystemItem) => {
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
+  try {
+    await deleteSystem(deleteTarget.value.id);
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
+  } catch (err: any) {
+    // Handled by useApi
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -228,7 +178,9 @@ const handleSave = async () => {
 };
 
 const handleExport = () => {
-  alert("Mengunduh data Sistem ke .xls...");
+  exportToExcel(systemColumns, filteredData.value, {
+    fileName: "Data_Sistem_Pembangkit_PLN",
+  });
 };
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
@@ -340,6 +292,15 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       :submitting="submitting"
       @submit="handleSave"
       @cancel="modalOpen = false"
+    />
+
+    <!-- Confirm Delete Dialog -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Sistem Pembangkit"
+      :message="`Apakah Anda yakin ingin menghapus sistem '${deleteTarget?.name || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
     />
 
     <!-- Success Modal Popup -->

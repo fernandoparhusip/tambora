@@ -4,9 +4,12 @@ import { z } from "zod";
 import BaseDetailModal from "~/components/base/BaseDetailModal.vue";
 import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
 import type { TableColumn, FormSectionConfig } from "~/types";
+import { getUserFormSections } from "~/schemas/master/user.schema";
 import { useUser } from "~/composables/master/useUser";
 import { useRole } from "~/composables/master/useRole";
 import { useOrganization } from "~/composables/master/useOrganization";
+import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
+import { exportToExcel } from "~/utils/exportExcel";
 
 // ── Composables ──────────────────────────────────────────────
 const { users, loading, fetchUsers, createUser, updateUser, deleteUser } = useUser();
@@ -24,7 +27,7 @@ const userTableColumns: TableColumn[] = [
 ];
 
 const orgOptions = computed(() =>
-  organizations.value.map((o) => ({ label: `${o.nama} (${o.kode})`, value: o.nama }))
+  organizations.value.map((o: any) => ({ label: `${o.nama} (${o.kode})`, value: o.nama }))
 );
 
 // ── Form Sections Config Builder ──────────────────────────────
@@ -303,6 +306,9 @@ const openCreateModal = () => {
 };
 
 const isDetailModalOpen = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<any>(null);
+const isDeleting = ref(false);
 const detailRecord = ref<any>(null);
 
 const detailModalTitle = computed(() => "View Data Pengguna");
@@ -352,23 +358,29 @@ const handleEdit = (row: any) => {
   modalOpen.value = true;
 };
 
-const handleDelete = async (row: any) => {
-  if (
-    typeof window !== "undefined" &&
-    window.confirm(
-      `Apakah Anda yakin ingin menghapus pengguna "${row.nama || row.full_name || row.username}"?`
-    )
-  ) {
-    try {
-      await deleteUser(row.id);
-    } catch (err: any) {
-      alert("Gagal menghapus: " + (err.message || err));
-    }
+const handleDelete = (row: any) => {
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
+  try {
+    await deleteUser(deleteTarget.value.id);
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
+  } catch (err: any) {
+    // Error is handled by useApi global toast
+  } finally {
+    isDeleting.value = false;
   }
 };
 
 const handleExport = () => {
-  alert("Memproses download file Excel (.xls)...");
+  exportToExcel(userTableColumns, activeFilteredData.value, {
+    fileName: "Data_Pengguna_PLN",
+  });
 };
 
 const clearErrors = () => {
@@ -499,6 +511,15 @@ const handleSave = async () => {
       :errors="formErrors"
       @submit="handleSave"
       @cancel="clearErrors"
+    />
+
+    <!-- Confirm Delete Dialog -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Pengguna"
+      :message="`Apakah Anda yakin ingin menghapus pengguna '${deleteTarget?.nama || deleteTarget?.full_name || deleteTarget?.username || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
     />
 
     <!-- Success Modal Popup -->

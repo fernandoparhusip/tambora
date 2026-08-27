@@ -47,7 +47,7 @@
 1. **Separation of Concerns**:
    - **`/components/base`**: Komponen murni generik, tidak boleh memiliki keterikatan bisnis (hanya menerima props/emits/slots).
    - **`/composables`**: State reaktif, business logic, dan orkestrasi data fetching (`useFetch` / `$fetch`).
-   - **`/config`**: Definisi declarative untuk tabel (`TableColumn[]`) dan form (`FormFieldConfig[]`).
+   - **`/schemas`**: Definisi declarative schema untuk seluruh form master (`schemas/master/*.schema.ts`) dengan dukungan conditional visibility (`hidden`).
    - **`/utils`**: Pure functions tanpa side-effects (mudah di-unit test secara terisolasi).
 2. **Data Fetching & Proxy Standards**:
    - Wajib menggunakan composable terpusat `useApi()` atau bawaan Nuxt (`$fetch` / `useFetch`). Dilarang memakai `axios`.

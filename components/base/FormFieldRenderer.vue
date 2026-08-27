@@ -216,7 +216,7 @@ const onDateSelect = (
           type="radio"
           :name="field.key"
           :value="opt.value"
-          :disabled="field.disabled"
+          :disabled="isDisabled"
           class="w-4 h-4 accent-blue-600 border-gray-300 cursor-pointer"
           style="accent-color: #2563eb"
         >
@@ -259,10 +259,10 @@ const onDateSelect = (
         type="text"
         inputmode="numeric"
         :placeholder="field.placeholder || '8xx xxxx xxxx'"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
         class="w-full h-10 px-3.5 text-xs bg-white border border-gray-200/80 rounded-r-lg text-gray-700 placeholder-gray-400 shadow-2xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
         :class="[
-          field.disabled ? 'bg-[#E2E8F0] text-gray-700 cursor-not-allowed' : '',
+          isDisabled ? 'bg-[#E2E8F0] text-gray-700 cursor-not-allowed' : '',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
         :value="phoneInputValue"
@@ -282,14 +282,14 @@ const onDateSelect = (
       <button
         :id="field.key"
         type="button"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
         class="w-full h-10 pl-3.5 pr-8 text-xs rounded-lg transition-all text-left flex items-center justify-between shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500"
         :class="[
-          field.disabled
+          isDisabled
             ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
             : 'bg-white text-gray-700 border border-gray-200/80 hover:border-gray-300 focus:border-blue-500 cursor-pointer',
           (!multiSelectValues || multiSelectValues.length === 0) &&
-          !field.disabled
+          !isDisabled
             ? 'text-gray-400'
             : 'text-gray-700 font-medium',
           error ? 'border-red-500 focus:ring-red-500' : '',
@@ -405,13 +405,13 @@ const onDateSelect = (
       <button
         :id="field.key"
         type="button"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
         class="w-full h-10 pl-3.5 pr-8 text-xs rounded-lg transition-all text-left flex items-center justify-between shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500"
         :class="[
-          field.disabled
+          isDisabled
             ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
             : 'bg-white text-gray-700 border border-gray-200/80 hover:border-gray-300 focus:border-blue-500 cursor-pointer',
-          !value && !field.disabled
+          !value && !isDisabled
             ? 'text-gray-400'
             : 'text-gray-700 font-medium',
           error ? 'border-red-500 focus:ring-red-500' : '',
@@ -514,13 +514,13 @@ const onDateSelect = (
       <select
         :id="field.key"
         v-model="value"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
         class="w-full h-10 pl-3.5 pr-8 text-xs rounded-lg transition-all appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
         :class="[
-          field.disabled
+          isDisabled
             ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
             : 'bg-white text-gray-700 border border-gray-200/80 shadow-2xs focus:border-blue-500 cursor-pointer',
-          !value && !field.disabled ? 'text-gray-400' : '',
+          !value && !isDisabled ? 'text-gray-400' : '',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
       >
@@ -539,7 +539,7 @@ const onDateSelect = (
 
       <!-- Chevron Icon -->
       <div
-        v-if="!field.disabled"
+        v-if="!isDisabled"
         class="absolute right-2.5 pointer-events-none text-[#2563EB]"
       >
         <svg
@@ -562,13 +562,13 @@ const onDateSelect = (
     <div
       v-else-if="field.type === 'date'"
       class="pv-datepicker-wrap w-full"
-      :class="{ 'is-error': error, 'is-disabled': field.disabled }"
+      :class="{ 'is-error': error, 'is-disabled': isDisabled }"
     >
       <DatePicker
         :id="field.key"
         :model-value="dateValue"
         :placeholder="field.placeholder || 'Pilih Tanggal'"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
         date-format="dd/mm/yy"
         show-icon
         :show-button-bar="true"
@@ -591,10 +591,10 @@ const onDateSelect = (
         v-model.number="value"
         type="number"
         :placeholder="field.placeholder || '0'"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
         class="w-full h-10 pl-8 pr-3.5 text-xs bg-white border border-gray-200/80 rounded-lg text-gray-700 placeholder-gray-400 shadow-2xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
         :class="[
-          field.disabled ? 'bg-[#E2E8F0] text-gray-600 cursor-not-allowed' : '',
+          isDisabled ? 'bg-[#E2E8F0] text-gray-600 cursor-not-allowed' : '',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
       >
@@ -606,12 +606,12 @@ const onDateSelect = (
         :id="field.key"
         v-model="value"
         :placeholder="field.placeholder"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
         :maxlength="field.maxLength || 500"
         :rows="field.rows || 4"
         class="w-full px-3.5 py-2.5 text-xs rounded-lg resize-none transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
         :class="[
-          field.disabled
+          isDisabled
             ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
             : 'bg-white text-gray-700 border border-gray-200/80 shadow-2xs',
           error ? 'border-red-500 focus:ring-red-500' : '',
@@ -629,7 +629,7 @@ const onDateSelect = (
       <ToggleSwitch
         :id="field.key"
         v-model="value"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
       />
     </div>
 
@@ -640,10 +640,10 @@ const onDateSelect = (
         v-model="value"
         :type="field.type || 'text'"
         :placeholder="field.placeholder"
-        :disabled="field.disabled"
+        :disabled="isDisabled"
         class="w-full h-10 px-3.5 text-xs rounded-lg transition-all shadow-2xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
         :class="[
-          field.disabled
+          isDisabled
             ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
             : 'bg-white text-gray-700 border border-gray-200/80',
           error ? 'border-red-500 focus:ring-red-500' : '',

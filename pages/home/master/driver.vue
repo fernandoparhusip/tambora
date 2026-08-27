@@ -2,8 +2,11 @@
 import { ref, computed, watch, onMounted } from "vue";
 import BaseDetailModal from "~/components/base/BaseDetailModal.vue";
 import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
-import type { TableColumn, FormSectionConfig, DriverItem } from "~/types";
+import type { TableColumn, DriverItem } from "~/types";
+import { driverFormSections } from "~/schemas/master/driver.schema";
 import { useDriver } from "~/composables/master/useDriver";
+import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
+import { exportToExcel } from "~/utils/exportExcel";
 
 const { drivers, loading, fetchDrivers, createDriver, updateDriver, deleteDriver } = useDriver();
 
@@ -18,6 +21,9 @@ const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
 const isDetailModalOpen = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<DriverItem | null>(null);
+const isDeleting = ref(false);
 const detailRecord = ref<DriverItem | null>(null);
 
 const driverColumns: TableColumn[] = [
@@ -31,112 +37,6 @@ const driverColumns: TableColumn[] = [
   { key: "actions", label: "Aksi" }
 ];
 
-const formSections: FormSectionConfig[] = [
-  {
-    fields: [
-      {
-        key: "full_name",
-        label: "Nama Pengemudi",
-        type: "text",
-        placeholder: "Masukkan Nama Lengkap Pengemudi",
-        colSpan: 6,
-        required: true
-      },
-      {
-        key: "phone_number",
-        label: "No. Telepon / WA",
-        type: "text",
-        placeholder: "+6281234567890",
-        colSpan: 6,
-        required: false
-      },
-      {
-        key: "nik",
-        label: "NIK (KTP)",
-        type: "text",
-        placeholder: "Masukkan 16 digit NIK",
-        colSpan: 6,
-        required: false
-      },
-      {
-        key: "license_number",
-        label: "Nomor SIM",
-        type: "text",
-        placeholder: "Contoh: SIM-5271000123",
-        colSpan: 6,
-        required: false
-      },
-      {
-        key: "license_type",
-        label: "Jenis SIM",
-        type: "searchable-select",
-        placeholder: "Pilih Jenis SIM",
-        colSpan: 6,
-        required: false,
-        options: [
-          { label: "SIM A", value: "SIM A" },
-          { label: "SIM B1", value: "SIM B1" },
-          { label: "SIM B2 Umum", value: "SIM B2 Umum" },
-          { label: "SIM C", value: "SIM C" }
-        ]
-      },
-      {
-        key: "employment_status",
-        label: "Status Bekerja",
-        type: "searchable-select",
-        placeholder: "Pilih Status",
-        colSpan: 6,
-        required: true,
-        options: [
-          { label: "Aktif", value: "Aktif" },
-          { label: "Nonaktif", value: "Nonaktif" }
-        ]
-      },
-      {
-        key: "birth_place",
-        label: "Tempat Lahir",
-        type: "text",
-        placeholder: "Contoh: Mataram",
-        colSpan: 6,
-        required: false
-      },
-      {
-        key: "birth_date",
-        label: "Tanggal Lahir",
-        type: "date",
-        placeholder: "Pilih Tanggal Lahir",
-        colSpan: 6,
-        required: false
-      },
-      {
-        key: "employment_start_date",
-        label: "Tanggal Mulai Bekerja",
-        type: "date",
-        placeholder: "Pilih Tanggal Mulai",
-        colSpan: 12,
-        required: false
-      },
-      {
-        key: "address",
-        label: "Alamat",
-        type: "textarea",
-        placeholder: "Masukkan Alamat Tempat Tinggal",
-        colSpan: 12,
-        required: false,
-        rows: 3
-      },
-      {
-        key: "description",
-        label: "Catatan / Deskripsi",
-        type: "textarea",
-        placeholder: "Catatan operasional...",
-        colSpan: 12,
-        required: false,
-        rows: 2
-      }
-    ]
-  }
-];
 
 onMounted(async () => {
   await fetchDrivers();
@@ -200,13 +100,22 @@ const handleEdit = (row: DriverItem) => {
   modalOpen.value = true;
 };
 
-const handleDelete = async (row: DriverItem) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus pengemudi "${row.full_name}"?`)) {
-    try {
-      await deleteDriver(row.id);
-    } catch (err: any) {
-      alert("Gagal menghapus pengemudi: " + (err?.message || err));
-    }
+const handleDelete = (row: DriverItem) => {
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
+  try {
+    await deleteDriver(deleteTarget.value.id);
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
+  } catch (err: any) {
+    // Handled by useApi
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -273,7 +182,9 @@ const handleSave = async () => {
 };
 
 const handleExport = () => {
-  alert("Mengunduh data Pengemudi ke .xls...");
+  exportToExcel(driverColumns, filteredData.value, {
+    fileName: "Data_Pengemudi_PLN",
+  });
 };
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
@@ -371,10 +282,19 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:form-data="formData"
       :title="modalTitle"
       :subtitle="modalSubtitle"
-      :sections="formSections"
+      :sections="driverFormSections"
       :submitting="submitting"
       @submit="handleSave"
       @cancel="modalOpen = false"
+    />
+
+    <!-- Confirm Delete Dialog -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Pengemudi"
+      :message="`Apakah Anda yakin ingin menghapus data pengemudi '${deleteTarget?.full_name || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
     />
 
     <!-- Success Modal Popup -->

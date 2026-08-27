@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type { TableColumn, FormSectionConfig, MachineConditionItem } from "~/types";
+import type { TableColumn, MachineConditionItem } from "~/types";
+import { machineConditionFormSections } from "~/schemas/master/machine-condition.schema";
 import { useMachineCondition } from "~/composables/master/useMachineCondition";
+import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
+import { exportToExcel } from "~/utils/exportExcel";
 
 const {
   machineConditions,
@@ -21,6 +24,9 @@ const isSuccessModalOpen = ref(false);
 const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<MachineConditionItem | null>(null);
+const isDeleting = ref(false);
 
 const conditionColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -30,37 +36,6 @@ const conditionColumns: TableColumn[] = [
   { key: "actions", label: "Aksi" }
 ];
 
-const formSections: FormSectionConfig[] = [
-  {
-    fields: [
-      {
-        key: "name",
-        label: "Nama Kondisi Mesin",
-        type: "text",
-        placeholder: "Contoh: Beroperasi, Standby, Derating, Gangguan, Pemeliharaan",
-        required: true,
-        colSpan: 12
-      },
-      {
-        key: "description",
-        label: "Deskripsi Operasional",
-        type: "textarea",
-        placeholder: "Jelaskan definisi dan dampak operasional kondisi mesin ini...",
-        required: false,
-        colSpan: 12,
-        rows: 3
-      },
-      {
-        key: "is_active",
-        label: "Status Aktif?",
-        type: "switch",
-        helpText: "Nonaktifkan jika status ini sudah tidak digunakan dalam pelaporan.",
-        required: false,
-        colSpan: 12
-      }
-    ]
-  }
-];
 
 onMounted(async () => {
   await fetchMachineConditions();
@@ -110,13 +85,22 @@ const handleEdit = (row: MachineConditionItem) => {
   modalOpen.value = true;
 };
 
-const handleDelete = async (row: MachineConditionItem) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus kondisi mesin "${row.name}"?`)) {
-    try {
-      await deleteMachineCondition(row.id);
-    } catch (err: any) {
-      alert("Gagal menghapus kondisi mesin: " + (err?.message || err));
-    }
+const handleDelete = (row: MachineConditionItem) => {
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
+  try {
+    await deleteMachineCondition(deleteTarget.value.id);
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
+  } catch (err: any) {
+    // Handled by useApi
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -153,7 +137,9 @@ const handleSave = async () => {
 };
 
 const handleExport = () => {
-  alert("Mengunduh data Kondisi Mesin ke .xls...");
+  exportToExcel(conditionColumns, filteredData.value, {
+    fileName: "Data_Kondisi_Mesin_PLN",
+  });
 };
 
 const getConditionBadgeVariant = (name: string) => {
@@ -247,11 +233,20 @@ const getConditionBadgeVariant = (name: string) => {
       v-model:form-data="formData"
       :title="modalTitle"
       :subtitle="modalSubtitle"
-      :sections="formSections"
+      :sections="machineConditionFormSections"
       variant="centered"
       :submitting="submitting"
       @submit="handleSave"
       @cancel="modalOpen = false"
+    />
+
+    <!-- Confirm Delete Dialog -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Kondisi Mesin"
+      :message="`Apakah Anda yakin ingin menghapus kondisi mesin '${deleteTarget?.name || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
     />
 
     <!-- Success Modal Popup -->

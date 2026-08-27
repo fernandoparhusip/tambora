@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { useScope } from "~/composables/master/useScope";
-import type { ScopeItem, TableColumn, FormSectionConfig } from "~/types";
+import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
+import { exportToExcel } from "~/utils/exportExcel";
+import type { ScopeItem, TableColumn } from "~/types";
+import { scopeFormSections } from "~/schemas/master/scope.schema";
 
 const { scopes, loading, fetchScopes, createScope, deleteScope } = useScope();
 
@@ -11,6 +14,9 @@ const pageSize = ref(10);
 const isModalOpen = ref(false);
 const isSuccessModalOpen = ref(false);
 const isSubmitting = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<ScopeItem | null>(null);
+const isDeleting = ref(false);
 
 const scopeColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -19,38 +25,6 @@ const scopeColumns: TableColumn[] = [
   { key: "scope_type_name", label: "Tipe Scope" },
   { key: "description", label: "Deskripsi" },
   { key: "actions", label: "Aksi" }
-];
-
-const scopeFormSections: FormSectionConfig[] = [
-  {
-    fields: [
-      {
-        key: "code",
-        label: "Kode Scope",
-        type: "text",
-        placeholder: "Contoh: ORG-PLANT-C, REGIONAL-NTB",
-        required: true,
-        colSpan: 12
-      },
-      {
-        key: "name",
-        label: "Nama Scope",
-        type: "text",
-        placeholder: "Contoh: Plant C Tambora",
-        required: true,
-        colSpan: 12
-      },
-      {
-        key: "description",
-        label: "Deskripsi",
-        type: "textarea",
-        placeholder: "Masukkan deskripsi cakupan wilayah scope ini...",
-        required: true,
-        colSpan: 12,
-        rows: 3
-      }
-    ]
-  }
 ];
 
 const formData = ref<Record<string, any>>({
@@ -121,13 +95,28 @@ const handleSave = async () => {
   }
 };
 
-const handleDelete = async (row: ScopeItem) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus scope "${row.name}" (${row.code})?`)) {
-    try {
-      await deleteScope(row.id);
-    } catch (err: any) {
-      alert("Gagal menghapus scope: " + (err?.message || err));
-    }
+const handleExport = () => {
+  exportToExcel(scopeColumns, filteredRows.value, {
+    fileName: "Data_Scope_Wilayah_PLN",
+  });
+};
+
+const handleDelete = (row: ScopeItem) => {
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
+  try {
+    await deleteScope(deleteTarget.value.id);
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
+  } catch (err: any) {
+    // Handled by useApi
+  } finally {
+    isDeleting.value = false;
   }
 };
 </script>
@@ -149,6 +138,7 @@ const handleDelete = async (row: ScopeItem) => {
         >
           <div class="flex items-center gap-3">
             <BaseSearchInput v-model="searchQuery" placeholder="Cari Kode atau Nama Scope..." />
+            <BaseExportButton @click="handleExport" />
           </div>
           <BaseCreateButton label="TAMBAH DATA" @click="openModal" />
         </div>
@@ -220,6 +210,15 @@ const handleDelete = async (row: ScopeItem) => {
       :submitting="isSubmitting"
       @submit="handleSave"
       @cancel="closeModal"
+    />
+
+    <!-- Confirm Delete Dialog -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Scope"
+      :message="`Apakah Anda yakin ingin menghapus scope '${deleteTarget?.name || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
     />
 
     <!-- Success Modal Popup -->

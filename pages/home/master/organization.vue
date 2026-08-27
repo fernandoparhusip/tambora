@@ -2,7 +2,10 @@
 import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
 import type { TableColumn, FormSectionConfig, OrganizationItem } from "~/types";
+import { getOrganizationFormSections } from "~/schemas/master/organization.schema";
 import { useOrganization } from "~/composables/master/useOrganization";
+import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
+import { exportToExcel } from "~/utils/exportExcel";
 
 const {
   organizations,
@@ -24,6 +27,9 @@ const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
 const isDetailModalOpen = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<OrganizationItem | null>(null);
+const isDeleting = ref(false);
 const detailRecord = ref<OrganizationItem | null>(null);
 
 const orgColumns: TableColumn[] = [
@@ -37,76 +43,15 @@ const orgColumns: TableColumn[] = [
 
 const parentOptions = computed(() => {
   const list = [{ label: "-- Tanpa Parent (Root Node) --", value: "" }];
-  organizations.value.forEach((o) => {
+  organizations.value.forEach((o: any) => {
     list.push({ label: `${o.nama} (${o.kode})`, value: o.id });
   });
   return list;
 });
 
-const formSections = computed<FormSectionConfig[]>(() => [
-  {
-    fields: [
-      {
-        key: "kode",
-        label: "Kode Organisasi",
-        type: "text",
-        placeholder: "Contoh: ORG-PLANT-C, UIW-NTB",
-        required: true,
-        colSpan: 6
-      },
-      {
-        key: "nama",
-        label: "Nama Organisasi",
-        type: "text",
-        placeholder: "Contoh: Plant C Tambora",
-        required: true,
-        colSpan: 6
-      },
-      {
-        key: "parent_id",
-        label: "Parent Organisasi (Hierarki)",
-        type: "searchable-select",
-        placeholder: "Pilih Induk Organisasi",
-        options: parentOptions.value,
-        required: false,
-        colSpan: 12
-      },
-      {
-        key: "alamat",
-        label: "Alamat / Wilayah",
-        type: "text",
-        placeholder: "Contoh: Mataram, Bekasi, Cilegon",
-        required: false,
-        colSpan: 12
-      },
-      {
-        key: "latitude",
-        label: "Latitude (Peta)",
-        type: "text",
-        placeholder: "Contoh: -8.5833",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "longitude",
-        label: "Longitude (Peta)",
-        type: "text",
-        placeholder: "Contoh: 116.1166",
-        required: false,
-        colSpan: 6
-      },
-      {
-        key: "keterangan",
-        label: "Keterangan",
-        type: "textarea",
-        placeholder: "Catatan deskripsi organisasi...",
-        required: false,
-        colSpan: 12,
-        rows: 3
-      }
-    ]
-  }
-]);
+const formSections = computed<FormSectionConfig[]>(() =>
+  getOrganizationFormSections({ parentOptions: parentOptions.value })
+);
 
 onMounted(async () => {
   await fetchOrganizations();
@@ -173,13 +118,22 @@ const handleEdit = (row: OrganizationItem) => {
   modalOpen.value = true;
 };
 
-const handleDelete = async (row: OrganizationItem) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus organisasi "${row.nama}" (${row.kode})?`)) {
-    try {
-      await deleteOrganization(row.id);
-    } catch (err: any) {
-      alert("Gagal menghapus organisasi: " + (err?.message || err));
-    }
+const handleDelete = (row: OrganizationItem) => {
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
+  try {
+    await deleteOrganization(deleteTarget.value.id);
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
+  } catch (err: any) {
+    // Handled by useApi
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -225,7 +179,9 @@ const handleSave = async () => {
 };
 
 const handleExport = () => {
-  alert("Mengunduh data Organisasi ke .xls...");
+  exportToExcel(orgColumns, filteredData.value, {
+    fileName: "Data_Organisasi_PLN",
+  });
 };
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
@@ -328,6 +284,15 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       :submitting="submitting"
       @submit="handleSave"
       @cancel="modalOpen = false"
+    />
+
+    <!-- Confirm Delete Dialog -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Organisasi"
+      :message="`Apakah Anda yakin ingin menghapus organisasi '${deleteTarget?.nama || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
     />
 
     <!-- Success Modal Popup -->

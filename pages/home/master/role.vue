@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { useRole } from "~/composables/master/useRole";
-import type { RoleItem, TableColumn, FormSectionConfig } from "~/types";
+import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
+import { exportToExcel } from "~/utils/exportExcel";
+import type { RoleItem, TableColumn } from "~/types";
+import { roleFormSections } from "~/schemas/master/role.schema";
 
 const { roles, loading, fetchRoles, createRole, deleteRole } = useRole();
 
@@ -11,6 +14,9 @@ const pageSize = ref(10);
 const isModalOpen = ref(false);
 const isSuccessModalOpen = ref(false);
 const isSubmitting = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<RoleItem | null>(null);
+const isDeleting = ref(false);
 
 const masterRoleColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -19,52 +25,6 @@ const masterRoleColumns: TableColumn[] = [
   { key: "description", label: "Deskripsi" },
   { key: "is_system", label: "Tipe" },
   { key: "actions", label: "Aksi" }
-];
-
-const masterRoleFormConfig: FormSectionConfig[] = [
-  {
-    fields: [
-      {
-        key: "code",
-        label: "Kode Role",
-        type: "text",
-        placeholder: "Contoh: OPERATOR_UNIT, SUPERVISOR_HARIAN",
-        required: true,
-        colSpan: 12
-      },
-      {
-        key: "name",
-        label: "Nama Role",
-        type: "text",
-        placeholder: "Contoh: Operator Unit Pembangkit",
-        required: true,
-        colSpan: 12
-      },
-      {
-        key: "description",
-        label: "Deskripsi Role",
-        type: "textarea",
-        placeholder: "Masukkan deskripsi dan tanggung jawab role ini...",
-        required: true,
-        colSpan: 12,
-        rows: 3
-      },
-      {
-        key: "levelRole",
-        label: "Level Jabatan (Opsional)",
-        type: "searchable-select",
-        placeholder: "Pilih Level Jabatan",
-        required: false,
-        colSpan: 12,
-        options: [
-          { label: "Wilayah / Unit Induk", value: "Wilayah/Unit Induk" },
-          { label: "Unit Pelaksana (UP3 / UPK)", value: "UPK" },
-          { label: "Sentral Pembangkit", value: "Sentral" },
-          { label: "Pengatur Beban (Dispatcher)", value: "Pengatur Beban" }
-        ]
-      }
-    ]
-  }
 ];
 
 const formData = ref<Record<string, any>>({
@@ -100,7 +60,9 @@ const paginatedRows = computed(() => {
 });
 
 const handleExport = () => {
-  alert("Mengunduh data Role ke .xls...");
+  exportToExcel(masterRoleColumns, filteredData.value, {
+    fileName: "Data_Role_PLN",
+  });
 };
 
 const openModal = () => {
@@ -143,13 +105,22 @@ const handleSave = async () => {
   }
 };
 
-const handleDelete = async (row: RoleItem) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus role "${row.name}" (${row.code})?`)) {
-    try {
-      await deleteRole(row.id);
-    } catch (err: any) {
-      alert("Gagal menghapus role: " + (err?.message || err));
-    }
+const handleDelete = (row: RoleItem) => {
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
+  try {
+    await deleteRole(deleteTarget.value.id);
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
+  } catch (err: any) {
+    // Handled by useApi
+  } finally {
+    isDeleting.value = false;
   }
 };
 </script>
@@ -241,11 +212,20 @@ const handleDelete = async (row: RoleItem) => {
       v-model:form-data="formData"
       title="Tambah Data Role"
       subtitle="Form Tambah Data Role"
-      :sections="masterRoleFormConfig"
+      :sections="roleFormSections"
       variant="centered"
       :submitting="isSubmitting"
       @submit="handleSave"
       @cancel="closeModal"
+    />
+
+    <!-- Confirm Delete Dialog -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Role"
+      :message="`Apakah Anda yakin ingin menghapus role '${deleteTarget?.name || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
     />
 
     <!-- Success Modal Popup -->
