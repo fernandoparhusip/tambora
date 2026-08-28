@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
-import type { TableColumn, MachineConditionItem } from "~/types";
-import { machineConditionFormSections } from "~/schemas/master/machine-condition.schema";
-import { useMachineCondition } from "~/composables/master/useMachineCondition";
-import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
-import { exportToExcel } from "~/utils/exportExcel";
+import { ref, computed, watch, onMounted } from 'vue'
+import type { TableColumn, MachineConditionItem } from '~/types'
+import { machineConditionFormSections } from '~/schemas/master/machine-condition.schema'
+import type { DetailDataItem } from '~/types/master.types';
+import { exportToExcel } from '~/utils/exportExcel'
 
 const {
   machineConditions,
@@ -12,153 +11,185 @@ const {
   fetchMachineConditions,
   createMachineCondition,
   updateMachineCondition,
-  deleteMachineCondition
-} = useMachineCondition();
+  deleteMachineCondition,
+} = useMachineCondition()
+const toast = useAppToast()
 
-const searchQuery = ref("");
-const currentPage = ref(1);
-const pageSize = ref(10);
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10)
 
-const modalOpen = ref(false);
-const isSuccessModalOpen = ref(false);
-const modalMode = ref<"create" | "edit">("create");
-const formData = ref<Record<string, any>>({});
-const submitting = ref(false);
-const isConfirmDialogOpen = ref(false);
-const deleteTarget = ref<MachineConditionItem | null>(null);
-const isDeleting = ref(false);
+const modalOpen = ref(false)
+const isSuccessModalOpen = ref(false)
+const modalMode = ref<'create' | 'edit'>('create')
+const formData = ref<Record<string, any>>({})
+const submitting = ref(false)
+const isConfirmDialogOpen = ref(false)
+const deleteTarget = ref<MachineConditionItem | null>(null)
+const isDeleting = ref(false)
+
+// Detail Modal States
+const isDetailModalOpen = ref(false)
+const detailRecord = ref<MachineConditionItem | null>(null)
 
 const conditionColumns: TableColumn[] = [
-  { key: "no", label: "No" },
-  { key: "name", label: "Nama Kondisi Mesin" },
-  { key: "description", label: "Deskripsi Operasional" },
-  { key: "is_active", label: "Status" },
-  { key: "actions", label: "Aksi" }
-];
-
+  { key: 'no', label: 'No' },
+  { key: 'name', label: 'Nama Kondisi Mesin' },
+  { key: 'description', label: 'Deskripsi Operasional' },
+  { key: 'is_active', label: 'Status' },
+  { key: 'actions', label: 'Aksi' },
+]
 
 onMounted(async () => {
-  await fetchMachineConditions();
-});
+  await fetchMachineConditions()
+})
 
 watch(searchQuery, () => {
-  currentPage.value = 1;
-});
+  currentPage.value = 1
+})
 
 const filteredData = computed(() => {
-  if (!searchQuery.value) return machineConditions.value;
-  const q = searchQuery.value.toLowerCase();
+  if (!searchQuery.value) return machineConditions.value
+  const q = searchQuery.value.toLowerCase()
   return machineConditions.value.filter(
-    (c) =>
-      (c.name && c.name.toLowerCase().includes(q)) ||
-      (c.description && c.description.toLowerCase().includes(q))
-  );
-});
+    item =>
+      item.name.toLowerCase().includes(q)
+      || (item.description && item.description.toLowerCase().includes(q)),
+  )
+})
 
 const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredData.value.slice(start, start + pageSize.value);
-});
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredData.value.slice(start, start + pageSize.value)
+})
 
 const modalTitle = computed(() =>
-  modalMode.value === "edit" ? "Edit Kondisi Mesin" : "Tambah Kondisi Mesin"
-);
+  modalMode.value === 'create' ? 'Tambah Kondisi Mesin' : 'Ubah Kondisi Mesin',
+)
 const modalSubtitle = computed(() =>
-  modalMode.value === "edit"
-    ? "Form Edit Master Kondisi Mesin Pembangkit"
-    : "Form Tambah Master Kondisi Mesin Pembangkit"
-);
+  modalMode.value === 'create'
+    ? 'Form Tambah Master Kondisi Mesin Pembangkit'
+    : 'Form Ubah Master Kondisi Mesin Pembangkit',
+)
 
 const openCreateModal = () => {
-  modalMode.value = "create";
+  modalMode.value = 'create'
   formData.value = {
-    name: "",
-    description: "",
-    is_active: true
-  };
-  modalOpen.value = true;
-};
+    name: '',
+    description: '',
+    is_active: true,
+  }
+  modalOpen.value = true
+}
+
+const handleView = (row: MachineConditionItem) => {
+  detailRecord.value = row
+  isDetailModalOpen.value = true
+}
 
 const handleEdit = (row: MachineConditionItem) => {
-  modalMode.value = "edit";
-  formData.value = { ...row };
-  modalOpen.value = true;
-};
+  modalMode.value = 'edit'
+  formData.value = { ...row }
+  modalOpen.value = true
+}
+
+const openEditFromDetail = () => {
+  if (detailRecord.value) {
+    handleEdit(detailRecord.value)
+  }
+}
 
 const handleDelete = (row: MachineConditionItem) => {
-  deleteTarget.value = row;
-  isConfirmDialogOpen.value = true;
-};
+  deleteTarget.value = row
+  isConfirmDialogOpen.value = true
+}
 
 const confirmDelete = async () => {
-  if (!deleteTarget.value) return;
-  isDeleting.value = true;
+  if (!deleteTarget.value) return
+  isDeleting.value = true
   try {
-    await deleteMachineCondition(deleteTarget.value.id);
-    isConfirmDialogOpen.value = false;
-    deleteTarget.value = null;
+    await deleteMachineCondition(deleteTarget.value.id)
+    toast.success(`Kondisi mesin '${deleteTarget.value.name}' berhasil dihapus.`, 'Sukses')
+    isConfirmDialogOpen.value = false
+    deleteTarget.value = null
   } catch (err: any) {
-    // Handled by useApi
+    toast.error(err?.message || 'Gagal menghapus kondisi mesin.', 'Gagal Hapus')
   } finally {
-    isDeleting.value = false;
+    isDeleting.value = false
   }
-};
+}
 
 const handleSave = async () => {
-  if (!formData.value.name || formData.value.name.trim() === "") {
-    alert("Nama Kondisi Mesin wajib diisi.");
-    return;
+  if (!formData.value.name || formData.value.name.trim() === '') {
+    toast.error('Nama Kondisi Mesin wajib diisi.', 'Validasi Form')
+    return
   }
 
-  submitting.value = true;
+  submitting.value = true
   try {
-    if (modalMode.value === "create") {
+    if (modalMode.value === 'create') {
       await createMachineCondition({
         name: formData.value.name.trim(),
-        description: formData.value.description?.trim() || "",
-        is_active: formData.value.is_active ?? true
-      });
+        description: formData.value.description?.trim() || '',
+        is_active: formData.value.is_active ?? true,
+      })
+      toast.success(`Kondisi mesin '${formData.value.name}' berhasil dibuat.`, 'Sukses')
     } else {
       await updateMachineCondition(formData.value.id, {
         name: formData.value.name.trim(),
-        description: formData.value.description?.trim() || "",
-        is_active: formData.value.is_active ?? true
-      });
+        description: formData.value.description?.trim() || '',
+        is_active: formData.value.is_active ?? true,
+      })
+      toast.success(`Kondisi mesin '${formData.value.name}' berhasil diperbarui.`, 'Sukses')
     }
-    modalOpen.value = false;
+    modalOpen.value = false
     setTimeout(() => {
-      isSuccessModalOpen.value = true;
-    }, 150);
+      isSuccessModalOpen.value = true
+    }, 150)
   } catch (err: any) {
-    alert("Gagal menyimpan kondisi mesin: " + (err?.message || err));
+    toast.error(err?.message || 'Gagal menyimpan kondisi mesin.', 'Terjadi Kesalahan')
   } finally {
-    submitting.value = false;
+    submitting.value = false
   }
-};
+}
 
 const handleExport = () => {
   exportToExcel(conditionColumns, filteredData.value, {
-    fileName: "Data_Kondisi_Mesin_PLN",
-  });
-};
+    fileName: 'Master_Kondisi_Mesin_PLN',
+  })
+}
 
-const getConditionBadgeVariant = (name: string) => {
-  const n = (name || "").toLowerCase();
-  if (n.includes("operasi") || n.includes("normal")) return "success";
-  if (n.includes("standby") || n.includes("siap")) return "info";
-  if (n.includes("derating") || n.includes("turun")) return "warning";
-  if (n.includes("gangguan") || n.includes("trip") || n.includes("rusak")) return "danger";
-  if (n.includes("pelihara") || n.includes("overhaul")) return "primary";
-  return "neutral";
-};
+const getConditionBadgeVariant = (name: string): any => {
+  const n = (name || '').toUpperCase()
+  if (n.includes('OPERASI') || n.includes('NORMAL')) return 'success'
+  if (n.includes('GANGGUAN') || n.includes('RUSAK') || n.includes('TRIP')) return 'danger'
+  if (n.includes('PEMELIHARAAN') || n.includes('OVERHAUL') || n.includes('HAR')) return 'warning'
+  if (n.includes('STANDBY') || n.includes('CADANGAN')) return 'info'
+  return 'default'
+}
+
+// Detail Data Items
+const detailDataItems = computed<DetailDataItem[]>(() => {
+  if (!detailRecord.value) return []
+  return [
+    { label: 'Nama Kondisi', value: detailRecord.value.name },
+    { label: 'Deskripsi Operasional', value: detailRecord.value.description || '-' },
+    {
+      label: 'Status Aktif',
+      value: detailRecord.value.is_active ? 'Aktif' : 'Nonaktif',
+      isStatus: true,
+    },
+    { label: 'ID Record', value: detailRecord.value.id },
+  ]
+})
 </script>
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-gray-50/50">
     <!-- ── Page Title Header ───────────────────────────────── -->
-    <BasePageHeader title="Master Kondisi Mesin" />
+    <BasePageHeader />
 
-    <!-- ── Main Card Container ─────────────────────────────── -->
+    <!-- ── Main Card Container ───────────────────────────────── -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
       <div
         class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
@@ -208,11 +239,12 @@ const getConditionBadgeVariant = (name: string) => {
             </BaseBadge>
           </template>
 
-          <!-- Action Buttons Cell Slot -->
+          <!-- Action Buttons Cell Slot (View, Edit, Delete) -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
+              <BaseActionButton type="edit" title="Ubah Kondisi" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" title="Hapus Kondisi" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>
@@ -227,14 +259,14 @@ const getConditionBadgeVariant = (name: string) => {
       </div>
     </div>
 
-    <!-- ── Centered Form Modal ───────────────────────────────── -->
+    <!-- ── Form Drawer ─────────────────────────────────────────── -->
     <BaseFormModal
       v-model:is-open="modalOpen"
       v-model:form-data="formData"
       :title="modalTitle"
       :subtitle="modalSubtitle"
       :sections="machineConditionFormSections"
-      variant="centered"
+      variant="drawer"
       :submitting="submitting"
       @submit="handleSave"
       @cancel="modalOpen = false"
@@ -251,5 +283,14 @@ const getConditionBadgeVariant = (name: string) => {
 
     <!-- Success Modal Popup -->
     <BaseSuccessModal v-model:is-open="isSuccessModalOpen" />
+
+    <!-- ── View Detail Modal ───────────────────────── -->
+    <BaseDetailModal
+      v-model:is-open="isDetailModalOpen"
+      title="Detail Kondisi Mesin"
+      subtitle="Informasi Status & Deskripsi Operasional Mesin"
+      :data-items="detailDataItems"
+      @edit="openEditFromDetail"
+    />
   </div>
 </template>

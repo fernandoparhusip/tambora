@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import BaseDetailModal from "~/components/base/BaseDetailModal.vue";
-import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
+import type { DetailDataItem } from '~/types/master.types';
 import type { TableColumn, DriverItem } from "~/types";
 import { driverFormSections } from "~/schemas/master/driver.schema";
-import { useDriver } from "~/composables/master/useDriver";
-import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
 import { exportToExcel } from "~/utils/exportExcel";
 
 const { drivers, loading, fetchDrivers, createDriver, updateDriver, deleteDriver } = useDriver();
@@ -208,7 +205,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-gray-50/50">
     <!-- ── Page Title Header ───────────────────────────────── -->
-    <BasePageHeader title="Master Pengemudi" />
+    <BasePageHeader />
 
     <!-- ── Main Card Container (Flex-1, No Page Scroll) ────────── -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">

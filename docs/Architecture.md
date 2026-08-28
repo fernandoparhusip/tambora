@@ -7,7 +7,7 @@
 - **GIS / Mapping**: OpenLayers (`ol` v10) + MapTiler Positron Vector/Raster Tiles
 - **Data Visualization**: Apache ECharts (`echarts` + `vue-echarts`)
 - **Form & Validation**: Schema-Driven Declarative Form Engine (`schemas/master/` & `schemas/transaksi/`)
-- **Testing**: Vitest + @vue/test-utils + Happy-DOM (Coverage: @vitest/coverage-v8) — **60/60 Tests Passing (100% Green)**
+- **Testing**: Vitest + @vue/test-utils + Happy-DOM (Coverage: @vitest/coverage-v8) — **64/64 Tests Passing (100% Green)**
 - **Code Quality**: Strict ESLint + SonarQube Quality Gate Grade A
 
 ---
@@ -24,14 +24,15 @@
 ┌───────────────────────────────┐ ┌───────────────────────────┐
 │     Composables & Stores      │ │      Schemas Layer        │
 │  (useOperasiHarian, usePagu,  │ │  (schemas/master/*.ts,    │
-│   useIdleTimer, useApi,       │ │   schemas/transaksi/*.ts, │
-│   useAuthStore, Pinia Stores) │ │   types/*.types.ts)       │
+│   useIdleTimer, useAppToast,  │ │   schemas/transaksi/*.ts, │
+│   useNetwork, useAuthStore,   │ │   types/*.types.ts)       │
+│   Pinia Stores)               │ │                           │
 └──────────────┬────────────────┘ └─────────────┬─────────────┘
                │                                │
                ▼                                ▼
 ┌─────────────────────────────────────────────────────────────┐
 │               Base UI Components (Generic)                  │
-│  (BaseTable, BaseFormModal, BaseMap, BaseIdleWarningModal)  │
+│  (BaseTable, BaseFormModal, BaseMap, BaseToastContainer)    │
 └──────────────┬──────────────────────────────────────────────┘
                │
                ▼
@@ -68,19 +69,40 @@ flowchart TD
 
 ---
 
-## 4. Core Architectural Principles
+## 4. Modern UI/UX Animation & Notification Architecture
+
+```mermaid
+flowchart TD
+    subgraph ANIM_SUITE["1. High-Impact Animations"]
+        PAGES["Page Navigation"] -->|GPU Cubic-Bezier| PAGE_TRANS["Smooth Fade & Slide-Up 6px"]
+        DATA_LOAD["API Data Arrived"] -->|GSAP gsap.fromTo()| STAGGER["Table Rows Cascade (20ms Stagger)"]
+        LOADING["Table Loading"] -->|Tailwind Gradient Wave| SKELETON["5-Row Shimmer Skeleton Loader"]
+        CLICKS["Button Click"] -->|Spring Active Scale| TACTILE["Tactile Feedback (active:scale-90)"]
+    end
+
+    subgraph SAFETY_FEEDBACK["2. Data Safety & Global Toast"]
+        FORM_DIRTY["Form Input Modified"] -->|Close Attempt| GUARD["Unsaved Changes Guard Dialog"]
+        CRUD_ACTION["API Success / Error"] -->|useAppToast()| TOAST["BaseToastContainer (Animated Progress Bar)"]
+    end
+```
+
+---
+
+## 5. Core Architectural Principles
 1. **Separation of Concerns**:
    - **`/components/base`**: Komponen murni generik, tidak boleh memiliki keterikatan bisnis (hanya menerima props/emits/slots).
-   - **`/composables`**: State reaktif, business logic, dan orkestrasi data fetching (`useApi`, `useIdleTimer`, composable CRUD).
+   - **`/composables`**: State reaktif, business logic, dan orkestrasi data fetching (`useApi`, `useIdleTimer`, `useAppToast`, composable CRUD).
    - **`/schemas`**: Definisi declarative schema untuk seluruh form master (`schemas/master/*.schema.ts`) dan transaksi (`schemas/transaksi/*.schema.ts`).
+   - **`/config`**: Konfigurasi navigasi terisolasi (`config/navigation.ts`).
    - **`/utils`**: Pure functions tanpa side-effects (mudah di-unit test secara terisolasi).
 2. **Data Fetching & Proxy Standards**:
    - Wajib menggunakan composable terpusat `useApi()` atau bawaan Nuxt (`$fetch` / `useFetch`). Dilarang memakai `axios`.
    - Menggunakan dynamic Nitro reverse proxy (`/api/v1/**`) di `nuxt.config.ts` untuk menangani routing backend dan bypass CORS.
-   - Error handling terpusat otomatis memicu notifikasi Toast PrimeVue dan penanganan silent refresh / auto-logout saat 401 Unauthorized.
+   - Error handling terpusat otomatis memicu notifikasi Toast dan penanganan silent refresh / auto-logout saat 401 Unauthorized.
 3. **Quality & Maintainability**:
    - Code Duplication dijaga di bawah 3% sesuai aturan SonarQube.
    - Semua fungsi `utils`, `composables`, dan `stores` wajib memiliki unit test di folder `test/` (Target Coverage > 80%).
 4. **Performance & Bundling**:
+   - Animasi wajib memanfaatkan **Hardware Acceleration (GPU)** lewat `transform` dan `opacity` dengan auto `clearProps` pada GSAP.
    - Library berat (OpenLayers GIS `ol/*` & Apache ECharts) di-prebundle melalui `vite.optimizeDeps` untuk menjamin navigasi instan.
-   - Sidebar navigasi menggunakan `prefetch` pada `<NuxtLink>` untuk asynchronous chunk loading.
+

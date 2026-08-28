@@ -1,5 +1,5 @@
+import { useAuthStore } from '~/stores/auth';
 import { ref } from 'vue'
-import { useAuthStore } from '~/stores/auth'
 
 export interface LoginPayload {
   email: string

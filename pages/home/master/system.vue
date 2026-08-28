@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
+import type { DetailDataItem } from '~/types/master.types';
 import type { TableColumn, FormSectionConfig, SystemItem } from "~/types";
 import { getSystemFormSections } from "~/schemas/master/system.schema";
-import { useSystem } from "~/composables/master/useSystem";
-import { useOrganization } from "~/composables/master/useOrganization";
-import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
 import { exportToExcel } from "~/utils/exportExcel";
 
 const {
@@ -201,7 +198,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-gray-50/50">
     <!-- ── Page Title Header ───────────────────────────────── -->
-    <BasePageHeader title="Master Sistem Pembangkit" />
+    <BasePageHeader />
 
     <!-- ── Main Card Container ─────────────────────────────── -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">

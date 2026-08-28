@@ -1,5 +1,5 @@
+import { useApi } from '~/composables/useApi';
 import { ref, computed } from 'vue'
-import { useApi } from '~/composables/useApi'
 import type {
   RoleItem,
   CreateRoleRequest,

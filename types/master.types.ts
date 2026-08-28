@@ -1,3 +1,9 @@
+export interface DetailDataItem {
+  label: string;
+  value?: string | number;
+  isStatus?: boolean;
+}
+
 /** Master User DTOs */
 export interface UserRoleAssignment {
   role_code: string;
@@ -70,7 +76,7 @@ export interface CreateRoleRequest {
 }
 
 export interface UpdateRoleRequest {
-  code: string;
+  code?: string;
   name: string;
   description: string;
   permissions?: string[];
@@ -107,7 +113,7 @@ export interface CreateScopeRequest {
 }
 
 export interface UpdateScopeRequest {
-  code: string;
+  code?: string;
   name: string;
   description: string;
   scope_type_id?: string;

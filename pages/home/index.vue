@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import { useAuthStore } from "~/stores/auth";
 import { gsap } from "gsap";
 
 const authStore = useAuthStore();

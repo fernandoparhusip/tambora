@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
+import { gsap } from "gsap";
 import type { TableColumn } from "~/types";
 
 interface Props {
@@ -14,6 +15,55 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   enableColumnToggle: true,
   tableId: "",
+});
+
+// Table body ref for GSAP row stagger animations
+const tbodyRef = ref<HTMLTableSectionElement | null>(null);
+
+const animateRows = () => {
+  if (!import.meta.client || !tbodyRef.value) return;
+  nextTick(() => {
+    const rowEls = tbodyRef.value?.querySelectorAll("tr.table-data-row");
+    if (rowEls && rowEls.length > 0) {
+      gsap.fromTo(
+        rowEls,
+        { opacity: 0, y: 8 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.24,
+          stagger: 0.02,
+          ease: "power2.out",
+          clearProps: "transform,opacity",
+        }
+      );
+    }
+  });
+};
+
+watch(
+  () => props.rows,
+  () => {
+    if (!props.loading) {
+      animateRows();
+    }
+  },
+  { deep: true }
+);
+
+watch(
+  () => props.loading,
+  (isLoading) => {
+    if (!isLoading) {
+      animateRows();
+    }
+  }
+);
+
+onMounted(() => {
+  if (!props.loading && props.rows.length > 0) {
+    animateRows();
+  }
 });
 
 // Dropdown popover state
@@ -272,38 +322,28 @@ onBeforeUnmount(() => {
         </thead>
 
         <!-- Table Body -->
-        <tbody class="divide-y divide-gray-50">
-          <!-- Loading State -->
-          <tr v-if="loading">
-            <td
-              :colspan="visibleColumns.length"
-              class="py-12 text-center text-gray-400 text-xs"
+        <tbody ref="tbodyRef" class="divide-y divide-gray-50">
+          <!-- Shimmer Skeleton Loading State (5 animated skeleton rows) -->
+          <template v-if="loading">
+            <tr
+              v-for="sIdx in 5"
+              :key="`skeleton-${sIdx}`"
+              class="animate-pulse"
             >
-              <div class="flex items-center justify-center gap-2">
-                <svg
-                  class="animate-spin h-4 w-4 text-[#2563EB]"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  />
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                <span>Memuat data...</span>
-              </div>
-            </td>
-          </tr>
+              <td
+                v-for="col in visibleColumns"
+                :key="`skel-col-${col.key}`"
+                class="py-4 px-4 whitespace-nowrap"
+              >
+                <div
+                  class="h-3.5 bg-gradient-to-r from-gray-100 via-gray-200/70 to-gray-100 rounded-md"
+                  :style="{
+                    width: col.key === 'actions' ? '60px' : col.key === 'id' || col.key === 'no' ? '28px' : `${40 + (sIdx * 11) % 45}%`,
+                  }"
+                />
+              </td>
+            </tr>
+          </template>
 
           <!-- Empty State -->
           <tr v-else-if="rows.length === 0">
@@ -315,12 +355,12 @@ onBeforeUnmount(() => {
             </td>
           </tr>
 
-          <!-- Data Rows -->
+          <!-- Data Rows (GSAP Stagger Animated) -->
           <tr
             v-for="(row, idx) in rows"
             v-else
             :key="row.id || idx"
-            class="hover:bg-[#F6FAFD] transition-colors group"
+            class="table-data-row hover:bg-[#F6FAFD] transition-colors group"
           >
             <td
               v-for="col in visibleColumns"

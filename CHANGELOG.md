@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-28
+
+### 📶 Network Resilience & Offline Detection
+* **network-status:** Integrated `composables/useNetworkStatus.ts` listening to browser online/offline events, notifying user seamlessly via floating Toast notifications and subtle top header pill indicator without obtrusive UI banners.
+* **tests:** Added `test/composables/network.test.ts` achieving **64/64 tests passed (100% green)** across 12 test suites.
+
+### 🎨 Modern UI/UX & GSAP Animation Suite
+* **page-transitions:** Added GPU-accelerated page and layout transitions in `nuxt.config.ts` and `assets/css/primevue-overrides.css` with `cubic-bezier(0.16, 1, 0.3, 1)` easing.
+* **table-stagger:** Integrated GSAP `gsap.fromTo()` stagger animation on `BaseTable.vue` data rows with automatic `clearProps: 'transform,opacity'` to maintain sticky column integrity.
+* **skeleton-loader:** Added 5-row Shimmer Skeleton table loader with dynamic column widths in `BaseTable.vue`, replacing standard circular spinners.
+* **tactile-buttons:** Added spring active scale feedback (`active:scale-[0.90]` & `active:scale-[0.96]`) across `BaseActionButton.vue` and `BaseExportButton.vue`.
+* **modal-animations:** Added `backdrop-blur-xs` and spring zoom-in transitions to `BaseFormModal.vue`, `BaseDetailModal.vue`, and `BaseConfirmDialog.vue`.
+
+### 🧭 AppSidebar Modular Compression & Navigation SSOT
+* **nav-config:** Extracted 16-item navigation tree into typed [`config/navigation.ts`](file:///c:/Users/USER/Documents/GitHub/tambora-frontend/config/navigation.ts), reducing `AppSidebar.vue` file size by ~40% while preserving Level 3 recursive accordion support.
+* **dynamic-page-headers:** Centralized page title and breadcrumb resolution across all 16 pages into `config/navigation.ts`, allowing zero-boilerplate `<BasePageHeader />` and instant synchronized renaming across sidebar, breadcrumbs, and page headers.
+* **auto-import-cleanup:** Fully purged all manual component imports across 16 views and base components, maximizing Nuxt 4 native automatic component registration.
+* **seamless-guideline:** Connected adjacent active/hover indicators into a single continuous solid blue line matching Figma design.
+* **submenu-stagger:** Added cascade entrance animation for submenu items upon accordion expansion.
+* **auto-scroll:** Added smooth auto-scroll into view when active route navigates to lower items (e.g. NKO / Prognosa).
+
+### 🛡️ Form Protection, Standardization & Toast System
+* **swagger-alignment:** Completed 100% Swagger OpenAPI audit (58 endpoints). Integrated full CRUD action buttons (`view`, `edit`, `delete`) and `BaseDetailModal` across `role.vue`, `scope.vue`, `machine-condition.vue`, and `permission.vue`.
+* **form-guard:** Integrated Unsaved Changes Guard in `BaseFormModal.vue` with left-aligned enterprise card layout and `<Teleport to="body">` full-screen backdrop to prevent accidental data loss with prompt dialog ("Lanjut Mengisi" vs "Buang & Tutup").
+* **modal-standardization:** Standardized 100% of Master and Transaksi form modals to unified Right Drawer (`variant="drawer"`), eliminating inconsistent centered popup dialogs across `role.vue`, `scope.vue`, and `machine-condition.vue`.
+* **toast-system:** Created global `composables/useAppToast.ts` and `components/base/BaseToastContainer.vue` with animated timer countdown progress bars.
+* **tests:** Added `test/composables/toast.test.ts` achieving **63/63 tests passed (100% green)** across 11 test suites.
+
+---
+
 ## [0.5.0] - 2026-08-28
 
 ### 🔒 Features & Authentication Modernization

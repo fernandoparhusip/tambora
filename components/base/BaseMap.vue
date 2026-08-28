@@ -12,7 +12,6 @@ import { fromLonLat } from "ol/proj";
 import { Style, Circle, Fill } from "ol/style";
 import Overlay from "ol/Overlay";
 import "ol/ol.css";
-import LoadingIndicatorPLN from "~/components/base/LoadingIndicatorPLN.vue";
 
 export interface MapMarkerItem {
   id?: string | number;

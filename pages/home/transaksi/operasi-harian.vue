@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, FormSectionConfig, OperasiHarianDTO } from "~/types";
-import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
-import { useOperasiHarian } from "~/composables/transaksi/useOperasiHarian";
-import { useOrganization } from "~/composables/master/useOrganization";
-import { useAsset } from "~/composables/master/useAsset";
+import type { DetailDataItem } from '~/types/master.types';
 import { getOperasiHarianFormSections } from "~/schemas/transaksi/operasi-harian.schema";
-import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
 import { exportToExcel } from "~/utils/exportExcel";
 
 const { list, loading, fetchList, createItem, updateItem, deleteItem } = useOperasiHarian();
@@ -204,7 +200,7 @@ const detailItems = computed<DetailDataItem[]>(() => {
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-gray-50/50">
     <!-- Header -->
-    <BasePageHeader title="Operasi Harian Pembangkit" />
+    <BasePageHeader />
 
     <!-- Main Card -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">

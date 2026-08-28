@@ -12,7 +12,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-60_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-64_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 
 </div>
 
@@ -22,14 +22,15 @@
 
 **Tambora Web App** adalah platform enterprise modern berbasis *Single Page & Server-Side Rendering (Universal SSR)* yang dirancang khusus untuk memonitor stabilitas sistem ketenagalistrikan, neraca daya, dan tata kelola master data pembangkitan di lingkungan **PT PLN (Persero)**.
 
-Platform ini mengintegrasikan pemetaan spasial geografis sentral pembangkit (GIS), analitik kurva beban *real-time*, mesin formulir dinamis (*Schema-Driven Dynamic Form Engine*), modul transaksi pencatatan daya dan anggaran, serta sistem otentikasi aman terintegrasi.
+Platform ini mengintegrasikan pemetaan spasial geografis sentral pembangkit (GIS), analitik kurva beban *real-time*, mesin formulir dinamis (*Schema-Driven Dynamic Form Engine*), modul transaksi pencatatan daya dan anggaran, sistem otentikasi aman terintegrasi, serta rangkaian animasi mikro modern berstandar enterprise (*60 FPS Hardware-Accelerated*).
 
 ```mermaid
 graph LR
     subgraph CLIENT["Client Layer (Nuxt 4 / PrimeVue Aura)"]
         UI["Dashboard, Master & Transaksi Views"] --> FORM["Dynamic Schema Engine (schemas/master & schemas/transaksi)"]
-        UI --> TABLE["BaseTable (Column Visibility Toggle)"]
+        UI --> TABLE["BaseTable (Column Visibility Toggle & GSAP Stagger)"]
         UI --> GIS["GIS Map Monitoring (OpenLayers v10 + MapTiler Positron)"]
+        UI --> TOAST["Modern Toast Notification System (useAppToast)"]
     end
 
     subgraph PROXY["Nitro Server Engine"]
@@ -55,6 +56,9 @@ graph LR
 | **⚡ Dashboard Operasi** | Monitoring metrik real-time: **DMN** (Daya Mampu Nyata), **DMP** (Daya Mampu Pasok), **Beban Sistem**, **Unit Max**, dan **Cadangan Total/Putar**. |
 | **🗺️ GIS Sentral Map** | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan marker status visual (*Operasi*, *Gangguan*, *Pemeliharaan/Standby*), popup detail unit, dan filter wilayah. |
 | **📈 Analisis Beban & Grafik** | Visualisasi kurva beban harian/mingguan dan tren neraca energi bertenaga **Apache ECharts**. |
+| **📶 Offline Network Detection** | Deteksi instan status koneksi jaringan (`navigator.onLine`) yang memicu notifikasi Toast elegan dan indicator pill halus tanpa banner mengambang. |
+| **🎨 Modern GSAP & GPU Animations** | Transisi halaman mulus (*Page Route Transitions*), efek baris tabel meluncur berjenjang (**GSAP Row Stagger**), **5-row Shimmer Skeleton Loader**, dan efek klik tombol membal (**Tactile Micro-Interactions**). |
+| **🍞 Floating Toast & Form Guard** | Sistem notifikasi mengambang pojok kanan atas dengan **Timer Countdown Progress Bar** (`useAppToast`), serta perlindungan data form (*Unsaved Changes Guard* di `BaseFormModal.vue`). |
 | **📝 Dynamic Form Engine** | Formulir berbasis skema deklaratif di `schemas/master/` dan `schemas/transaksi/` dengan dukungan *conditional field visibility* (`hidden`), *functional disabled*, dan validasi otomatis. |
 | **📊 Smart Data Table** | Komponen tabel terpadu (`BaseTable.vue`) dengan fitur **Show/Hide Kolom** (*Column Visibility Toggle*), filter pencarian instan, sorting dinamis, dan *local persistence*. |
 | **🏛️ 8 Modul Master Data** | Tata kelola CRUD lengkap: *User*, *Role & Permissions*, *Scope*, *Driver*, *Organisasi (Hierarki Parent-Child)*, *Sistem Pembangkit*, *Aset Mesin*, dan *Kondisi Mesin*. |
@@ -81,7 +85,7 @@ tambora-frontend/
 ├── 📁 schemas/            # Definisi Skema Formulir Deklaratif
 │   ├── 📁 master/         # 8 Berkas Skema Form Master (user, driver, asset, system, dll)
 │   └── 📁 transaksi/      # 7 Berkas Skema Form Transaksi (operasi, pagu, prognosa, nko, dll)
-├── 📁 stores/             # Pinia Global Stores (auth, session, transaksi)
+├── 📁 stores/             # Pinia Global Store (auth: session, security, token)
 ├── 📁 test/               # Vitest Unit Test Suites & Testing Mocks
 ├── 📁 types/              # Modular TypeScript DTOs & Contracts
 │   ├── form.types.ts      # Tipe field & section form

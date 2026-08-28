@@ -8,8 +8,9 @@ const apiBackend = process.env.NUXT_BACKEND_URL;
 export default (defineNuxtConfig as (config: any) => any)({
   compatibilityDate: "2026-07-21",
   devtools: { enabled: false },
-  experimental: {
-    appManifest: false,
+  app: {
+    pageTransition: { name: 'page', mode: 'out-in' },
+    layoutTransition: { name: 'layout', mode: 'out-in' },
   },
   routeRules: {
     '/api/v1/**': {
@@ -21,7 +22,10 @@ export default (defineNuxtConfig as (config: any) => any)({
       apiBaseUrl: '/api/v1',
       maptilerKey: process.env.NUXT_PUBLIC_MAPTILER_KEY || 'vAiwKNYltLbMYEotSzTT',
     },
-  },  
+  },
+  imports: {
+    dirs: ['composables', 'composables/**', 'stores'],
+  },
   modules: [
     "@nuxt/ui",
     "@primevue/nuxt-module",

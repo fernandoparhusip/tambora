@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { computed, resolveComponent } from "vue";
-import { useOperasiPembangkit } from "~/composables/useOperasiPembangkit";
 import {
   getStatusMeta,
   type SentralItem,
 } from "~/utils/operasiPembangkitUtils";
-import LoadingIndicatorPLN from "~/components/base/LoadingIndicatorPLN.vue";
-import FormFieldRenderer from "~/components/base/FormFieldRenderer.vue";
 import BaseTabFilter, {
   type TabItem,
 } from "~/components/base/BaseTabFilter.vue";

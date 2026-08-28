@@ -79,13 +79,13 @@ const loadingOptions = computed(() => ({
     <!-- Empty/No Data overlay -->
     <div
       v-if="!loading && isEmpty"
-      class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80"
+      class="absolute inset-0 flex flex-col items-center justify-center bg-white/80"
     >
       <UIcon
         name="i-heroicons-chart-bar"
         class="w-10 h-10 text-gray-400 mb-2"
       />
-      <span class="text-sm text-gray-500 dark:text-gray-400"
+      <span class="text-sm text-gray-500"
         >Tidak ada data untuk ditampilkan</span
       >
     </div>

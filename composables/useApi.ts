@@ -1,6 +1,6 @@
+import { useAuthStore } from '~/stores/auth';
 import { useToast } from 'primevue/usetoast'
 import { parseApiError } from '~/utils/apiError'
-import { useAuthStore } from '~/stores/auth'
 
 // Shared mutex lock for concurrent 401 refresh requests
 let refreshPromise: Promise<boolean> | null = null

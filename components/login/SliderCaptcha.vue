@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { VueFinalModal } from "vue-final-modal";
 import "vue-final-modal/style.css";
-import LoadingIndicatorPLN from "@/components/base/LoadingIndicatorPLN.vue";
 import { RefreshCcw, ShieldCheck } from "@lucide/vue";
 
 // Define props

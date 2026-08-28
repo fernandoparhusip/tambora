@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { VueFinalModal } from "vue-final-modal";
 import type { FormSectionConfig } from "~/types";
 
@@ -29,6 +29,33 @@ const formData = defineModel<Record<string, any>>("formData", {
   default: () => ({}),
 });
 
+// State for unsaved changes guard
+const initialSnapshot = ref("");
+const showUnsavedPrompt = ref(false);
+
+// Record initial snapshot whenever modal opens
+watch(
+  isOpen,
+  (open) => {
+    if (open) {
+      showUnsavedPrompt.value = false;
+      initialSnapshot.value = JSON.stringify(formData.value || {});
+    }
+  },
+  { immediate: true }
+);
+
+// Check if form data has been modified by the user
+const isDirty = computed(() => {
+  if (!isOpen.value) return false;
+  const current = JSON.stringify(formData.value || {});
+  if (current === initialSnapshot.value) return false;
+  const data = formData.value || {};
+  return Object.values(data).some(
+    (v) => v !== "" && v !== null && v !== undefined
+  );
+});
+
 // Check if all required fields in active form sections are filled out
 const isFormValid = computed(() => {
   if (!props.sections || props.sections.length === 0) return true;
@@ -49,9 +76,23 @@ const isFormValid = computed(() => {
   return true;
 });
 
-const closeModal = () => {
+const handleAttemptClose = () => {
+  if (isDirty.value && !props.submitting) {
+    showUnsavedPrompt.value = true;
+  } else {
+    isOpen.value = false;
+    emit("cancel");
+  }
+};
+
+const confirmDiscardChanges = () => {
+  showUnsavedPrompt.value = false;
   isOpen.value = false;
   emit("cancel");
+};
+
+const continueEditing = () => {
+  showUnsavedPrompt.value = false;
 };
 
 const handleSubmit = () => {
@@ -67,8 +108,8 @@ const handleSubmit = () => {
     :content-transition="
       variant === 'centered' ? 'vfm-slide-fade' : 'vfm-slide-right'
     "
-    :click-to-close="true"
-    :esc-to-close="true"
+    :click-to-close="!isDirty"
+    :esc-to-close="!isDirty"
     :class="
       variant === 'centered'
         ? 'fixed inset-0 z-50 flex items-center justify-center p-4'
@@ -94,7 +135,7 @@ const handleSubmit = () => {
           type="button"
           class="w-9 h-9 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
           title="Tutup"
-          @click="closeModal"
+          @click="handleAttemptClose"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -137,18 +178,17 @@ const handleSubmit = () => {
           >
             <!-- Section Divider & Title (if title exists) -->
             <div v-if="section.title" class="flex items-center gap-3 pt-2">
-              <span
-                class="text-xs font-bold text-[#4D5E80] tracking-wide whitespace-nowrap"
-              >
+              <span class="w-1.5 h-4 bg-[#2671D9] rounded-full" />
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#2671D9]">
                 {{ section.title }}
-              </span>
-              <div class="h-px bg-gray-200/80 w-full" />
+              </h4>
+              <div class="flex-1 h-px bg-gray-200/80" />
             </div>
 
-            <!-- Fields Grid directly on bg-[#F6FAFD] -->
-            <div class="grid grid-cols-12 gap-3 sm:gap-4">
+            <!-- Fields Grid for this Section -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div
-                v-for="field in section.fields"
+                v-for="field in section.fields.filter((f) => !f.hidden)"
                 :key="field.key"
                 class="col-span-12"
                 :class="{
@@ -185,7 +225,7 @@ const handleSubmit = () => {
         <button
           type="button"
           class="text-red-500 hover:text-red-600 font-bold text-xs tracking-wider uppercase px-4 py-2 transition-colors cursor-pointer"
-          @click="closeModal"
+          @click="handleAttemptClose"
         >
           BATAL
         </button>
@@ -204,6 +244,68 @@ const handleSubmit = () => {
           <span v-else>SIMPAN</span>
         </button>
       </div>
+
+      <!-- Unsaved Changes Prompt Overlay (Teleported to Body for clean full-screen backdrop) -->
+      <Teleport to="body">
+        <Transition name="fade">
+          <div
+            v-if="showUnsavedPrompt"
+            class="fixed inset-0 z-[100] bg-gray-950/45 backdrop-blur-xs flex items-center justify-center p-4 select-none"
+          >
+            <div
+              class="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-[0_25px_60px_-15px_rgba(0,0,0,0.22)] border border-gray-100 flex flex-col gap-4 animate-in zoom-in-95 duration-150"
+            >
+              <!-- Left-Aligned Header with Icon Badge -->
+              <div class="flex items-start gap-3.5">
+                <div
+                  class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h4 class="text-base font-bold text-gray-900">
+                    Perubahan Belum Disimpan
+                  </h4>
+                  <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                    Anda memiliki data yang belum disimpan pada formulir ini. Yakin ingin menutup dan membuang perubahan?
+                  </p>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 border border-gray-200 transition-colors cursor-pointer"
+                  @click="continueEditing"
+                >
+                  Lanjut Mengisi
+                </button>
+                <button
+                  type="button"
+                  class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors cursor-pointer"
+                  @click="confirmDiscardChanges"
+                >
+                  Buang & Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
     </div>
   </VueFinalModal>
 </template>

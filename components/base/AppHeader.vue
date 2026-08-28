@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { useAuthStore } from "~/stores/auth";
+import { menuItems } from "~/config/navigation";
 
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
+const { isOnline } = useNetworkStatus();
 
 // ─── Dropdown & Notif state ───────────────────────────────────────────────────
 const dropdownOpen = ref(false);
@@ -109,17 +110,36 @@ const avatarColor = computed(() => {
   return AVATAR_COLORS[idx];
 });
 
-// ─── Breadcrumb ───────────────────────────────────────────────────────────────
-const ROUTE_LABELS: Record<string, string> = {
-  home: "Home",
-  dashboard: "Dashboard",
-  operasiPembangkit: "Operasi Pembangkit",
-  "operasi-pembangkit": "Operasi Pembangkit",
-  master: "Master",
-  user: "Pengguna",
-  pegawai: "Pegawai",
-  transaksi: "Transaksi",
-};
+// ─── Breadcrumb (Synced from config/navigation.ts) ───────────────────────────
+function getNavigationLabel(path: string, seg: string): string {
+  if (seg.toLowerCase() === "home") return "Home";
+
+  const cleanPath = path.replace(/\/$/, "");
+
+  for (const item of menuItems) {
+    if (item.key === seg) return item.label;
+    if (item.path && item.path.replace(/\/$/, "") === cleanPath) {
+      return item.label;
+    }
+    if (item.children) {
+      for (const child of item.children) {
+        if (child.key === seg) return child.label;
+        if (child.path && child.path.replace(/\/$/, "") === cleanPath) {
+          return child.label;
+        }
+        if (child.children) {
+          for (const leaf of child.children) {
+            if (leaf.path && leaf.path.replace(/\/$/, "") === cleanPath) {
+              return leaf.label;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return seg.charAt(0).toUpperCase() + seg.slice(1);
+}
 
 interface Crumb {
   label: string;
@@ -141,7 +161,7 @@ const breadcrumbs = computed<Crumb[]>(() => {
     );
 
     crumbs.push({
-      label: ROUTE_LABELS[seg] ?? seg.charAt(0).toUpperCase() + seg.slice(1),
+      label: getNavigationLabel(accumulated, seg),
       path: accumulated,
       isLink,
     });
@@ -153,7 +173,7 @@ const breadcrumbs = computed<Crumb[]>(() => {
 
 <template>
   <header
-    class="w-full h-14 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-30 shadow-sm"
+    class="w-full h-14 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-30 shadow-xs transition-colors duration-150"
   >
     <!-- Breadcrumb (kiri) -->
     <nav class="flex items-center gap-1 text-xs text-gray-500 select-none">
@@ -172,12 +192,21 @@ const breadcrumbs = computed<Crumb[]>(() => {
       </template>
     </nav>
 
-    <!-- Kanan: Notifikasi + Grid + Avatar -->
-    <div class="flex items-center gap-2">
+    <!-- Kanan: Offline Pill + Notifikasi + Grid + Avatar -->
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <!-- Offline Sentinel Pill -->
+      <div
+        v-if="!isOnline"
+        class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 text-xs font-semibold select-none mr-1 animate-pulse"
+      >
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        <span>Mode Offline</span>
+      </div>
+
       <!-- Notifikasi Bell -->
       <button
         id="header-btn-notification"
-        class="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        class="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
         title="Notifikasi"
         @click="toggleNotif"
       >
@@ -195,7 +224,6 @@ const breadcrumbs = computed<Crumb[]>(() => {
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
           />
         </svg>
-        <!-- Badge notif (opsional, tampilkan jika ada notif) -->
         <span
           v-if="notifCount > 0"
           class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"
@@ -205,7 +233,7 @@ const breadcrumbs = computed<Crumb[]>(() => {
       <!-- Grid / Apps -->
       <button
         id="header-btn-apps"
-        class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
         title="Aplikasi"
       >
         <svg
@@ -228,23 +256,21 @@ const breadcrumbs = computed<Crumb[]>(() => {
       <div ref="dropdownRef" class="relative">
         <button
           id="header-btn-user"
-          class="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full hover:bg-gray-100 transition-colors group"
+          class="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full hover:bg-gray-100 transition-colors group cursor-pointer"
           @click="toggleDropdown"
         >
-          <!-- Avatar circle dengan inisial 2 huruf dari username -->
+          <!-- Avatar circle -->
           <div
             class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
             :style="{ backgroundColor: avatarColor }"
           >
             {{ initials }}
           </div>
-          <!-- Username di sebelah avatar -->
           <span
             class="text-xs font-semibold text-gray-600 group-hover:text-gray-900"
           >
             {{ username }}
           </span>
-          <!-- Chevron -->
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="w-3.5 h-3.5 text-gray-400 transition-transform"

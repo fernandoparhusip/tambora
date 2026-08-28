@@ -1,13 +1,26 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { ModalsContainer } from 'vue-final-modal'
 import Toast from 'primevue/toast'
+
+const { initNetworkListeners } = useNetworkStatus()
+
+onMounted(() => {
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('dark')
+    localStorage.removeItem('tambora_theme')
+    localStorage.removeItem('nuxt-color-mode')
+  }
+  initNetworkListeners()
+})
 </script>
 
 <template>
-  <div class="text-gray-900 font-sans">
+  <div class="text-gray-900 font-sans min-h-screen">
     <Toast position="top-right" />
     <ClientOnly>
       <ModalsContainer />
+      <BaseToastContainer />
     </ClientOnly>
     <NuxtLayout>
       <NuxtPage />
@@ -39,6 +52,6 @@ body {
   height: 100vh;
   width: 100vw;
   overflow: hidden !important;
-  background-color: #ffffff !important;
+  background-color: #ffffff;
 }
 </style>

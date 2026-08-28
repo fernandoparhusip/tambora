@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, FormSectionConfig, NKODTO } from "~/types";
-import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
-import { useNKO } from "~/composables/transaksi/useNKO";
+import type { DetailDataItem } from '~/types/master.types';
 import { getNKOFormSections } from "~/schemas/transaksi/nko.schema";
-import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
 
 const { list, loading, fetchList, createBatch, updateItem, deleteItem, exportExcel } = useNKO();
 
@@ -177,7 +175,7 @@ const detailItems = computed<DetailDataItem[]>(() => {
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-gray-50/50">
     <!-- Header -->
-    <BasePageHeader title="Perhitungan NKO (Nilai Kinerja Organisasi)" />
+    <BasePageHeader />
 
     <!-- Main Card -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">

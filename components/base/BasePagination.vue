@@ -130,13 +130,13 @@ const visiblePages = computed(() => {
 
 <template>
   <div
-    class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 px-1 text-xs text-gray-500 select-none"
+    class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 text-xs text-gray-500 select-none border-t border-gray-50"
   >
-    <!-- Left: Data count info with interactive Page Size selector/input -->
-    <div class="flex items-center gap-1.5">
+    <!-- Left: Page size control & Total info -->
+    <div class="flex items-center gap-2">
       <span>Menampilkan</span>
 
-      <!-- Interactive Page Size Selector & Number Input -->
+      <!-- Custom Page Size Input + Dropdown -->
       <div ref="dropdownRef" class="relative inline-flex items-center">
         <div
           class="inline-flex items-center bg-gray-100 hover:bg-gray-200/60 border border-gray-200 rounded-md focus-within:bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all"
@@ -217,7 +217,7 @@ const visiblePages = computed(() => {
       <!-- Previous button -->
       <button
         type="button"
-        class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
+        class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer text-gray-600"
         :disabled="currentPage <= 1"
         @click="changePage(currentPage - 1)"
       >
@@ -258,7 +258,7 @@ const visiblePages = computed(() => {
       <!-- Next button -->
       <button
         type="button"
-        class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
+        class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer text-gray-600"
         :disabled="currentPage >= totalPages"
         @click="changePage(currentPage + 1)"
       >

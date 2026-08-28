@@ -59,7 +59,7 @@ const buttonConfig = computed(() => {
     :disabled="disabled"
     :title="title || buttonConfig.defaultTitle"
     :aria-label="title || buttonConfig.ariaLabel"
-    class="w-7 h-7 flex items-center justify-center rounded-lg border transition-all cursor-pointer select-none active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+    class="w-7 h-7 flex items-center justify-center rounded-lg border transition-all duration-150 transform cursor-pointer select-none active:scale-[0.90] hover:scale-[1.06] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
     :class="buttonConfig.class"
     @click="$emit('click', $event)"
   >

@@ -1,5 +1,5 @@
+import { useAuthStore } from '~/stores/auth';
 import { ref, computed } from 'vue'
-import { useAuthStore } from '~/stores/auth'
 
 export interface IdleTimerOptions {
   /** Idle duration before warning modal appears (default: 28 minutes in ms) */

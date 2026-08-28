@@ -19,8 +19,6 @@ import IconLupaPassword from "@/assets/icon/LupaPassword.svg";
 import IconKonfirmasiPassword from "@/assets/icon/KonfirmasiPassword.svg";
 
 // Composables & Stores & Utils
-import { useAuthStore } from "~/stores/auth";
-import { useAuth } from "~/composables/useAuth";
 import { getQueryValue } from "~/utils/authCrypto";
 
 // Asset variable mappings for template bindings

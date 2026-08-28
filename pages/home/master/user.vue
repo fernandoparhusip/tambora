@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { z } from "zod";
-import BaseDetailModal from "~/components/base/BaseDetailModal.vue";
-import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
+import type { DetailDataItem } from '~/types/master.types';
 import type { TableColumn, FormSectionConfig } from "~/types";
 import { getUserFormSections } from "~/schemas/master/user.schema";
-import { useUser } from "~/composables/master/useUser";
-import { useRole } from "~/composables/master/useRole";
-import { useOrganization } from "~/composables/master/useOrganization";
-import BaseConfirmDialog from "~/components/base/BaseConfirmDialog.vue";
 import { exportToExcel } from "~/utils/exportExcel";
 
 // ── Composables ──────────────────────────────────────────────
@@ -443,7 +438,7 @@ const handleSave = async () => {
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-gray-50/50">
     <!-- ── Page Title Header ───────────────────────────────── -->
-    <BasePageHeader title="Pengguna" />
+    <BasePageHeader />
 
     <!-- ── Main Card Container (Flex-1, No Page Scroll) ────────── -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">

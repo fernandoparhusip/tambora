@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { VueFinalModal } from 'vue-final-modal'
-import { useIdleTimer } from '~/composables/useIdleTimer'
 
 const {
   showWarning,
