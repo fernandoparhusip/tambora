@@ -19,7 +19,7 @@ export default (defineNuxtConfig as (config: any) => any)({
   runtimeConfig: {
     public: {
       apiBaseUrl: '/api/v1',
-      maptilerKey: process.env.NUXT_PUBLIC_MAPTILER_KEY || process.env.VITE_MAPTILER_KEY || 'vAiwKNYltLbMYEotSzTT',
+      maptilerKey: process.env.NUXT_PUBLIC_MAPTILER_KEY || 'vAiwKNYltLbMYEotSzTT',
     },
   },  
   modules: [

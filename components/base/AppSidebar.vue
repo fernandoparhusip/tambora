@@ -83,6 +83,47 @@ const menuItems: MenuItem[] = [
       },
     ],
   },
+  {
+    key: "transaksi",
+    label: "Transaksi",
+    children: [
+      {
+        key: "operasi-harian",
+        label: "Operasi Harian",
+        path: "/home/transaksi/operasi-harian",
+      },
+      {
+        key: "pemakaian-bahan-bakar",
+        label: "Pemakaian Bahan Bakar",
+        path: "/home/transaksi/pemakaian-bahan-bakar",
+      },
+      {
+        key: "pembebanan",
+        label: "Pembebanan",
+        path: "/home/transaksi/pembebanan",
+      },
+      {
+        key: "pagu",
+        label: "Pagu Anggaran",
+        path: "/home/transaksi/pagu",
+      },
+      {
+        key: "pagu-bidang",
+        label: "Pagu Bidang",
+        path: "/home/transaksi/pagu-bidang",
+      },
+      {
+        key: "prognosa",
+        label: "Prognosa Kinerja",
+        path: "/home/transaksi/prognosa",
+      },
+      {
+        key: "nko",
+        label: "Perhitungan NKO",
+        path: "/home/transaksi/nko",
+      },
+    ],
+  },
 ];
 
 // State & Router

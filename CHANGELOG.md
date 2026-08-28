@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-28
+
+### 🔒 Features & Authentication Modernization
+* **auth-logout:** Implemented global logout with `/auth/logout` API call, cookie deletion, session termination, and clean redirect to login page in `components/layout/AppHeader.vue`.
+* **auth-guard:** Updated `middleware/auth.ts` to handle expired tokens gracefully via `authStore.logout()` and trigger `checkAuthStatus()` on every route navigation.
+* **auth-store:** Refactored Vuex store with proper modular isolation, introducing explicit `token` field and `setToken` method in `store/modules/auth.ts`.
+* **idle-timeout:** Added `components/layout/IdleTimeoutWarning.vue` component polling auth status every 10 seconds to auto-logout upon server-side session expiry.
+* **test:** Added `test/auth/authGuard.test.ts` and `test/auth/authStore.test.ts` unit tests, achieving **65/65 tests passed (100% green)** across 9 test suites.
+
+### ⚡ Features & Transaksi Integration (7 Live Modules)
+* **transaksi-schemas:** Standardized dedicated form schema engine for all 7 Transaksi modules in `schemas/transaksi/` with root barrel export in `schemas/index.ts`.
+* **transaksi-operasi-harian:** Integrated `/api/v1/operasi-harian` CRUD with power parameters (DMN, DMP, Terpasang, Aktual), energy production, fuel consumption, and Excel export in `pages/home/transaksi/operasi-harian.vue`.
+* **transaksi-pemakaian-bahan-bakar:** Integrated `/api/v1/pemakaian-bahan-bakar` CRUD with fuel consumption tracking (Batubara, HSD, B30, MFO, Biomassa, Gas), stock monitoring, and Excel export in `pages/home/transaksi/pemakaian-bahan-bakar.vue`.
+* **transaksi-pembebanan:** Integrated `/api/v1/pembebanan` CRUD with active electrical load (MW), operating voltage (kV), system frequency status badge (Hz), and power factor in `pages/home/transaksi/pembebanan.vue`.
+* **transaksi-pagu:** Integrated `/api/v1/pagu` CRUD with Pagu AO & AKO, AI & AKI, POS 54, multi-level revision workflow (`/revise`), and native Excel export (`/export`) in `pages/home/transaksi/pagu.vue`.
+* **transaksi-pagu-bidang:** Integrated `/api/v1/pagu-bidang` CRUD with parent Pagu Unit linkage, multi-bidang allocation (Ophar, Adum, K3L), percentage validation, and Excel export in `pages/home/transaksi/pagu-bidang.vue`.
+* **transaksi-prognosa:** Integrated `/api/v1/prognosa` CRUD with machine readiness parameters (DMN, DMP, PH, SH, RSH, POH, MOH, FOH, AH, OMC) for PLTU & Non-PLTU and native Excel export in `pages/home/transaksi/prognosa.vue`.
+* **transaksi-nko:** Integrated `/api/v1/nko` CRUD with batch KPI entry, polarity status, monthly targets vs actual realization, and native Excel export in `pages/home/transaksi/nko.vue`.
+* **sidebar:** Restructured Master menu order (Option 1) and added `Transaksi` navigation dropdown menu with all 7 submenus in `components/base/AppSidebar.vue`.
+* **map:** Resolved MapTiler API Key integration (`VITE_MAPTILER_KEY` / `NUXT_PUBLIC_MAPTILER_KEY`) and configured clean Positron tile layer in `components/base/BaseMap.vue`.
+* **animations:** Added realistic typewriter text animation for greeting on `/home` and description on `/login` with clean static state after finish.
+* **types:** Added comprehensive DTOs and payloads for all 7 transaction modules in `types/transaksi.types.ts`.
+
 ---
 
 ## [0.4.0] - 2026-08-27

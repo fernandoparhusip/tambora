@@ -2,6 +2,9 @@ import { useToast } from 'primevue/usetoast'
 import { parseApiError } from '~/utils/apiError'
 import { useAuthStore } from '~/stores/auth'
 
+// Shared mutex lock for concurrent 401 refresh requests
+let refreshPromise: Promise<boolean> | null = null
+
 export const useApi = () => {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
@@ -20,42 +23,33 @@ export const useApi = () => {
 
       if (token) {
         options.headers = new Headers(options.headers)
-
-        options.headers.set(
-          'Authorization',
-          `Bearer ${token}`
-        )
+        options.headers.set('Authorization', `Bearer ${token}`)
       }
     },
 
     async onResponseError(context) {
       const errorResult = parseApiError(context)
+      const requestUrl = context.request.toString()
       const isAuthEndpoint =
-        context.request.toString().includes('/auth/login') ||
-        context.request.toString().includes('/auth/refresh') ||
-        context.request.toString().includes('/auth/logout')
+        requestUrl.includes('/auth/login') ||
+        requestUrl.includes('/auth/refresh') ||
+        requestUrl.includes('/auth/logout')
 
+      // Handle 401 Unauthorized with Single-Flight Refresh Mutex
       if (context.response?.status === 401 && !isAuthEndpoint) {
         if (authStore.refreshToken) {
           try {
-            const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
-            const refreshRes = await $fetch<{
-              data?: {
-                access_token: string
-                refresh_token?: string
-              }
-            }>(`${baseUrl}/auth/refresh`, {
-              method: 'POST',
-              body: {
-                refresh_token: authStore.refreshToken
-              }
-            })
+            if (!refreshPromise) {
+              refreshPromise = authStore.refreshSession().finally(() => {
+                refreshPromise = null
+              })
+            }
 
-            const newToken = refreshRes?.data?.access_token
-            const newRefreshToken = refreshRes?.data?.refresh_token
-            if (newToken) {
-              authStore.setTokens(newToken, newRefreshToken)
+            const isRefreshed = await refreshPromise
+            if (isRefreshed) {
               return
+            } else {
+              await authStore.logout()
             }
           } catch {
             await authStore.logout()

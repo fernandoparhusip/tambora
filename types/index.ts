@@ -8,3 +8,4 @@ export * from "./table.types";
 export * from "./auth.types";
 export * from "./operasi.types";
 export * from "./master.types";
+export * from "./transaksi.types";

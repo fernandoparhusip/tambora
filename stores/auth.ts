@@ -23,15 +23,18 @@ export interface AuthSession {
   refreshToken?: string
 }
 
+const AUTH_CHANNEL_NAME = 'tambora_auth_channel'
+
 export const useAuthStore = defineStore('auth', () => {
+  // 24 Hours Session Cookie (Standard 1 Shift Enterprise)
   const authCookie = useCookie<AuthSession | null>('auth-session', {
-    maxAge: 60 * 60 * 24 * 7 // 7 days
+    maxAge: 60 * 60 * 24
   })
   const accessTokenCookie = useCookie<string | null>('access_token', {
     maxAge: 60 * 60 * 24
   })
   const refreshTokenCookie = useCookie<string | null>('refresh_token', {
-    maxAge: 60 * 60 * 24 * 7
+    maxAge: 60 * 60 * 24
   })
 
   const isLoggedIn = ref(authCookie.value?.isLoggedIn ?? !!accessTokenCookie.value)
@@ -41,6 +44,22 @@ export const useAuthStore = defineStore('auth', () => {
   const errorMessage = ref('')
   const message = ref('')
   const isError = ref(false)
+
+  // Cross-Tab BroadcastChannel setup
+  let authChannel: BroadcastChannel | null = null
+  if (import.meta.client && typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    authChannel = new BroadcastChannel(AUTH_CHANNEL_NAME)
+    authChannel.onmessage = (event) => {
+      if (event.data?.type === 'LOGOUT') {
+        clearLocalState(false)
+        navigateTo('/login')
+      } else if (event.data?.type === 'SESSION_UPDATE' && event.data?.session) {
+        token.value = event.data.session.token
+        user.value = event.data.session.user
+        isLoggedIn.value = true
+      }
+    }
+  }
 
   const setSession = (
     sessionUser: UserSession,
@@ -72,6 +91,16 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('refresh_token', sessionRefreshToken)
       }
       localStorage.setItem('user', JSON.stringify(sessionUser))
+
+      // Broadcast session update to other tabs
+      try {
+        authChannel?.postMessage({
+          type: 'SESSION_UPDATE',
+          session: { token: sessionToken, user: sessionUser }
+        })
+      } catch {
+        // Ignore channel errors
+      }
     }
   }
 
@@ -140,6 +169,33 @@ export const useAuthStore = defineStore('auth', () => {
     return null
   }
 
+  const refreshSession = async (): Promise<boolean> => {
+    if (!refreshToken.value) return false
+    try {
+      const config = useRuntimeConfig()
+      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+      const res = await $fetch<{
+        data?: {
+          access_token: string
+          refresh_token?: string
+        }
+      }>(`${baseUrl}/auth/refresh`, {
+        method: 'POST',
+        body: { refresh_token: refreshToken.value }
+      })
+
+      const newAccess = res?.data?.access_token
+      const newRefresh = res?.data?.refresh_token
+      if (newAccess) {
+        setTokens(newAccess, newRefresh)
+        return true
+      }
+    } catch {
+      // Refresh failed
+    }
+    return false
+  }
+
   const setError = (errorState: boolean) => {
     isError.value = errorState
   }
@@ -148,7 +204,31 @@ export const useAuthStore = defineStore('auth', () => {
     message.value = msg
   }
 
-  const logout = async () => {
+  const clearLocalState = (notifyBroadcast: boolean = true) => {
+    isLoggedIn.value = false
+    user.value = null
+    token.value = null
+    refreshToken.value = null
+    authCookie.value = null
+    accessTokenCookie.value = null
+    refreshTokenCookie.value = null
+
+    if (import.meta.client) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user')
+
+      if (notifyBroadcast) {
+        try {
+          authChannel?.postMessage({ type: 'LOGOUT' })
+        } catch {
+          // Ignore channel errors
+        }
+      }
+    }
+  }
+
+  const logout = async (redirectPath?: string) => {
     try {
       const config = useRuntimeConfig()
       const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
@@ -164,21 +244,10 @@ export const useAuthStore = defineStore('auth', () => {
       // Ignore backend logout network error
     }
 
-    isLoggedIn.value = false
-    user.value = null
-    token.value = null
-    refreshToken.value = null
-    authCookie.value = null
-    accessTokenCookie.value = null
-    refreshTokenCookie.value = null
+    clearLocalState(true)
 
-    if (import.meta.client) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('refresh_token')
-      localStorage.removeItem('user')
-    }
-
-    navigateTo('/login')
+    const target = redirectPath ? `/login?redirect=${encodeURIComponent(redirectPath)}` : '/login'
+    navigateTo(target)
   }
 
   return {
@@ -193,8 +262,10 @@ export const useAuthStore = defineStore('auth', () => {
     setTokens,
     setUser,
     fetchUserMe,
+    refreshSession,
     setError,
     setMessage,
+    clearLocalState,
     logout
   }
 })

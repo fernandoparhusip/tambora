@@ -250,7 +250,8 @@ async function performLogin() {
       email: email.value,
       password: password.value,
     });
-    await navigateTo("/home");
+    const redirectTarget = (route.query.redirect as string) || "/home";
+    await navigateTo(redirectTarget);
   } catch (err: any) {
     errorMessage.value = err?.message || "Email atau password yang dimasukkan salah.";
     nextTick(() => triggerForgotPasswordGuide());
