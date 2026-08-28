@@ -35,41 +35,25 @@ export interface SystemSummary {
 }
 ```
 
-### 1.3. Master User & Role
-```typescript
-export interface User {
-  id: string;
-  nama: string;
-  role: string;
-  level: string;
-  uiw: string;
-  status: 'Pegawai' | 'Pengemudi';
-}
-```
+### 1.3. Master Entities (`types/master.types.ts`)
+* `UserDTO`: Manajemen akun, NIP, PRNR, Organisasi, dan Status.
+* `DriverDTO`: Master pengemudi operasional PLN.
+* `OrganizationDTO`: Struktur hierarki unit/induk/wilayah (*parent-child*).
+* `SystemDTO`: Master sistem ketenagalistrikan.
+* `RoleDTO` & `ScopeDTO`: Akses kontrol & perijinan hak akses.
+* `AssetDTO` & `MachineConditionDTO`: Inventaris mesin pembangkit dan status kesiapan.
 
-### 1.4. Transaksi & Keuntungan
-```typescript
-export interface Transaksi {
-  id: string;
-  tanggal: string;
-  nama: string;
-  jumlah: number;
-  kategori: string;
-  status: 'Pending' | 'Selesai' | 'Batal';
-}
+### 1.4. Transaksi Entities (`types/transaksi.types.ts`)
+Kontrak DTO live untuk seluruh 7 modul transaksi pembangkitan:
+* **Operasi Harian (`OperasiHarianDTO`)**: Daya terpasang, DMN, DMP, Aktual, Produksi (kWh), dan Konsumsi Bahan Bakar.
+* **Pemakaian BBM (`PemakaianBahanBakarDTO`)**: Konsumsi batubara, HSD, B30, MFO, Biomassa, Gas dan sisa stok.
+* **Pembebanan Generator (`PembebananDTO`)**: Beban aktif (MW), tegangan (kV), frekuensi (Hz), dan faktor daya.
+* **Pagu Anggaran (`PaguDTO`)**: Pagu AO & AKO, AI & AKI, POS 54, dan alur revisi (`/revise`).
+* **Pagu Bidang (`PaguBidangDTO`)**: Alokasi anggaran bidang Ophar, Adum, K3L per unit pembangkit.
+* **Prognosa Kinerja (`PrognosaDTO`)**: Parameter kesiapan mesin PLTU/Non-PLTU (DMN, DMP, PH, SH, RSH, POH, MOH, FOH, AH, OMC).
+* **Perhitungan NKO (`NKODTO`)**: Realisasi KPI bulanan vs target dan skor polaritas.
 
-export interface Keuntungan {
-  id: string;
-  periode: string;
-  wilayah: string;
-  pendapatan: number;
-  beban: number;
-  keuntungan: number;
-  growth: number;
-}
-```
-
-### 1.5. Autentikasi & User Session (`UserSession` & `AuthResponse`)
+### 1.5. Autentikasi & User Session (`types/auth.types.ts`)
 ```typescript
 export interface UserSession {
   id?: string;
@@ -79,20 +63,17 @@ export interface UserSession {
   role?: string;          // e.g. "Admin"
   email?: string;
   level_id?: string;
-  organization?: string;  // e.g. "PLN Pusat"
+  organization?: string;  // e.g. "PLN Tambora"
   nip?: string;
   prnr?: string;
   status?: number | string;
 }
 
-export interface AuthResponse {
-  message?: string;
-  data?: {
-    access_token?: string;
-    refresh_token?: string;
-    token_type?: string;
-    user?: UserSession;
-  };
+export interface AuthSession {
+  isLoggedIn: boolean;
+  user: UserSession | null;
+  token?: string;
+  refreshToken?: string;
 }
 ```
 
@@ -108,10 +89,11 @@ export interface TableColumn {
   label: string;
   sortable?: boolean;
   type?: 'text' | 'currency' | 'number' | 'date' | 'percent' | 'custom';
+  locked?: boolean; // Kolom wajib yang tidak bisa disembunyikan
 }
 ```
 
-### 2.2. Form Field (`FormFieldConfig`)
+### 2.2. Dynamic Form Engine (`FormSectionConfig` & `FormFieldConfig`)
 Konfigurasi deklaratif untuk `BaseFormModal.vue` & `FormFieldRenderer.vue`:
 ```typescript
 export interface FormFieldConfig {
@@ -132,12 +114,24 @@ export interface FormFieldConfig {
     | 'switch';
   placeholder?: string;
   options?: { label: string; value: any }[];
-  colSpan?: number; // 1 s/d 12
+  colSpan?: number; // 1 s/d 12 (Grid 12-Column System)
   required?: boolean;
-  disabled?: boolean;
+  disabled?: boolean | ((formData: Record<string, any>) => boolean);
+  hidden?: (formData: Record<string, any>) => boolean;
   maxLength?: number;
   rows?: number;
   helpText?: string;
   prefix?: string;
 }
+
+export interface FormSectionConfig {
+  title?: string;
+  description?: string;
+  fields: FormFieldConfig[];
+}
 ```
+
+### 2.3. Form Schema Registry
+* **Master Schemas:** `schemas/master/*.schema.ts` (User, Driver, Organization, System, Role, Scope, Machine Condition, Asset).
+* **Transaksi Schemas:** `schemas/transaksi/*.schema.ts` (Operasi Harian, BBM, Pembebanan, Pagu, Pagu Bidang, Prognosa, NKO).
+* **Central Barrel Export:** `schemas/index.ts`.

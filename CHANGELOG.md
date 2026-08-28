@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.0] - 2026-08-28
 
 ### 🔒 Features & Authentication Modernization
-* **auth-logout:** Implemented global logout with `/auth/logout` API call, cookie deletion, session termination, and clean redirect to login page in `components/layout/AppHeader.vue`.
-* **auth-guard:** Updated `middleware/auth.ts` to handle expired tokens gracefully via `authStore.logout()` and trigger `checkAuthStatus()` on every route navigation.
-* **auth-store:** Refactored Vuex store with proper modular isolation, introducing explicit `token` field and `setToken` method in `store/modules/auth.ts`.
-* **idle-timeout:** Added `components/layout/IdleTimeoutWarning.vue` component polling auth status every 10 seconds to auto-logout upon server-side session expiry.
-* **test:** Added `test/auth/authGuard.test.ts` and `test/auth/authStore.test.ts` unit tests, achieving **65/65 tests passed (100% green)** across 9 test suites.
+* **auth-store:** Refactored Pinia store with 24h work-shift cookie lifecycle, `refreshSession()`, single-flight mutex on 401, and `BroadcastChannel('tambora_auth_channel')` cross-tab sync in `stores/auth.ts`.
+* **auth-guard:** Updated `middleware/auth.global.ts` with preserve `redirect` query parameter support and automatic redirection to intended route upon login.
+* **idle-timeout:** Added `components/base/BaseIdleWarningModal.vue` and `composables/useIdleTimer.ts` providing 28-minute inactivity detection with a 2-minute grace countdown modal.
+* **api-interceptor:** Upgraded `composables/useApi.ts` with single-flight mutex refresh queue to prevent race conditions during concurrent 401 responses.
+* **tests:** Added `test/composables/idleTimer.test.ts` and `test/composables/transaksi.test.ts` unit tests, achieving **60/60 tests passed (100% green)** across 10 test suites.
 
 ### ⚡ Features & Transaksi Integration (7 Live Modules)
 * **transaksi-schemas:** Standardized dedicated form schema engine for all 7 Transaksi modules in `schemas/transaksi/` with root barrel export in `schemas/index.ts`.
