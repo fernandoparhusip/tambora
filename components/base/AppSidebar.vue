@@ -6,6 +6,26 @@ import { menuItems, type MenuItem, type SubMenuItem } from '~/config/navigation'
 import LogoFullPLN from '@/assets/logo/LogoFullPLN.svg'
 import LogoTamboraSidebar from '@/assets/logo/LogoTamboraSidebar.svg'
 
+// Menu Icons Auto-Loader (Vite glob)
+const menuIcons = import.meta.glob('@/assets/icon/menu/*.svg', { eager: true, import: 'default' }) as Record<string, string>
+
+const getMenuIcon = (key: string): string => {
+  const iconNameMap: Record<string, string> = {
+    dashboard: 'DashboardIcon',
+    master: 'MasterIcon',
+    transaksi: 'TransaksiIcon',
+  }
+  const targetName = iconNameMap[key]
+  if (!targetName) return ''
+
+  for (const [filePath, iconSrc] of Object.entries(menuIcons)) {
+    if (filePath.includes(targetName)) {
+      return iconSrc
+    }
+  }
+  return ''
+}
+
 // State & Router
 const route = useRoute()
 const isExpanded = ref(false)
@@ -143,12 +163,12 @@ const handleMouseLeave = () => {
     </div>
 
     <!-- ── Navigation Items ───────────────────────────────────── -->
-    <nav class="flex-1 py-4 px-3.5 overflow-y-auto overflow-x-hidden space-y-2 custom-scrollbar">
+    <nav class="flex-1 py-3 px-3.5 overflow-y-auto overflow-x-hidden space-y-2 custom-scrollbar">
       <div v-for="item in menuItems" :key="item.key" class="relative">
         <!-- Level 1 Parent Button -->
         <div class="relative">
           <button
-            class="group relative w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-colors duration-200 overflow-hidden cursor-pointer"
+            class="group relative w-full flex items-center gap-3.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors duration-200 overflow-hidden cursor-pointer"
             :class="[
               isGroupActive(item)
                 ? 'bg-[#E9F1FB] text-[#2671D9] font-semibold shadow-xs'
@@ -162,61 +182,13 @@ const handleMouseLeave = () => {
               :class="isGroupActive(item) ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'"
             />
             <!-- Icon -->
-            <span class="shrink-0 w-6 h-6 flex items-center justify-center">
-              <svg
-                v-if="item.key === 'dashboard'"
-                xmlns="http://www.w3.org/2000/svg"
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+            <span class="shrink-0 w-7 h-7 flex items-center justify-center">
+              <img
+                :src="getMenuIcon(item.key)"
+                :alt="item.label"
+                class="object-contain transition-all duration-200"
+                :class="isGroupActive(item) ? 'opacity-100 scale-105' : 'opacity-70 group-hover:opacity-100 group-hover:scale-105'"
               >
-                <rect width="20" height="14" x="2" y="3" rx="2" />
-                <line x1="8" x2="16" y1="21" y2="21" />
-                <line x1="12" x2="12" y1="17" y2="21" />
-                <path d="M7 13v-3" />
-                <path d="M12 13v-5" />
-                <path d="M17 13v-7" />
-              </svg>
-
-              <svg
-                v-else-if="item.key === 'master'"
-                xmlns="http://www.w3.org/2000/svg"
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <rect width="20" height="14" x="2" y="3" rx="2" />
-                <line x1="8" x2="16" y1="21" y2="21" />
-                <line x1="12" x2="12" y1="17" y2="21" />
-                <path d="M6 8h4l1.5 2H18v5H6z" />
-              </svg>
-
-              <svg
-                v-else-if="item.key === 'transaksi'"
-                xmlns="http://www.w3.org/2000/svg"
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-3" />
-                <path d="M17 9H7l3-3" />
-                <path d="M7 15h10l-3 3" />
-              </svg>
             </span>
 
             <!-- Label (Expanded only) -->
@@ -269,7 +241,7 @@ const handleMouseLeave = () => {
               <!-- If Level 2 has children (Level 3 Nested Accordion) -->
               <template v-if="subItem.children">
                 <button
-                  class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[12px] font-medium transition-all duration-150 whitespace-nowrap cursor-pointer"
+                  class="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-150 whitespace-nowrap cursor-pointer"
                   :class="
                     isSubGroupActive(subItem)
                       ? 'bg-[#E9F1FB] text-[#2671D9] font-semibold'
@@ -309,7 +281,7 @@ const handleMouseLeave = () => {
                       <NuxtLink
                         :to="leaf.path"
                         prefetch
-                        class="relative flex items-center px-3.5 py-2.5 rounded-xl text-[13px] transition-all duration-150 whitespace-nowrap overflow-hidden"
+                        class="relative flex items-center px-3.5 py-2.5 rounded-lg text-[13px] transition-all duration-150 whitespace-nowrap overflow-hidden"
                         :class="
                           isChildActive(leaf.path)
                             ? 'bg-[#E9F1FB] text-[#2671D9] font-semibold'
@@ -328,7 +300,7 @@ const handleMouseLeave = () => {
                 <NuxtLink
                   :to="subItem.path || '/home'"
                   prefetch
-                  class="relative flex items-center px-4 py-2.5 rounded-xl text-[12px] font-lato transition-all duration-150 whitespace-nowrap overflow-hidden"
+                  class="relative flex items-center px-4 py-2.5 rounded-lg text-[12px] font-lato transition-all duration-150 whitespace-nowrap overflow-hidden"
                   :class="
                     isChildActive(subItem.path || '')
                       ? 'bg-[#E9F1FB] text-[#2671D9] font-semibold'

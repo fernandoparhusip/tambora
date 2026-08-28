@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **tests:** Added `test/composables/network.test.ts` achieving **64/64 tests passed (100% green)** across 12 test suites.
 
 ### 🎨 Modern UI/UX & GSAP Animation Suite
+* **sidebar-icons:** Dynamic SVG menu icon auto-loader using `import.meta.glob('@/assets/icon/menu/*.svg')` in `AppSidebar.vue`.
+* **table-separator:** Added distinct bottom border separators (`border-b border-gray-100`) between `tbody` data rows in `BaseTable.vue` for crisp row readability.
+* **license-compliance:** Standardized on PrimeVue `4.5.5` (Pure MIT License) and `@primeuix/themes` `1.2.3` for 100% enterprise & PLN legal compliance, permanently purging all license warnings.
 * **page-transitions:** Added GPU-accelerated page and layout transitions in `nuxt.config.ts` and `assets/css/primevue-overrides.css` with `cubic-bezier(0.16, 1, 0.3, 1)` easing.
 * **table-stagger:** Integrated GSAP `gsap.fromTo()` stagger animation on `BaseTable.vue` data rows with automatic `clearProps: 'transform,opacity'` to maintain sticky column integrity.
 * **skeleton-loader:** Added 5-row Shimmer Skeleton table loader with dynamic column widths in `BaseTable.vue`, replacing standard circular spinners.

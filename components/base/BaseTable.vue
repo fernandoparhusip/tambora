@@ -292,16 +292,23 @@ onBeforeUnmount(() => {
 
     <!-- Table Wrapper: Scrollable flex-1 -->
     <div
-      class="flex-1 overflow-auto rounded-xl border border-gray-100 bg-white"
+      class="flex-1 overflow-auto rounded-xl border border-gray-100 bg-white flex flex-col min-h-0"
     >
-      <table class="w-full text-left border-collapse min-w-[800px]">
+      <table
+        class="w-full text-left border-collapse"
+        :class="[
+          rows.length > 0 || loading
+            ? 'min-w-[800px]'
+            : 'min-w-full h-full flex-1',
+        ]"
+      >
         <!-- Table Header -->
-        <thead class="sticky top-0 bg-white border-b border-gray-100 z-20">
+        <thead class="sticky top-0 bg-white border-b border-gray-100 z-20 shrink-0">
           <tr>
             <th
               v-for="col in visibleColumns"
               :key="col.key"
-              class="py-3 px-4 text-[11px] font-bold uppercase tracking-wider text-gray-400 select-none whitespace-nowrap"
+              class="py-3.5 px-4 text-[13px] font-semibold text-[#486284] select-none whitespace-nowrap"
               :class="[
                 col.align === 'right'
                   ? 'text-right'
@@ -322,7 +329,11 @@ onBeforeUnmount(() => {
         </thead>
 
         <!-- Table Body -->
-        <tbody ref="tbodyRef" class="divide-y divide-gray-50">
+        <tbody
+          ref="tbodyRef"
+          class="divide-y divide-gray-100/90"
+          :class="{ 'h-full': rows.length === 0 }"
+        >
           <!-- Shimmer Skeleton Loading State (5 animated skeleton rows) -->
           <template v-if="loading">
             <tr
@@ -345,13 +356,35 @@ onBeforeUnmount(() => {
             </tr>
           </template>
 
-          <!-- Empty State -->
-          <tr v-else-if="rows.length === 0">
+          <!-- Empty State (Illustrated & Vertically/Horizontally Centered without overflow scroll) -->
+          <tr v-else-if="rows.length === 0" class="h-full">
             <td
               :colspan="visibleColumns.length"
-              class="py-12 text-center text-gray-400 text-xs"
+              class="h-full text-center align-middle select-none p-4"
             >
-              Tidak ada data tersedia.
+              <div class="w-full h-full flex flex-col items-center justify-center gap-1.5 py-4">
+                <!-- Database Cylinders Icon -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-10 h-10 text-gray-400/80 mb-1 stroke-[1.6]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <ellipse cx="12" cy="5" rx="9" ry="3" />
+                  <path d="M3 5V19A9 3 0 0 0 21 19V5" />
+                  <path d="M3 12A9 3 0 0 0 21 12" />
+                </svg>
+
+                <h4 class="text-sm font-semibold text-[#2C3E50]">
+                  Tidak ada data
+                </h4>
+                <p class="text-xs text-gray-400 font-normal">
+                  Maaf, Data Anda belum tersedia
+                </p>
+              </div>
             </td>
           </tr>
 
@@ -360,7 +393,7 @@ onBeforeUnmount(() => {
             v-for="(row, idx) in rows"
             v-else
             :key="row.id || idx"
-            class="table-data-row hover:bg-[#F6FAFD] transition-colors group"
+            class="table-data-row border-b border-gray-100 hover:bg-[#F6FAFD] transition-colors group"
           >
             <td
               v-for="col in visibleColumns"
