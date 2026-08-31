@@ -256,4 +256,16 @@ button[data-p-selected="true"] {
   transform: translateY(-4px);
 }
 
+/* ── Remove Native Browser Number Input Spinners (Chrome, Safari, Edge, Opera, Firefox) ── */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
 

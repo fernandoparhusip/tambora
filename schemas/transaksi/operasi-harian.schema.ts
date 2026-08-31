@@ -26,8 +26,8 @@ export const getOperasiHarianFormSections = (
         {
           key: "jam",
           label: "Jam Pencatatan",
-          type: "text",
-          placeholder: "Contoh: 08:00",
+          type: "time",
+          placeholder: "08:00",
           required: true,
           colSpan: 6
         },

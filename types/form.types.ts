@@ -5,6 +5,7 @@ export interface FormFieldConfig {
     | 'text'
     | 'number'
     | 'date'
+    | 'time'
     | 'select'
     | 'searchable-select'
     | 'multi-select'

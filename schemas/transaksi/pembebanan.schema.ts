@@ -26,8 +26,8 @@ export const getPembebananFormSections = (
         {
           key: "jam",
           label: "Jam Pengukuran",
-          type: "text",
-          placeholder: "Contoh: 10:00",
+          type: "time",
+          placeholder: "10:00",
           required: true,
           colSpan: 6
         },

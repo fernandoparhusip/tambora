@@ -5,9 +5,20 @@ import type { FormFieldConfig } from "~/types";
 interface Props {
   field: FormFieldConfig;
   error?: string;
+  formData?: Record<string, any>;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  error: "",
+  formData: () => ({}),
+});
+
+const isDisabled = computed<boolean>(() => {
+  if (typeof props.field.disabled === "function") {
+    return props.field.disabled(props.formData || {});
+  }
+  return !!props.field.disabled;
+});
 
 // Vue 3.4 two-way model binding
 const value = defineModel<any>();
@@ -183,6 +194,31 @@ const onDateSelect = (
   const d = String(date.getDate()).padStart(2, "0");
   value.value = `${y}-${m}-${d}`;
 };
+
+// PrimeVue TimePicker (DatePicker time-only) converters
+const timeValue = computed<Date | null>(() => {
+  if (!value.value) return null;
+  if (value.value instanceof Date) return value.value;
+  const parts = String(value.value).split(":");
+  if (parts.length >= 2 && parts[0] !== undefined && parts[1] !== undefined) {
+    const d = new Date();
+    d.setHours(parseInt(parts[0], 10) || 0, parseInt(parts[1], 10) || 0, 0, 0);
+    return d;
+  }
+  return null;
+});
+
+const onTimeSelect = (
+  date: Date | Date[] | (Date | null)[] | null | undefined,
+) => {
+  if (!date || Array.isArray(date)) {
+    value.value = "";
+    return;
+  }
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  value.value = `${hours}:${minutes}`;
+};
 </script>
 
 <template>
@@ -283,7 +319,7 @@ const onDateSelect = (
         :id="field.key"
         type="button"
         :disabled="isDisabled"
-        class="w-full h-10 pl-3.5 pr-8 text-xs rounded-lg transition-all text-left flex items-center justify-between shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="w-full h-10 pl-3.5 pr-9 text-xs rounded-lg transition-all text-left flex items-center shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500 relative"
         :class="[
           isDisabled
             ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
@@ -299,11 +335,13 @@ const onDateSelect = (
         <span class="truncate">{{
           multiSelectDisplayLabel || field.placeholder || "Select..."
         }}</span>
-        <div class="pointer-events-none text-[#2563EB] shrink-0 ml-2">
+        <div
+          class="pointer-events-none text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="w-4 h-4 stroke-[2.5] transition-transform duration-200"
-            :class="{ 'rotate-180': isOpen }"
+            class="w-4 h-4 stroke-2 transition-transform duration-200"
+            :class="{ 'rotate-180 text-blue-600': isOpen }"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -395,9 +433,9 @@ const onDateSelect = (
       </ClientOnly>
     </div>
 
-    <!-- Searchable Select Field -->
+    <!-- Custom Select & Searchable Select Field -->
     <div
-      v-else-if="field.type === 'searchable-select'"
+      v-else-if="field.type === 'searchable-select' || field.type === 'select'"
       ref="triggerRef"
       class="relative"
     >
@@ -406,7 +444,7 @@ const onDateSelect = (
         :id="field.key"
         type="button"
         :disabled="isDisabled"
-        class="w-full h-10 pl-3.5 pr-8 text-xs rounded-lg transition-all text-left flex items-center justify-between shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="w-full h-10 pl-3.5 pr-9 text-xs rounded-lg transition-all text-left flex items-center shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500 relative"
         :class="[
           isDisabled
             ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
@@ -421,11 +459,13 @@ const onDateSelect = (
         <span class="truncate">{{
           selectedOptionLabel || field.placeholder || "Pilih..."
         }}</span>
-        <div class="pointer-events-none text-[#2563EB] shrink-0 ml-2">
+        <div
+          class="pointer-events-none text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="w-4 h-4 stroke-[2.5] transition-transform duration-200"
-            :class="{ 'rotate-180': isOpen }"
+            class="w-4 h-4 stroke-2 transition-transform duration-200"
+            :class="{ 'rotate-180 text-blue-600': isOpen }"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -443,14 +483,17 @@ const onDateSelect = (
       <ClientOnly>
         <Teleport :to="teleportTarget">
           <div
-            v-if="isOpen && field.type === 'searchable-select'"
+            v-if="
+              isOpen &&
+              (field.type === 'searchable-select' || field.type === 'select')
+            "
             ref="popupRef"
             class="fixed z-[99999] bg-white rounded-lg shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col max-h-48"
             :style="popupStyle"
             @click.stop
             @mousedown.stop
           >
-            <!-- Search Input -->
+            <!-- Search Input (Present on all dropdowns) -->
             <div
               class="p-2 border-b border-gray-100 flex items-center relative bg-white sticky top-0 z-10"
               @click.stop
@@ -509,55 +552,6 @@ const onDateSelect = (
       </ClientOnly>
     </div>
 
-    <!-- Standard Select Field -->
-    <div v-else-if="field.type === 'select'" class="relative flex items-center">
-      <select
-        :id="field.key"
-        v-model="value"
-        :disabled="isDisabled"
-        class="w-full h-10 pl-3.5 pr-8 text-xs rounded-lg transition-all appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-        :class="[
-          isDisabled
-            ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
-            : 'bg-white text-gray-700 border border-gray-200/80 shadow-2xs focus:border-blue-500 cursor-pointer',
-          !value && !isDisabled ? 'text-gray-400' : '',
-          error ? 'border-red-500 focus:ring-red-500' : '',
-        ]"
-      >
-        <option value="" disabled selected hidden>
-          {{ field.placeholder || "Pilih..." }}
-        </option>
-        <option
-          v-for="opt in field.options || []"
-          :key="opt.value"
-          :value="opt.value"
-          class="text-gray-700 bg-white py-1"
-        >
-          {{ opt.label }}
-        </option>
-      </select>
-
-      <!-- Chevron Icon -->
-      <div
-        v-if="!isDisabled"
-        class="absolute right-2.5 pointer-events-none text-[#2563EB]"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-4 h-4 stroke-[2.5]"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </div>
-    </div>
-
     <!-- Date Field — PrimeVue DatePicker -->
     <div
       v-else-if="field.type === 'date'"
@@ -574,6 +568,25 @@ const onDateSelect = (
         :show-button-bar="true"
         fluid
         @update:model-value="onDateSelect"
+      />
+    </div>
+
+    <!-- Time Field — PrimeVue TimePicker (DatePicker time-only) -->
+    <div
+      v-else-if="field.type === 'time'"
+      class="pv-datepicker-wrap w-full"
+      :class="{ 'is-error': error, 'is-disabled': isDisabled }"
+    >
+      <DatePicker
+        :id="field.key"
+        :model-value="timeValue"
+        :placeholder="field.placeholder || '00:00'"
+        :disabled="isDisabled"
+        time-only
+        hour-format="24"
+        show-icon
+        fluid
+        @update:model-value="onTimeSelect"
       />
     </div>
 
@@ -685,7 +698,7 @@ const onDateSelect = (
 .pv-datepicker-wrap :deep(.p-datepicker-input) {
   width: 100%;
   height: 2.5rem;
-  padding: 0 2.75rem 0 0.875rem;
+  padding: 0 2.25rem 0 0.875rem;
   font-size: 0.75rem;
   border-radius: 0.5rem;
   background-color: #ffffff;
@@ -722,23 +735,28 @@ const onDateSelect = (
   cursor: not-allowed;
 }
 
-/* Calendar icon button */
+/* Calendar / Clock icon button */
 .pv-datepicker-wrap :deep(.p-datepicker-dropdown) {
   background: transparent !important;
   border: none !important;
-  color: #2563eb;
+  color: #9ca3af;
   position: absolute;
-  right: 0.625rem;
+  right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   padding: 0;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
 }
 
-.pv-datepicker-wrap :deep(.p-datepicker-dropdown:hover) {
+.pv-datepicker-wrap :deep(.p-datepicker-dropdown:hover),
+.pv-datepicker-wrap:focus-within :deep(.p-datepicker-dropdown) {
   background: transparent !important;
-  color: #1d4ed8;
+  color: #2563eb;
 }
 
 /* ── Override native radio button color (hitam → biru) ─────── */

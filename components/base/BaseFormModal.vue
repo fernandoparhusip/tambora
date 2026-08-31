@@ -334,6 +334,7 @@ const handleSubmit = () => {
                   v-model="formData[field.key]"
                   :field="field"
                   :error="errors?.[field.key]"
+                  :form-data="formData"
                 />
               </div>
             </div>

@@ -2,7 +2,7 @@ import { defineNuxtConfig } from "nuxt/config";
 import { useNuxt } from "@nuxt/kit";
 import Aura from "@primeuix/themes/aura";
 
-const apiBackend = process.env.NUXT_BACKEND_URL;
+const apiBackend = process.env.NUXT_BACKEND_URL || 'http://88.222.242.143:9090';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default (defineNuxtConfig as (config: any) => any)({
@@ -18,6 +18,7 @@ export default (defineNuxtConfig as (config: any) => any)({
     },
   },
   runtimeConfig: {
+    backendUrl: process.env.NUXT_BACKEND_URL || 'http://88.222.242.143:9090',
     public: {
       apiBaseUrl: '/api/v1',
       maptilerKey: process.env.NUXT_PUBLIC_MAPTILER_KEY || 'vAiwKNYltLbMYEotSzTT',
