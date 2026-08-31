@@ -1,5 +1,6 @@
 import { useAuthStore } from '~/stores/auth';
 import { parseApiError } from '~/utils/apiError'
+import { getDeviceMetaHeaders } from '~/utils/deviceMeta'
 import { ref } from 'vue'
 
 export interface LoginPayload {
@@ -59,6 +60,9 @@ export const useAuth = () => {
         `${baseUrl}/auth/login`,
         {
           method: 'POST',
+          headers: {
+            ...getDeviceMetaHeaders(),
+          },
           body: {
             email: payload.email,
             username: payload.email,

@@ -1,7 +1,9 @@
 <div align="center">
 
 # ⚡ TAMBORA WEB APPLICATION
-### *Sistem Monitoring Operasional Pembangkit Listrik & Manajemen Data Terpadu*
+
+### _Sistem Monitoring Operasional Pembangkit Listrik & Manajemen Data Terpadu_
+
 **PT PLN (Persero) — Wilayah Sistem Tambora & Sumbawa**
 
 ---
@@ -12,17 +14,17 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-72_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-88_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 
 </div>
 
 ---
 
-## 📌 Ringkasan Eksekutif (*Overview*)
+## 📌 Ringkasan Eksekutif (_Overview_)
 
-**Tambora Web App** adalah platform enterprise modern berbasis *Single Page & Server-Side Rendering (Universal SSR)* yang dirancang khusus untuk memonitor stabilitas sistem ketenagalistrikan, neraca daya, dan tata kelola master data pembangkitan di lingkungan **PT PLN (Persero)**.
+**Tambora Web App** adalah platform enterprise modern berbasis _Single Page & Server-Side Rendering (Universal SSR)_ yang dirancang khusus untuk memonitor stabilitas sistem ketenagalistrikan, neraca daya, dan tata kelola master data pembangkitan di lingkungan **PT PLN (Persero)**.
 
-Platform ini mengintegrasikan pemetaan spasial geografis sentral pembangkit (GIS), analitik kurva beban *real-time*, mesin formulir dinamis (*Schema-Driven Dynamic Form Engine*), modul transaksi pencatatan daya dan anggaran, sistem otentikasi aman terintegrasi, fitur ketangguhan jaringan terpencil (*Low-Bandwidth Resilience & Form Auto-Save*), serta rangkaian animasi mikro modern berstandar enterprise (*60 FPS Hardware-Accelerated*).
+Platform ini mengintegrasikan pemetaan spasial geografis sentral pembangkit (GIS), analitik kurva beban _real-time_, mesin formulir dinamis (_Schema-Driven Dynamic Form Engine_), modul transaksi pencatatan daya dan anggaran, sistem otentikasi aman terintegrasi, fitur ketangguhan jaringan terpencil (_Low-Bandwidth Resilience & Form Auto-Save_), serta rangkaian animasi mikro modern berstandar enterprise (_60 FPS Hardware-Accelerated_).
 
 ```mermaid
 graph LR
@@ -52,21 +54,21 @@ graph LR
 
 ## ✨ Fitur-Fitur Unggulan
 
-| Modul | Deskripsi & Kemampuan Teknis |
-| :--- | :--- |
-| **⚡ Dashboard Operasi** | Monitoring metrik real-time: **DMN** (Daya Mampu Nyata), **DMP** (Daya Mampu Pasok), **Beban Sistem**, **Unit Max**, dan **Cadangan Total/Putar**. |
-| **🗺️ GIS Sentral Map** | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan marker status visual (*Operasi*, *Gangguan*, *Pemeliharaan/Standby*), popup detail unit, dan filter wilayah. |
-| **📈 Analisis Beban & Grafik** | Visualisasi kurva beban harian/mingguan dan tren neraca energi bertenaga **Apache ECharts**. |
-| **📶 Remote Resilience (Sumbawa Edition)** | **Auto-Save Form Drafts** (pencegah kehilangan ketikan saat sinyal mati), **SWR API Client Cache** (buka tabel instan 0ms), dan **Smart Network Retry** (otomatis coba ulang request saat koneksi drop). |
-| **🎨 Modern GSAP & GPU Animations** | Transisi halaman mulus (*Page Route Transitions*), efek baris tabel meluncur berjenjang (**GSAP Row Stagger**), **5-row Shimmer Skeleton Loader**, dan efek klik tombol membal (**Tactile Micro-Interactions**). |
-| **🍞 Floating Toast & Form Guard** | Sistem notifikasi mengambang pojok kanan atas dengan **Timer Countdown Progress Bar** (`useAppToast`), serta perlindungan data form (*Unsaved Changes Guard* di `BaseFormModal.vue`). |
-| **📝 Dynamic Form Engine** | Formulir berbasis skema deklaratif di `schemas/master/` dan `schemas/transaksi/` dengan dukungan *conditional field visibility* (`hidden`), *functional disabled*, dan validasi otomatis. |
-| **📊 Smart Data Table** | Komponen tabel terpadu (`BaseTable.vue`) dengan fitur **Show/Hide Kolom** (*Column Visibility Toggle*), filter pencarian instan, sorting dinamis, dan *local persistence*. |
-| **🏛️ 8 Modul Master Data** | Tata kelola CRUD lengkap: *User*, *Role & Permissions*, *Scope*, *Driver*, *Organisasi (Hierarki Parent-Child)*, *Sistem Pembangkit*, *Aset Mesin*, dan *Kondisi Mesin*. |
-| **⚡ 7 Modul Transaksi** | Pencatatan operasional & keuangan: *Operasi Harian*, *Pemakaian Bahan Bakar*, *Pembebanan Generator*, *Pagu Anggaran (AO/AKO, AI/AKI, POS 54)*, *Pagu Bidang*, *Prognosa Kinerja (PLTU & Non-PLTU)*, dan *Perhitungan NKO (KPI)*. |
-| **📥 Real Excel/CSV Export** | Generator file spreadsheet asli (`utils/exportExcel.ts`) dengan standar **UTF-8 BOM** terintegrasi di seluruh tombol export tabel serta endpoint backend native export `.xls`. |
-| **🛡️ Unified Modal Dialogs** | Modal konfirmasi hapus modern (`BaseConfirmDialog`) dan modal sukses (`BaseSuccessModal`) menggantikan dialog native browser. |
-| **🔒 Enterprise Session Security** | Deteksi inaktivitas (**28 menit idle + popup countdown 2 menit**), *Silent Token Refresh* dengan *Single-Flight Mutex* pada error 401, sinkronisasi multi-tab (*BroadcastChannel*), dan navigasi *Return-To*. |
+| Modul                                      | Deskripsi & Kemampuan Teknis                                                                                                                                                                                                      |
+| :----------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **⚡ Dashboard Operasi**                   | Monitoring metrik real-time: **DMN** (Daya Mampu Nyata), **DMP** (Daya Mampu Pasok), **Beban Sistem**, **Unit Max**, dan **Cadangan Total/Putar**.                                                                                |
+| **🗺️ GIS Sentral Map**                     | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan marker status visual (_Operasi_, _Gangguan_, _Pemeliharaan/Standby_), popup detail unit, dan filter wilayah.                                               |
+| **📈 Analisis Beban & Grafik**             | Visualisasi kurva beban harian/mingguan dan tren neraca energi bertenaga **Apache ECharts**.                                                                                                                                      |
+| **📶 Remote Resilience (Sumbawa Edition)** | **Auto-Save Form Drafts** (pencegah kehilangan ketikan saat sinyal mati), **SWR API Client Cache** (buka tabel instan 0ms), dan **Smart Network Retry** (otomatis coba ulang request saat koneksi drop).                          |
+| **🎨 Modern GSAP & GPU Animations**        | Transisi halaman mulus (_Page Route Transitions_), efek baris tabel meluncur berjenjang (**GSAP Row Stagger**), **5-row Shimmer Skeleton Loader**, dan efek klik tombol membal (**Tactile Micro-Interactions**).                  |
+| **🍞 Floating Toast & Form Guard**         | Sistem notifikasi mengambang pojok kanan atas dengan **Timer Countdown Progress Bar** (`useAppToast`), serta perlindungan data form (_Unsaved Changes Guard_ di `BaseFormModal.vue`).                                             |
+| **📝 Dynamic Form Engine**                 | Formulir berbasis skema deklaratif di `schemas/master/` dan `schemas/transaksi/` dengan dukungan _conditional field visibility_ (`hidden`), _functional disabled_, dan validasi otomatis.                                         |
+| **📊 Smart Data Table**                    | Komponen tabel terpadu (`BaseTable.vue`) dengan fitur **Show/Hide Kolom** (_Column Visibility Toggle_), filter pencarian instan, sorting dinamis, dan _local persistence_.                                                        |
+| **🏛️ 8 Modul Master Data**                 | Tata kelola CRUD lengkap: _User_, _Role_, _Permission (Katalog Hak Akses)_, _Scope_, _Driver_, _Organisasi (Hierarki Parent-Child)_, _Sistem Pembangkit_, _Aset Mesin_, dan _Kondisi Mesin_.                                    |
+| **⚡ Modul Transaksi Terpadu**             | Pencatatan operasional & keuangan: _Operasi Harian_, _Pemakaian Bahan Bakar_, _Pembebanan Generator_, _Pagu Anggaran (Tab Dinamis Unit & Bidang)_, _Prognosa Kinerja (PLTU & Non-PLTU)_, dan _Perhitungan NKO (KPI)_.         |
+| **📥 Real Excel/CSV Export**               | Generator file spreadsheet asli (`utils/exportExcel.ts`) dengan standar **UTF-8 BOM** terintegrasi di seluruh tombol export tabel serta endpoint backend native export `.xls`.                                                    |
+| **🛡️ Unified Modal Dialogs**               | Modal konfirmasi hapus modern (`BaseConfirmDialog`) dan modal sukses (`BaseSuccessModal`) menggantikan dialog native browser.                                                                                                     |
+| **🔒 Enterprise Session Security**         | Deteksi inaktivitas (**28 menit idle + popup countdown 2 menit**), _Silent Token Refresh_ dengan _Single-Flight Mutex_ pada error 401, sinkronisasi multi-tab (_BroadcastChannel_), dan navigasi _Return-To_.                     |
 
 ---
 
@@ -76,16 +78,16 @@ graph LR
 tambora-frontend/
 ├── 📁 assets/             # Asset statis, logo branding PLN, dan style overrides
 ├── 📁 components/         # Arsitektur Komponen Atomic
-│   ├── 📁 base/           # Core Base Components (BaseTable, BaseFormModal, BaseMap, BaseChart, dll)
+│   ├── 📁 base/           # Core Base Components (BaseTable, BaseFormModal, BaseDateFilter, BaseMap, BaseChart, dll)
 │   └── 📁 login/          # Komponen login, form credentials, dan typewriter animation
 ├── 📁 composables/        # State Management & Business Logic (Composables Pattern)
-│   ├── 📁 master/         # CRUD Logic per entitas master (useUser, useAsset, useDriver, dll)
+│   ├── 📁 master/         # CRUD Logic per entitas master (useUser, usePermission, useAsset, useDriver, dll)
 │   └── 📁 transaksi/      # CRUD Logic transaksi (useOperasiHarian, usePagu, usePrognosa, dll)
-├── 📁 docs/               # Dokumentasi Teknis Standar Proyek (PRD, Architecture, Schema, Rules)
+├── 📁 docs/               # Dokumentasi Teknis Standar Proyek (PRD, Architecture, Schema, Rules, DeveloperGuide)
 ├── 📁 pages/              # Nuxt 4 File-Based Routing (home/dashboard, home/master, home/transaksi, login)
 ├── 📁 schemas/            # Definisi Skema Formulir Deklaratif
-│   ├── 📁 master/         # 8 Berkas Skema Form Master (user, driver, asset, system, dll)
-│   └── 📁 transaksi/      # 7 Berkas Skema Form Transaksi (operasi, pagu, prognosa, nko, dll)
+│   ├── 📁 master/         # 9 Berkas Skema Form Master (user, role, permission, driver, asset, system, dll)
+│   └── 📁 transaksi/      # Berkas Skema Form Transaksi (operasi, pagu, pagu-bidang, prognosa, nko, dll)
 ├── 📁 stores/             # Pinia Global Store (auth: session, security, token)
 ├── 📁 test/               # Vitest Unit Test Suites & Testing Mocks
 ├── 📁 types/              # Modular TypeScript DTOs & Contracts
@@ -101,13 +103,15 @@ tambora-frontend/
 
 ---
 
-## 🚀 Panduan Memulai (*Quick Start*)
+## 🚀 Panduan Memulai (_Quick Start_)
 
 ### 1. Prasyarat Sistem
-* **Node.js**: Versi `>= 20.11.0` (Disarankan Node.js LTS)
-* **NPM**: Versi `>= 10.x` (atau pnpm / bun)
+
+- **Node.js**: Versi `>= 20.11.0` (Disarankan Node.js LTS)
+- **NPM**: Versi `>= 10.x` (atau pnpm / bun)
 
 ### 2. Instalasi Dependensi
+
 ```bash
 # Clone repository
 git clone git@github.com:aegis-immortal2/tambora-frontend.git
@@ -120,6 +124,7 @@ npm install
 ```
 
 ### 3. Konfigurasi Environment (`.env`)
+
 Buat berkas `.env` dari template `.env.example`:
 
 ```bash
@@ -127,6 +132,7 @@ cp .env.example .env
 ```
 
 Sesuaikan variabel lingkungan:
+
 ```ini
 # URL Backend Core API
 NUXT_BACKEND_URL=http://localhost:8080
@@ -136,6 +142,7 @@ NUXT_PUBLIC_MAPTILER_KEY=your_maptiler_api_key_here
 ```
 
 ### 4. Menjalankan Aplikasi
+
 ```bash
 # Development Mode (Hot-Reload)
 npm run dev
@@ -146,20 +153,21 @@ npm run build
 # Preview Production Build Lokal
 npm run preview
 ```
+
 > Akses aplikasi pada peramban web: **`http://localhost:3000`**
 
 ---
 
-## 📋 Daftar Perintah NPM (*Scripts Matrix*)
+## 📋 Daftar Perintah NPM (_Scripts Matrix_)
 
-| Command | Fungsi |
-| :--- | :--- |
-| **`npm run dev`** | Menjalankan local development server Nuxt dengan Nitro proxy aktif. |
-| **`npm run build`** | Mengompilasi aplikasi ke bundle production yang teroptimasi. |
-| **`npm run preview`** | Menjalankan simulasi build production pada port lokal. |
-| **`npm run test`** | Menjalankan seluruh test suite menggunakan **Vitest**. |
+| Command                     | Fungsi                                                                  |
+| :-------------------------- | :---------------------------------------------------------------------- |
+| **`npm run dev`**           | Menjalankan local development server Nuxt dengan Nitro proxy aktif.     |
+| **`npm run build`**         | Mengompilasi aplikasi ke bundle production yang teroptimasi.            |
+| **`npm run preview`**       | Menjalankan simulasi build production pada port lokal.                  |
+| **`npm run test`**          | Menjalankan seluruh test suite menggunakan **Vitest**.                  |
 | **`npm run test:coverage`** | Menjalankan testing dan menghasilkan laporan code coverage HTML & lcov. |
-| **`npm run lint`** | Memeriksa kepatuhan kode terhadap aturan ESLint (Clean Code Policy). |
+| **`npm run lint`**          | Memeriksa kepatuhan kode terhadap aturan ESLint (Clean Code Policy).    |
 
 ---
 
@@ -195,18 +203,18 @@ Proyek ini menerapkan standar **SonarQube Grade A** dan **Clean Architecture Pol
 
 Untuk membaca pedoman arsitektur dan spesifikasi mendalam, silakan merujuk ke folder [`/docs`](docs/):
 
-* 📘 [**Developer Guide**](docs/DeveloperGuide.md) — Panduan teknis & SOP 5 langkah membuat modul Master & Transaksi baru.
-* 📄 [**Product Requirements Document (PRD)**](docs/PRD.md) — Spesifikasi kebutuhan bisnis dan alur operasional.
-* 🏗️ [**System Architecture**](docs/Architecture.md) — Arsitektur layering, standar composable, dan security proxy.
-* 📊 [**Data Schemas & Contracts**](docs/Schema.md) — Definisi tipe data domain, DTO, dan konfigurasi form/table.
-* 📐 [**Development Rules & Standards**](docs/Rules.md) — Standar penulisan SFC Vue, anti-duplikasi, dan SonarQube rules.
-* 📜 [**Changelog**](CHANGELOG.md) — Riwayat lengkap pembaruan versi dan penambahan fitur.
+- 📘 [**Developer Guide**](docs/DeveloperGuide.md) — Panduan teknis & SOP 5 langkah membuat modul Master & Transaksi baru.
+- 📄 [**Product Requirements Document (PRD)**](docs/PRD.md) — Spesifikasi kebutuhan bisnis dan alur operasional.
+- 🏗️ [**System Architecture**](docs/Architecture.md) — Arsitektur layering, standar composable, dan security proxy.
+- 📊 [**Data Schemas & Contracts**](docs/Schema.md) — Definisi tipe data domain, DTO, dan konfigurasi form/table.
+- 📐 [**Development Rules & Standards**](docs/Rules.md) — Standar penulisan SFC Vue, anti-duplikasi, dan SonarQube rules.
+- 📜 [**Changelog**](CHANGELOG.md) — Riwayat lengkap pembaruan versi dan penambahan fitur.
 
 ---
 
 <div align="center">
 
 **© 2026 PT PLN (Persero). All Rights Reserved.**  
-*Developed with ❤️ for Excellence in National Power Generation Monitoring.*
+_Developed with ❤️ for Excellence in National Power Generation Monitoring._
 
 </div>

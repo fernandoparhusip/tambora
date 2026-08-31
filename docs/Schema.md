@@ -40,7 +40,7 @@ export interface SystemSummary {
 * `DriverDTO`: Master pengemudi operasional PLN.
 * `OrganizationDTO`: Struktur hierarki unit/induk/wilayah (*parent-child*).
 * `SystemDTO`: Master sistem ketenagalistrikan.
-* `RoleDTO` & `ScopeDTO`: Akses kontrol & perijinan hak akses.
+* `RoleDTO`, `PermissionItem`, & `ScopeDTO`: Akses kontrol, katalog hak akses (Permission), & cakupan unit organisasi.
 * `AssetDTO` & `MachineConditionDTO`: Inventaris mesin pembangkit dan status kesiapan.
 
 ### 1.4. Transaksi Entities (`types/transaksi.types.ts`)

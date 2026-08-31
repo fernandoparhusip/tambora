@@ -7,7 +7,8 @@ export default defineEventHandler(async (event) => {
   setResponseHeaders(event, {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept, X-Requested-With, X-Request-Id',
+    'Access-Control-Allow-Headers':
+      'Authorization, Content-Type, Accept, X-Requested-With, X-Request-Id, X-Device-ID, X-Device-Name, X-Browser, X-OS',
     'Access-Control-Allow-Credentials': 'true',
   });
 

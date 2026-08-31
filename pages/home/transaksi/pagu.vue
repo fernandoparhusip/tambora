@@ -1,15 +1,48 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type { TableColumn, FormSectionConfig, PaguDTO } from "~/types";
-import type { DetailDataItem } from '~/types/master.types';
+import type { TableColumn, FormSectionConfig, PaguDTO, PaguBidangDTO } from "~/types";
+import type { DetailDataItem } from "~/types/master.types";
+import type { TabItem } from "~/components/base/BaseTabFilter.vue";
 import { getPaguFormSections } from "~/schemas/transaksi/pagu.schema";
+import { getPaguBidangFormSections } from "~/schemas/transaksi/pagu-bidang.schema";
+import { exportToExcel } from "~/utils/exportExcel";
+import { formatRupiah } from "~/utils/formatNumber";
 
-const { list, loading, fetchList, createItem, updateItem, deleteItem, reviseItem, exportExcel } = usePagu();
+// Tab state murni di dalam halaman: 'unit' | 'bidang'
+const activeTab = ref<"unit" | "bidang">("unit");
+const tabOptions: TabItem[] = [
+  { key: "unit", label: "Unit" },
+  { key: "bidang", label: "Bidang" }
+];
+
+// 1. Pagu Unit Composable
+const {
+  list: paguUnitList,
+  loading: paguUnitLoading,
+  fetchList: fetchPaguUnitList,
+  createItem: createPaguUnit,
+  updateItem: updatePaguUnit,
+  deleteItem: deletePaguUnit,
+  reviseItem: revisePaguUnit,
+  exportExcel: exportPaguUnitExcel
+} = usePagu();
+
+// 2. Pagu Bidang Composable
+const {
+  list: paguBidangList,
+  loading: paguBidangLoading,
+  fetchList: fetchPaguBidangList,
+  createItem: createPaguBidang,
+  updateItem: updatePaguBidang,
+  deleteItem: deletePaguBidang
+} = usePaguBidang();
 
 const searchQuery = ref("");
+const selectedDate = ref("");
 const currentPage = ref(1);
 const pageSize = ref(10);
 
+// Modals state
 const modalOpen = ref(false);
 const isSuccessModalOpen = ref(false);
 const modalMode = ref<"create" | "edit">("create");
@@ -19,40 +52,89 @@ const submitting = ref(false);
 
 const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
-const deleteTarget = ref<PaguDTO | null>(null);
+const deleteTarget = ref<any>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<PaguDTO | null>(null);
+const detailRecord = ref<any>(null);
 
-const columns: TableColumn[] = [
-  { key: "no", label: "No" },
+// Table columns for Unit
+const unitColumns: TableColumn[] = [
+  { key: "no", label: "No." },
   { key: "jenis_pagu", label: "Jenis Pagu" },
-  { key: "periode", label: "Tahun Periode" },
-  { key: "scope", label: "Scope" },
   { key: "tanggal_input", label: "Tanggal Input" },
   { key: "revisi_ke", label: "Revisi" },
-  { key: "dokumen_path", label: "Dokumen" },
   { key: "actions", label: "Aksi" }
 ];
 
-const formSections = computed<FormSectionConfig[]>(() => getPaguFormSections());
+// Table columns for Bidang
+const bidangColumns: TableColumn[] = [
+  { key: "no", label: "No." },
+  { key: "periode", label: "Periode Pagu AO/AKO" },
+  { key: "total_bidang", label: "Alokasi Bidang" },
+  { key: "total_ao", label: "Total AO (Rp)" },
+  { key: "total_ako", label: "Total AKO (Rp)" },
+  { key: "actions", label: "Aksi" }
+];
 
-onMounted(async () => {
-  await fetchList();
+const currentColumns = computed(() =>
+  activeTab.value === "unit" ? unitColumns : bidangColumns
+);
+
+const currentLoading = computed(() =>
+  activeTab.value === "unit" ? paguUnitLoading.value : paguBidangLoading.value
+);
+
+const paguUnitOptions = computed(() =>
+  paguUnitList.value.map((p: any) => ({
+    label: `Pagu ${p.jenis_pagu} - Tahun ${p.periode} (${p.scope})`,
+    value: p.id
+  }))
+);
+
+// Dynamic form sections based on active tab
+const formSections = computed<FormSectionConfig[]>(() => {
+  if (activeTab.value === "unit") {
+    return getPaguFormSections();
+  }
+  return getPaguBidangFormSections({ paguUnitOptions: paguUnitOptions.value });
 });
 
-watch(searchQuery, () => {
+onMounted(async () => {
+  await Promise.all([fetchPaguUnitList(), fetchPaguBidangList()]);
+});
+
+watch(activeTab, () => {
+  currentPage.value = 1;
+  searchQuery.value = "";
+});
+
+watch([searchQuery, selectedDate], () => {
   currentPage.value = 1;
 });
 
 const filteredList = computed(() => {
-  if (!searchQuery.value.trim()) return list.value;
   const q = searchQuery.value.toLowerCase().trim();
-  return list.value.filter(
-    (item: PaguDTO) =>
-      item.jenis_pagu?.toLowerCase().includes(q) ||
-      item.scope?.toLowerCase().includes(q) ||
-      item.periode?.toString().includes(q)
-  );
+  const date = selectedDate.value;
+
+  if (activeTab.value === "unit") {
+    return paguUnitList.value.filter((item: PaguDTO) => {
+      const matchQuery =
+        !q ||
+        item.jenis_pagu?.toLowerCase().includes(q) ||
+        item.scope?.toLowerCase().includes(q) ||
+        item.periode?.toString().includes(q);
+      const matchDate = !date || item.tanggal_input?.startsWith(date);
+      return matchQuery && matchDate;
+    });
+  } else {
+    return paguBidangList.value.filter((item: PaguBidangDTO) => {
+      const matchQuery =
+        !q ||
+        item.pagu_unit_id?.toLowerCase().includes(q) ||
+        item.periode?.toString().includes(q);
+      const matchDate = !date || (item as any).created_at?.startsWith(date);
+      return matchQuery && matchDate;
+    });
+  }
 });
 
 const paginatedList = computed(() => {
@@ -60,56 +142,87 @@ const paginatedList = computed(() => {
   return filteredList.value.slice(start, start + pageSize.value);
 });
 
-const modalTitle = computed(() =>
-  isReviseMode.value
-    ? "Revisi Pagu Anggaran"
-    : modalMode.value === "edit"
-      ? "Edit Data Pagu Anggaran"
-      : "Tambah Dokumen Pagu Anggaran"
-);
-const modalSubtitle = computed(() =>
-  isReviseMode.value
-    ? "Form Pengajuan Revisi Pagu Anggaran"
-    : "Form Pencatatan Pagu AO/AKO, AI/AKI & POS 54"
-);
+const modalTitle = computed(() => {
+  if (activeTab.value === "unit") {
+    return isReviseMode.value
+      ? "Revisi Pagu Anggaran"
+      : modalMode.value === "edit"
+        ? "Edit Data Pagu Unit"
+        : "Tambah Dokumen Pagu Anggaran (Unit)";
+  }
+  return modalMode.value === "edit"
+    ? "Edit Alokasi Pagu Bidang"
+    : "Tambah Alokasi Pagu Bidang";
+});
+
+const modalSubtitle = computed(() => {
+  if (activeTab.value === "unit") {
+    return isReviseMode.value
+      ? "Form Pengajuan Revisi Pagu Anggaran Unit"
+      : "Form Pencatatan Pagu AO/AKO, AI/AKI & POS 54";
+  }
+  return modalMode.value === "edit"
+    ? "Form Pembagian Anggaran Operasional Bidang"
+    : "Form Alokasi Pagu Unit ke Bidang (Ophar, Adum, K3L)";
+});
 
 const openCreateModal = () => {
   modalMode.value = "create";
   isReviseMode.value = false;
-  formData.value = {
-    jenis_pagu: "AO_AKO",
-    periode: new Date().getFullYear(),
-    scope: "Unit",
-    tanggal_input: new Date().toISOString().split("T")[0],
-    dokumen_path: "Dokumen_Pagu_2026.pdf",
-    detail_ao_ako: [
-      { urutan: 1, level: 1, uraian: "Bahan Bakar dan Pelumas", ao: 1250000000, ako: 1000000000 },
-      { urutan: 2, level: 1, uraian: "Pemeliharaan Mesin & Pembangkit", ao: 800000000, ako: 750000000 }
-    ]
-  };
+
+  if (activeTab.value === "unit") {
+    formData.value = {
+      jenis_pagu: "AO_AKO",
+      periode: new Date().getFullYear(),
+      scope: "Unit",
+      tanggal_input: new Date().toISOString().split("T")[0],
+      dokumen_path: "Dokumen_Pagu_2026.pdf",
+      detail_ao_ako: [
+        { urutan: 1, level: 1, uraian: "Bahan Bakar dan Pelumas", ao: 1250000000, ako: 1000000000 },
+        { urutan: 2, level: 1, uraian: "Pemeliharaan Mesin & Pembangkit", ao: 800000000, ako: 750000000 }
+      ]
+    };
+  } else {
+    formData.value = {
+      pagu_unit_id: paguUnitList.value[0]?.id || "",
+      periode: new Date().getFullYear(),
+      details: [
+        { uraian: "Operasi & Pemeliharaan (Ophar)", ao: 500000000, ako: 450000000, persentase: 50 },
+        { uraian: "Administrasi & Umum (Adum)", ao: 300000000, ako: 250000000, persentase: 30 },
+        { uraian: "K3L & Keamanan", ao: 200000000, ako: 180000000, persentase: 20 }
+      ]
+    };
+  }
+
   modalOpen.value = true;
 };
 
-const handleEdit = (row: PaguDTO) => {
+const handleEdit = (row: any) => {
   modalMode.value = "edit";
   isReviseMode.value = false;
-  formData.value = { ...row, tanggal_input: row.tanggal_input?.split("T")[0] };
+  formData.value = {
+    ...row,
+    tanggal_input: row.tanggal_input ? row.tanggal_input.split("T")[0] : undefined
+  };
   modalOpen.value = true;
 };
 
 const openReviseModal = (row: PaguDTO) => {
   modalMode.value = "edit";
   isReviseMode.value = true;
-  formData.value = { ...row, tanggal_input: row.tanggal_input?.split("T")[0] };
+  formData.value = {
+    ...row,
+    tanggal_input: row.tanggal_input ? row.tanggal_input.split("T")[0] : undefined
+  };
   modalOpen.value = true;
 };
 
-const handleView = (row: PaguDTO) => {
+const handleView = (row: any) => {
   detailRecord.value = row;
   isDetailModalOpen.value = true;
 };
 
-const handleDelete = (row: PaguDTO) => {
+const handleDelete = (row: any) => {
   deleteTarget.value = row;
   isConfirmDialogOpen.value = true;
 };
@@ -118,24 +231,44 @@ const handleSubmit = async () => {
   submitting.value = true;
   try {
     const data = formData.value;
-    const payload = {
-      jenis_pagu: data.jenis_pagu || "AO_AKO",
-      periode: Number(data.periode) || 2026,
-      scope: data.scope || "Unit",
-      tanggal_input: data.tanggal_input ? `${data.tanggal_input}T00:00:00Z` : new Date().toISOString(),
-      dokumen_path: data.dokumen_path || "/uploads/Dokumen_Pagu.pdf",
-      detail_ao_ako: data.detail_ao_ako || [
-        { urutan: 1, level: 1, uraian: "Bahan Bakar dan Pelumas", ao: 1250000000, ako: 1000000000 }
-      ]
-    };
 
-    if (isReviseMode.value && formData.value.id) {
-      await reviseItem(formData.value.id, payload);
-    } else if (modalMode.value === "create") {
-      await createItem(payload);
-    } else if (formData.value.id) {
-      await updateItem(formData.value.id, payload);
+    if (activeTab.value === "unit") {
+      const payload = {
+        jenis_pagu: data.jenis_pagu || "AO_AKO",
+        periode: Number(data.periode) || 2026,
+        scope: data.scope || "Unit",
+        tanggal_input: data.tanggal_input
+          ? `${data.tanggal_input}T00:00:00Z`
+          : new Date().toISOString(),
+        dokumen_path: data.dokumen_path || "/uploads/Dokumen_Pagu.pdf",
+        detail_ao_ako: data.detail_ao_ako || [
+          { urutan: 1, level: 1, uraian: "Bahan Bakar dan Pelumas", ao: 1250000000, ako: 1000000000 }
+        ]
+      };
+
+      if (isReviseMode.value && formData.value.id) {
+        await revisePaguUnit(formData.value.id, payload);
+      } else if (modalMode.value === "create") {
+        await createPaguUnit(payload);
+      } else if (formData.value.id) {
+        await updatePaguUnit(formData.value.id, payload);
+      }
+    } else {
+      const payload = {
+        pagu_unit_id: data.pagu_unit_id,
+        periode: Number(data.periode) || 2026,
+        details: data.details || [
+          { uraian: "Operasi & Pemeliharaan", ao: 500000000, ako: 450000000, persentase: 50 }
+        ]
+      };
+
+      if (modalMode.value === "create") {
+        await createPaguBidang(payload);
+      } else if (formData.value.id) {
+        await updatePaguBidang(formData.value.id, payload);
+      }
     }
+
     modalOpen.value = false;
     isSuccessModalOpen.value = true;
   } finally {
@@ -147,7 +280,11 @@ const handleConfirmDelete = async () => {
   if (!deleteTarget.value) return;
   isDeleting.value = true;
   try {
-    await deleteItem(deleteTarget.value.id);
+    if (activeTab.value === "unit") {
+      await deletePaguUnit(deleteTarget.value.id);
+    } else {
+      await deletePaguBidang(deleteTarget.value.id);
+    }
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } finally {
@@ -155,19 +292,43 @@ const handleConfirmDelete = async () => {
   }
 };
 
+const handleExport = () => {
+  if (activeTab.value === "unit") {
+    exportPaguUnitExcel();
+  } else {
+    exportToExcel(
+      bidangColumns,
+      filteredList.value,
+      { fileName: `Pagu_Bidang_${new Date().toISOString().split("T")[0]}` }
+    );
+  }
+};
+
 const detailItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const r = detailRecord.value;
-  return [
-    { label: "ID Pagu", value: r.id },
-    { label: "Jenis Pagu", value: r.jenis_pagu },
-    { label: "Tahun Periode", value: `${r.periode}` },
-    { label: "Scope", value: r.scope },
-    { label: "Revisi Ke", value: `Rev ${r.revisi_ke || 0}` },
-    { label: "Tanggal Input", value: r.tanggal_input?.split("T")[0] || "-" },
-    { label: "Dokumen Pendukung", value: r.dokumen_path || "Tidak ada lampiran" },
-    { label: "Jumlah Rincian Item", value: `${r.detail_ao_ako?.length || 0} Baris Anggaran` }
-  ];
+
+  if (activeTab.value === "unit") {
+    return [
+      { label: "ID Pagu", value: r.id },
+      { label: "Jenis Pagu", value: r.jenis_pagu },
+      { label: "Tahun Periode", value: `${r.periode}` },
+      { label: "Scope", value: r.scope },
+      { label: "Revisi Ke", value: `Rev ${r.revisi_ke || 0}` },
+      { label: "Tanggal Input", value: r.tanggal_input?.split("T")[0] || "-" },
+      { label: "Dokumen Pendukung", value: r.dokumen_path || "Tidak ada lampiran" },
+      { label: "Jumlah Rincian Item", value: `${r.detail_ao_ako?.length || 0} Baris Anggaran` }
+    ];
+  } else {
+    return [
+      { label: "ID Pagu Bidang", value: r.id },
+      { label: "Pagu Unit Referensi", value: r.pagu_unit_id },
+      { label: "Tahun Periode", value: `${r.periode}` },
+      { label: "Total Alokasi Bidang", value: `${r.total_bidang || 0} Bidang` },
+      { label: "Total Anggaran Operasi (AO)", value: formatRupiah(r.total_ao || 0) },
+      { label: "Total Anggaran Kas Operasi (AKO)", value: formatRupiah(r.total_ako || 0) }
+    ];
+  }
 });
 </script>
 
@@ -183,21 +344,51 @@ const detailItems = computed<DetailDataItem[]>(() => {
       >
         <!-- Action Controls Bar -->
         <div
-          class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
+          class="shrink-0 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-4"
         >
-          <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari jenis pagu atau periode..." />
-            <BaseExportButton @click="exportExcel" />
+          <!-- Left filters: Search, Date Filter, Export -->
+          <div class="flex flex-wrap items-center gap-3.5">
+            <BaseSearchInput
+              v-model="searchQuery"
+              placeholder="Cari Data"
+              class="w-48 sm:w-60 shrink-0"
+            />
+
+            <!-- Date Filter using BaseDateFilter -->
+            <BaseDateFilter
+              v-model="selectedDate"
+              placeholder="27 April 2026"
+              class="w-48 sm:w-56 shrink-0"
+            />
+
+            <!-- Export Button -->
+            <BaseExportButton @click="handleExport" />
           </div>
 
-          <BaseCreateButton label="TAMBAH PAGU" @click="openCreateModal" />
+          <!-- Right controls: Tab Pills & Tambah Data -->
+          <div class="flex items-center gap-3 self-end lg:self-auto">
+            <!-- Tab Switcher: Unit | Bidang -->
+            <BaseTabFilter
+              v-model:active-tab="activeTab"
+              :items="tabOptions"
+              container-bg-color="#F1F5F9"
+              indicator-bg-color="#FFFFFF"
+              active-text-color="#1E293B"
+              inactive-text-color="#64748B"
+            />
+
+            <BaseCreateButton
+              label="TAMBAH DATA"
+              @click="openCreateModal"
+            />
+          </div>
         </div>
 
         <!-- Table Container -->
         <BaseTable
-          :columns="columns"
+          :columns="currentColumns"
           :rows="paginatedList"
-          :loading="loading"
+          :loading="currentLoading"
           class="flex-1 min-h-0"
         >
           <template #no-data="{ index }">
@@ -206,43 +397,59 @@ const detailItems = computed<DetailDataItem[]>(() => {
             </span>
           </template>
 
+          <!-- Tab Unit Slots -->
           <template #jenis_pagu-data="{ row }">
             <BaseBadge :variant="row.jenis_pagu === 'AO_AKO' ? 'primary' : row.jenis_pagu === 'AI_AKI' ? 'info' : 'warning'">
-              {{ row.jenis_pagu }}
+              {{ row.jenis_pagu === 'AO_AKO' ? 'Pagu AO/AKO' : row.jenis_pagu === 'AI_AKI' ? 'Pagu AI/AKI' : row.jenis_pagu }}
             </BaseBadge>
-          </template>
-
-          <template #periode-data="{ row }">
-            <span class="text-xs font-bold text-gray-800">Tahun {{ row.periode }}</span>
-          </template>
-
-          <template #scope-data="{ row }">
-            <span class="text-xs text-gray-700 font-medium">{{ row.scope }}</span>
           </template>
 
           <template #tanggal_input-data="{ row }">
-            <span class="text-xs text-gray-500">{{ row.tanggal_input ? row.tanggal_input.split("T")[0] : "-" }}</span>
-          </template>
-
-          <template #revisi_ke-data="{ row }">
-            <BaseBadge :variant="(row.revisi_ke || 0) > 0 ? 'warning' : 'mono'">
-              Rev {{ row.revisi_ke || 0 }}
-            </BaseBadge>
-          </template>
-
-          <template #dokumen_path-data="{ row }">
-            <span class="text-xs text-blue-600 font-mono truncate max-w-[150px] inline-block">
-              {{ row.dokumen_path ? row.dokumen_path.split('/').pop() : '-' }}
+            <span class="text-xs text-gray-700 font-medium">
+              {{ row.tanggal_input ? row.tanggal_input.split("T")[0] : "-" }}
             </span>
           </template>
 
+          <template #revisi_ke-data="{ row }">
+            <span class="text-xs font-semibold text-gray-800">
+              {{ row.revisi_ke !== undefined ? row.revisi_ke : 0 }}
+            </span>
+          </template>
+
+          <!-- Tab Bidang Slots -->
+          <template #periode-data="{ row }">
+            <span class="text-xs font-bold text-gray-800">
+              Tahun {{ row.periode }}
+            </span>
+          </template>
+
+          <template #total_bidang-data="{ row }">
+            <span class="text-xs font-semibold text-blue-600">
+              {{ row.total_bidang || 3 }} Bidang
+            </span>
+          </template>
+
+          <template #total_ao-data="{ row }">
+            <span class="text-xs font-mono font-medium text-gray-800">
+              {{ formatRupiah(row.total_ao || 0) }}
+            </span>
+          </template>
+
+          <template #total_ako-data="{ row }">
+            <span class="text-xs font-mono font-medium text-gray-800">
+              {{ formatRupiah(row.total_ako || 0) }}
+            </span>
+          </template>
+
+          <!-- Actions -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
               <BaseActionButton type="edit" @click="handleEdit(row)" />
               <button
+                v-if="activeTab === 'unit'"
                 type="button"
-                class="px-2 py-1 text-[11px] font-semibold rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors border border-purple-200"
+                class="px-2 py-1 text-[11px] font-semibold rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors border border-purple-200 cursor-pointer"
                 title="Revisi Pagu"
                 @click="openReviseModal(row)"
               >
@@ -271,7 +478,7 @@ const detailItems = computed<DetailDataItem[]>(() => {
       :subtitle="modalSubtitle"
       :sections="formSections"
       :submitting="submitting"
-      draft-key="transaksi-pagu"
+      :draft-key="activeTab === 'unit' ? 'transaksi-pagu-unit' : 'transaksi-pagu-bidang'"
       @submit="handleSubmit"
       @cancel="modalOpen = false"
     />
@@ -279,8 +486,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
     <!-- Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Pagu Anggaran"
-      subtitle="Rincian anggaran operasional dan investasi"
+      :title="activeTab === 'unit' ? 'Detail Pagu Anggaran (Unit)' : 'Detail Alokasi Pagu Bidang'"
+      :subtitle="activeTab === 'unit' ? 'Rincian anggaran operasional dan investasi' : 'Rincian alokasi anggaran per bidang kerja'"
       :data-items="detailItems"
       @close="isDetailModalOpen = false"
     />
@@ -288,8 +495,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
     <!-- Delete Confirmation Modal -->
     <BaseConfirmDialog
       v-model:is-open="isConfirmDialogOpen"
-      title="Hapus Data Pagu"
-      :message="`Apakah Anda yakin ingin menghapus dokumen Pagu ${deleteTarget?.jenis_pagu || ''} Periode ${deleteTarget?.periode || ''}?`"
+      :title="activeTab === 'unit' ? 'Hapus Data Pagu Unit' : 'Hapus Data Pagu Bidang'"
+      :message="`Apakah Anda yakin ingin menghapus data ini?`"
       :loading="isDeleting"
       @confirm="handleConfirmDelete"
     />

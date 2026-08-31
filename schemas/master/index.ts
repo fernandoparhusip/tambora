@@ -6,3 +6,4 @@ export * from "./role.schema";
 export * from "./scope.schema";
 export * from "./machine-condition.schema";
 export * from "./asset.schema";
+export * from "./permission.schema";

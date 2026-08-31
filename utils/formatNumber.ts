@@ -7,6 +7,8 @@ export const formatCurrency = (value: number | null | undefined): string => {
   }).format(value)
 }
 
+export const formatRupiah = formatCurrency
+
 export const formatNumber = (value: number | null | undefined): string => {
   if (value === null || value === undefined || isNaN(value)) return '0'
   return new Intl.NumberFormat('id-ID', {

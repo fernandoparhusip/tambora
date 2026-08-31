@@ -1,19 +1,41 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import type { DetailDataItem } from '~/types/master.types';
+import type { DetailDataItem } from '~/types/master.types'
 import { exportToExcel } from '~/utils/exportExcel'
 import type { TableColumn, PermissionItem } from '~/types'
+import { permissionFormSections } from '~/schemas/master/permission.schema'
 
-const { permissions, loading, fetchPermissions } = usePermission()
+const {
+  permissions,
+  loading,
+  fetchPermissions,
+  createPermission,
+  updatePermission,
+  deletePermission
+} = usePermission()
 
 const searchQuery = ref('')
 const selectedResource = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 
+// Form Modal State
+const isModalOpen = ref(false)
+const modalMode = ref<'create' | 'edit'>('create')
+const formData = ref<Record<string, any>>({})
+const submitting = ref(false)
+
 // Detail Modal State
 const isDetailModalOpen = ref(false)
 const detailRecord = ref<PermissionItem | null>(null)
+
+// Delete Dialog State
+const isConfirmDialogOpen = ref(false)
+const deleteTarget = ref<PermissionItem | null>(null)
+const isDeleting = ref(false)
+
+// Success Modal State
+const isSuccessModalOpen = ref(false)
 
 const permissionColumns: TableColumn[] = [
   { key: 'no', label: 'No' },
@@ -75,9 +97,71 @@ const handleExport = () => {
   })
 }
 
+// Modal Handlers
+const openCreateModal = () => {
+  modalMode.value = 'create'
+  formData.value = {
+    permission_key: '',
+    resource_code: '',
+    resource_name: '',
+    action_code: 'VIEW',
+    action_name: 'Lihat Data',
+    description: '',
+  }
+  isModalOpen.value = true
+}
+
+const handleEdit = (row: PermissionItem) => {
+  modalMode.value = 'edit'
+  formData.value = { ...row }
+  isModalOpen.value = true
+}
+
 const handleView = (row: PermissionItem) => {
   detailRecord.value = row
   isDetailModalOpen.value = true
+}
+
+const handleDelete = (row: PermissionItem) => {
+  deleteTarget.value = row
+  isConfirmDialogOpen.value = true
+}
+
+const handleSubmit = async () => {
+  submitting.value = true
+  try {
+    const payload = {
+      permission_key: formData.value.permission_key,
+      resource_code: formData.value.resource_code,
+      resource_name: formData.value.resource_name,
+      action_code: formData.value.action_code,
+      action_name: formData.value.action_name,
+      description: formData.value.description,
+    }
+
+    if (modalMode.value === 'create') {
+      await createPermission(payload)
+    } else if (formData.value.id) {
+      await updatePermission(formData.value.id, payload)
+    }
+
+    isModalOpen.value = false
+    isSuccessModalOpen.value = true
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handleConfirmDelete = async () => {
+  if (!deleteTarget.value) return
+  isDeleting.value = true
+  try {
+    await deletePermission(deleteTarget.value.id)
+    isConfirmDialogOpen.value = false
+    deleteTarget.value = null
+  } finally {
+    isDeleting.value = false
+  }
 }
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
@@ -125,11 +209,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseExportButton @click="handleExport" />
           </div>
 
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500 font-medium">
-              Total: {{ filteredRows.length }} Hak Akses
-            </span>
-          </div>
+          <BaseCreateButton label="TAMBAH PERMISSION" @click="openCreateModal" />
         </div>
 
         <!-- Permission Table -->
@@ -180,10 +260,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             </span>
           </template>
 
-          <!-- View Action Button -->
+          <!-- Table Action Buttons (View, Edit, Delete) -->
           <template #actions-data="{ row }">
-            <div class="flex items-center justify-end">
+            <div class="flex items-center gap-1.5 justify-end">
               <BaseActionButton type="view" title="Lihat Detail Permission" @click="handleView(row)" />
+              <BaseActionButton type="edit" title="Edit Permission" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" title="Hapus Permission" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>
@@ -198,12 +280,38 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       </div>
     </div>
 
+    <!-- Form Drawer Modal -->
+    <BaseFormModal
+      v-model:is-open="isModalOpen"
+      v-model:form-data="formData"
+      :title="modalMode === 'edit' ? 'Edit Hak Akses (Permission)' : 'Tambah Hak Akses (Permission)'"
+      :subtitle="modalMode === 'edit' ? 'Form Pembaruan Definisi Hak Akses' : 'Form Pembuatan Definisi Hak Akses Baru'"
+      :sections="permissionFormSections"
+      :submitting="submitting"
+      draft-key="master-permission"
+      @submit="handleSubmit"
+      @cancel="isModalOpen = false"
+    />
+
     <!-- View Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Hak Akses (Permission)"
       subtitle="Katalog Definisi Resource & Action RBAC"
       :data-items="detailDataItems"
+      @close="isDetailModalOpen = false"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <BaseConfirmDialog
+      v-model:is-open="isConfirmDialogOpen"
+      title="Hapus Hak Akses"
+      :message="`Apakah Anda yakin ingin menghapus permission '${deleteTarget?.permission_key || ''}'?`"
+      :loading="isDeleting"
+      @confirm="handleConfirmDelete"
+    />
+
+    <!-- Success Modal -->
+    <BaseSuccessModal v-model:is-open="isSuccessModalOpen" />
   </div>
 </template>

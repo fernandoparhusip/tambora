@@ -2,7 +2,7 @@
 import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { VueFinalModal } from "vue-final-modal";
 import { FileText, RotateCcw, X } from "@lucide/vue";
-import type { FormSectionConfig } from "~/types";
+import type { FormSectionConfig, FormFieldConfig } from "~/types";
 import { useFormDraft, type FormDraftData } from "~/composables/useFormDraft";
 
 interface Props {
@@ -127,13 +127,24 @@ const isDirty = computed(() => {
   );
 });
 
+const isFieldVisible = (field: FormFieldConfig) => {
+  if (typeof field.hidden === "function") {
+    return !field.hidden(formData.value || {});
+  }
+  return !field.hidden;
+};
+
 // Check if all required fields in active form sections are filled out
 const isFormValid = computed(() => {
   if (!props.sections || props.sections.length === 0) return true;
 
   for (const section of props.sections) {
     for (const field of section.fields) {
-      if (field.required !== false) {
+      if (
+        isFieldVisible(field) &&
+        field.required !== false &&
+        field.required !== undefined
+      ) {
         const val = formData.value?.[field.key];
         if (val === undefined || val === null || val === "") {
           return false;
@@ -157,6 +168,15 @@ const handleAttemptClose = () => {
 };
 
 const confirmDiscardChanges = () => {
+  if (saveDebounceTimer) {
+    clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = null;
+  }
+  if (props.draftKey) {
+    clearDraft(props.draftKey);
+  }
+  existingDraft.value = null;
+  showDraftBanner.value = false;
   showUnsavedPrompt.value = false;
   isOpen.value = false;
   emit("cancel");
@@ -312,7 +332,7 @@ const handleSubmit = () => {
             <!-- Fields Grid for this Section -->
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div
-                v-for="field in section.fields.filter((f) => !f.hidden)"
+                v-for="field in section.fields.filter(isFieldVisible)"
                 :key="field.key"
                 class="col-span-12"
                 :class="{

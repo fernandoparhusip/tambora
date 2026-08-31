@@ -93,6 +93,24 @@ export interface PermissionItem {
   action_name: string;
 }
 
+export interface CreatePermissionRequest {
+  permission_key: string;
+  description?: string;
+  resource_code?: string;
+  resource_name?: string;
+  action_code?: string;
+  action_name?: string;
+}
+
+export interface UpdatePermissionRequest {
+  permission_key?: string;
+  description?: string;
+  resource_code?: string;
+  resource_name?: string;
+  action_code?: string;
+  action_name?: string;
+}
+
 /** Master Scope DTOs */
 export interface ScopeItem {
   id: string;

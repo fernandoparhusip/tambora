@@ -6,7 +6,7 @@ export interface UserSchemaOptions {
 }
 
 export const getUserFormSections = (
-  options: UserSchemaOptions = {}
+  options: UserSchemaOptions = {},
 ): FormSectionConfig[] => {
   const orgOptions = options.orgOptions || [];
   const roleOptions = options.roleOptions || [];
@@ -30,7 +30,8 @@ export const getUserFormSections = (
           key: "akunPengelola",
           label: "Akun Pengelola?",
           type: "switch",
-          helpText: "Akun pengelola dapat mengelola semua organisasi dalam grup.",
+          helpText:
+            "Akun pengelola dapat mengelola semua organisasi dalam grup.",
           colSpan: 12,
           required: false,
         },
@@ -84,20 +85,6 @@ export const getUserFormSections = (
           required: false,
           hidden: (formData) => formData.akunPengelola !== true,
         },
-        // Shared fields
-        {
-          key: "aplikasiUtama",
-          label: "Aplikasi Utama",
-          type: "searchable-select",
-          placeholder: "Pilih Aplikasi...",
-          options: [
-            { label: "APP 1 - Konfigurasi", value: "APP 1 - Konfigurasi" },
-            { label: "APP 2 - Operasi Pembangkit", value: "APP 2 - Operasi Pembangkit" },
-            { label: "APP 3 - Laporan & Keuangan", value: "APP 3 - Laporan & Keuangan" },
-          ],
-          colSpan: 12,
-          required: false,
-        },
         {
           key: "nama",
           label: "Nama Lengkap",
@@ -120,28 +107,52 @@ export const getUserFormSections = (
           type: "searchable-select",
           placeholder: "Pilih Status...",
           options: [
-            { label: "Karyawan Tetap (PKWT)", value: "Karyawan Tetap" },
-            { label: "Outsourcing (TAD)", value: "Outsourcing" },
-            { label: "Magang / Intern", value: "Magang" },
+            { label: "Aktif", value: "Aktif" },
+            { label: "Nonaktif", value: "Nonaktif" },
           ],
+          colSpan: 6,
+          required: true,
+        },
+        {
+          key: "email",
+          label: "Email",
+          type: "email",
+          placeholder: "contoh@pln.co.id",
+          colSpan: 6,
+          required: true,
+        },
+        {
+          key: "noTelp",
+          label: "No. Telepon / WA",
+          type: "phone",
+          placeholder: "+6281234567890",
+          colSpan: 6,
+          required: false,
+        },
+        {
+          key: "nip",
+          label: "NIP",
+          type: "text",
+          placeholder: "Masukkan NIP pegawai...",
+          colSpan: 6,
+          required: false,
+        },
+        {
+          key: "perNr",
+          label: "PerNr",
+          type: "text",
+          placeholder: "Nomor Personnel...",
           colSpan: 6,
           required: false,
         },
         {
           key: "alamat",
-          label: "Alamat / Domisili",
+          label: "Alamat",
           type: "textarea",
-          placeholder: "Alamat lengkap...",
+          placeholder: "Alamat tempat tinggal...",
           colSpan: 12,
           required: false,
-        },
-        {
-          key: "noTelp",
-          label: "Nomor Telepon",
-          type: "phone",
-          placeholder: "+62 812 3456 7890",
-          colSpan: 12,
-          required: false,
+          rows: 2,
         },
       ],
     },

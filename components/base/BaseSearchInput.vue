@@ -10,12 +10,12 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="relative flex items-center h-12">
+  <div class="relative flex items-center h-12 w-full sm:w-64 shrink-0">
     <input
       :value="modelValue"
       type="text"
       :placeholder="placeholder"
-      class="w-full sm:w-64 h-12 bg-white border border-gray-200 rounded-lg pl-3.5 pr-9 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-[#2563EB] transition-all shadow-2xs"
+      class="w-full h-12 bg-white border border-gray-200 rounded-lg pl-3.5 pr-9 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-[#2563EB] transition-all shadow-2xs"
       @input="
         $emit('update:modelValue', ($event.target as HTMLInputElement).value)
       "

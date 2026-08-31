@@ -61,6 +61,32 @@ describe('Master Composables Test Suite', () => {
         body: expect.objectContaining({ username: 'newuser' })
       })
     })
+    it('updateUser sends POST payload and refetches users', async () => {
+      mockApi
+        .mockResolvedValueOnce({ data: { id: 'u-1', full_name: 'Super Admin Updated' } })
+        .mockResolvedValueOnce({ data: [] })
+
+      const { updateUser } = useUser()
+      await updateUser('u-1', { full_name: 'Super Admin Updated' })
+
+      expect(mockApi).toHaveBeenCalledWith('/users/u-1', {
+        method: 'POST',
+        body: expect.objectContaining({ full_name: 'Super Admin Updated' })
+      })
+    })
+
+    it('deleteUser calls POST /users/:id/delete', async () => {
+      mockApi
+        .mockResolvedValueOnce({ data: null })
+        .mockResolvedValueOnce({ data: [] })
+
+      const { deleteUser } = useUser()
+      await deleteUser('u-1')
+
+      expect(mockApi).toHaveBeenCalledWith('/users/u-1/delete', {
+        method: 'POST'
+      })
+    })
   })
 
   describe('useRole', () => {
@@ -102,6 +128,34 @@ describe('Master Composables Test Suite', () => {
       expect(result).toHaveLength(1)
       expect(permissions.value[0]?.permission_key).toBe('USER.CREATE')
       expect(mockApi).toHaveBeenCalledWith('/permissions')
+    })
+
+    it('createPermission, updatePermission, and deletePermission work with POST', async () => {
+      mockApi
+        .mockResolvedValueOnce({ data: { id: 'p-1', permission_key: 'USER.VIEW' } })
+        .mockResolvedValueOnce({ data: [] })
+        .mockResolvedValueOnce({ data: { id: 'p-1', permission_key: 'USER.VIEW_UPDATED' } })
+        .mockResolvedValueOnce({ data: [] })
+        .mockResolvedValueOnce({ data: null })
+        .mockResolvedValueOnce({ data: [] })
+
+      const { createPermission, updatePermission, deletePermission } = usePermission()
+      await createPermission({ permission_key: 'USER.VIEW' })
+      expect(mockApi).toHaveBeenCalledWith('/permissions/create', {
+        method: 'POST',
+        body: expect.objectContaining({ permission_key: 'USER.VIEW' })
+      })
+
+      await updatePermission('p-1', { permission_key: 'USER.VIEW_UPDATED' })
+      expect(mockApi).toHaveBeenCalledWith('/permissions/p-1', {
+        method: 'POST',
+        body: expect.objectContaining({ permission_key: 'USER.VIEW_UPDATED' })
+      })
+
+      await deletePermission('p-1')
+      expect(mockApi).toHaveBeenCalledWith('/permissions/p-1/delete', {
+        method: 'POST'
+      })
     })
   })
 

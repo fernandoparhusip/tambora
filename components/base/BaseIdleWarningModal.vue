@@ -12,9 +12,9 @@ const {
 <template>
   <VueFinalModal
     v-model="showWarning"
-    class="flex items-center justify-center p-4"
-    content-class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-amber-100 overflow-hidden flex flex-col transform transition-all animate-in fade-in zoom-in-95 duration-200"
-    overlay-class="bg-gray-900/60 backdrop-blur-xs"
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    content-class="relative z-[100] w-full max-w-md bg-white rounded-2xl shadow-2xl border border-amber-100 overflow-hidden flex flex-col transform transition-all animate-in fade-in zoom-in-95 duration-200"
+    overlay-class="fixed inset-0 z-[99] bg-gray-950/60 backdrop-blur-xs"
     :click-to-close="false"
     :esc-to-close="false"
   >

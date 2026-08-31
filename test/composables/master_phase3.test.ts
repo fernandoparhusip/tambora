@@ -48,7 +48,7 @@ describe('Master Phase 3 Composables Test Suite', () => {
       });
     });
 
-    it('deleteOrganization calls DELETE /organization/:id', async () => {
+    it('deleteOrganization calls POST /organization/:id/delete', async () => {
       mockApi
         .mockResolvedValueOnce({ data: null })
         .mockResolvedValueOnce({ data: [] });
@@ -56,8 +56,8 @@ describe('Master Phase 3 Composables Test Suite', () => {
       const { deleteOrganization } = useOrganization();
       await deleteOrganization('org-1');
 
-      expect(mockApi).toHaveBeenCalledWith('/organization/org-1', {
-        method: 'DELETE'
+      expect(mockApi).toHaveBeenCalledWith('/organization/org-1/delete', {
+        method: 'POST'
       });
     });
   });

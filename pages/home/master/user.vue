@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { z } from "zod";
-import type { DetailDataItem } from '~/types/master.types';
-import type { TableColumn, FormSectionConfig } from "~/types";
+import type { DetailDataItem } from "~/types/master.types";
+import type { TableColumn } from "~/types";
 import { getUserFormSections } from "~/schemas/master/user.schema";
 import { exportToExcel } from "~/utils/exportExcel";
 
 // ── Composables ──────────────────────────────────────────────
-const { users, loading, fetchUsers, createUser, updateUser, deleteUser } = useUser();
+const { users, loading, fetchUsers, createUser, updateUser, deleteUser } =
+  useUser();
 const { roles, fetchRoles } = useRole();
 const { organizations, fetchOrganizations } = useOrganization();
 
@@ -17,196 +18,28 @@ const userTableColumns: TableColumn[] = [
   { key: "aksesLevel", label: "Akses Level", sortable: true, type: "text" },
   { key: "organisasi", label: "Organisasi", sortable: true, type: "text" },
   { key: "aksesGrup", label: "Akses Grup", sortable: true, type: "text" },
-  { key: "statusKaryawan", label: "Status Karyawan", sortable: true, type: "custom" },
-  { key: "actions", label: "Aksi", sortable: false, type: "custom" }
+  {
+    key: "statusKaryawan",
+    label: "Status Karyawan",
+    sortable: true,
+    type: "custom",
+  },
+  { key: "actions", label: "Aksi", sortable: false, type: "custom" },
 ];
 
 const orgOptions = computed(() =>
-  organizations.value.map((o: any) => ({ label: `${o.nama} (${o.kode})`, value: o.nama }))
+  organizations.value.map((o: any) => ({
+    label: `${o.nama} (${o.kode})`,
+    value: o.nama,
+  })),
 );
 
-// ── Form Sections Config Builder ──────────────────────────────
-const getUserFormSections = (akunPengelola: boolean = false): FormSectionConfig[] => {
-  const headerFields: FormSectionConfig["fields"] = [
-    {
-      key: "tipe",
-      label: "Type",
-      type: "radio",
-      options: [
-        { label: "SSO PLN", value: "SSO PLN" },
-        { label: "Non-SSO User", value: "Non-SSO User" }
-      ],
-      helpText: "Non-SSO User akan dibuatkan akun internal aplikasi.",
-      colSpan: 12,
-      required: true
-    },
-    {
-      key: "akunPengelola",
-      label: "Akun Pengelola?",
-      type: "switch",
-      helpText: "Akun pengelola dapat mengelola semua organisasi dalam grup.",
-      colSpan: 12,
-      required: false
-    }
-  ];
-
-  const pengelolaOffFields: FormSectionConfig["fields"] = [
-    {
-      key: "organisasi",
-      label: "Organisasi",
-      type: "searchable-select",
-      placeholder: "Pilih Organisasi...",
-      options: orgOptions.value,
-      colSpan: 12,
-      required: true
-    },
-    {
-      key: "aksesLevel",
-      label: "Akses Level (Role)",
-      type: "searchable-select",
-      placeholder: "Pilih Role...",
-      options: roles.value.map(r => ({ label: r.name || r.code, value: r.code })),
-      helpText: "Pilih role hak akses pengguna",
-      colSpan: 12,
-      required: true
-    },
-    {
-      key: "aksesGrup",
-      label: "Akses Grup",
-      type: "searchable-multi-select",
-      placeholder: "Pilih Akses Grup...",
-      options: [
-        { label: "Grup 1", value: "Grup 1" },
-        { label: "Grup 2", value: "Grup 2" },
-        { label: "Grup Operations", value: "Grup Operations" }
-      ],
-      colSpan: 12,
-      required: false
-    },
-    {
-      key: "aplikasiUtama",
-      label: "Aplikasi Utama",
-      type: "searchable-select",
-      placeholder: "Pilih Aplikasi...",
-      options: [
-        { label: "APP 1 - Konfigurasi", value: "APP 1 - Konfigurasi" },
-        { label: "APP 2 - Operasi Pembangkit", value: "APP 2 - Operasi Pembangkit" },
-        { label: "APP 3 - Laporan & Keuangan", value: "APP 3 - Laporan & Keuangan" }
-      ],
-      colSpan: 12,
-      required: false
-    }
-  ];
-
-  const pengelolaOnFields: FormSectionConfig["fields"] = [
-    {
-      key: "aplikasiUtama",
-      label: "Aplikasi Utama",
-      type: "searchable-select",
-      placeholder: "Pilih Aplikasi...",
-      options: [
-        { label: "APP 1 - Konfigurasi", value: "APP 1 - Konfigurasi" },
-        { label: "APP 2 - Operasi Pembangkit", value: "APP 2 - Operasi Pembangkit" }
-      ],
-      colSpan: 12,
-      required: false
-    },
-    {
-      key: "pengelola",
-      label: "Pengelola",
-      type: "searchable-select",
-      placeholder: "Pilih Pengelola...",
-      options: [
-        { label: "Sewa", value: "Sewa" },
-        { label: "PLN Pusat", value: "PLN Pusat" }
-      ],
-      colSpan: 12,
-      required: false
-    }
-  ];
-
-  const profileFields: FormSectionConfig["fields"] = [
-    {
-      key: "nama",
-      label: "Nama Lengkap",
-      type: "text",
-      placeholder: "Masukkan nama lengkap...",
-      colSpan: 12,
-      required: true
-    },
-    {
-      key: "jabatan",
-      label: "Jabatan",
-      type: "text",
-      placeholder: "Contoh: Staff Operasi, Supervisor Unit",
-      colSpan: 6,
-      required: false
-    },
-    {
-      key: "statusKaryawan",
-      label: "Status Karyawan",
-      type: "searchable-select",
-      placeholder: "Pilih Status...",
-      options: [
-        { label: "Aktif", value: "Aktif" },
-        { label: "Nonaktif", value: "Nonaktif" }
-      ],
-      colSpan: 6,
-      required: true
-    },
-    {
-      key: "email",
-      label: "Email",
-      type: "email",
-      placeholder: "contoh@pln.co.id",
-      colSpan: 6,
-      required: true
-    },
-    {
-      key: "noTelp",
-      label: "No. Telepon / WA",
-      type: "text",
-      placeholder: "+6281234567890",
-      colSpan: 6,
-      required: false
-    },
-    {
-      key: "nip",
-      label: "NIP",
-      type: "text",
-      placeholder: "Masukkan NIP pegawai...",
-      colSpan: 6,
-      required: false
-    },
-    {
-      key: "perNr",
-      label: "PerNr",
-      type: "text",
-      placeholder: "Nomor Personnel...",
-      colSpan: 6,
-      required: false
-    },
-    {
-      key: "alamat",
-      label: "Alamat",
-      type: "textarea",
-      placeholder: "Alamat tempat tinggal...",
-      colSpan: 12,
-      required: false,
-      rows: 2
-    }
-  ];
-
-  return [
-    {
-      fields: [
-        ...headerFields,
-        ...(akunPengelola ? pengelolaOnFields : pengelolaOffFields),
-        ...profileFields
-      ]
-    }
-  ];
-};
+const roleOptions = computed(() =>
+  roles.value.map((r: any) => ({
+    label: r.name || r.code,
+    value: r.code,
+  })),
+);
 
 const userValidationSchema = z.object({
   nama: z.string().min(1, "Nama lengkap wajib diisi"),
@@ -220,7 +53,7 @@ const userValidationSchema = z.object({
   perNr: z.string().optional(),
   noTelp: z.string().optional(),
   alamat: z.string().optional(),
-  akunPengelola: z.boolean().optional()
+  akunPengelola: z.boolean().optional(),
 });
 
 // Reactive States
@@ -232,9 +65,12 @@ onMounted(async () => {
   await Promise.allSettled([fetchUsers(), fetchRoles(), fetchOrganizations()]);
 });
 
-// Dynamic Form Sections — driven by akunPengelola
+// Dynamic Form Sections — schema driven with reactive conditional visibility
 const activeFormSections = computed(() => {
-  return getUserFormSections(Boolean(formData.value?.akunPengelola));
+  return getUserFormSections({
+    orgOptions: orgOptions.value,
+    roleOptions: roleOptions.value,
+  });
 });
 
 // Reset pagination on search
@@ -248,7 +84,7 @@ const activeFilteredData = computed(() => {
   const q = searchQuery.value.toLowerCase();
   if (!q) return list;
   return list.filter((row: any) =>
-    Object.values(row).some((val) => String(val).toLowerCase().includes(q))
+    Object.values(row).some((val) => String(val).toLowerCase().includes(q)),
   );
 });
 
@@ -285,7 +121,6 @@ const openCreateModal = () => {
     organisasi: organizations.value[0]?.nama || "",
     aksesLevel: roles.value[0]?.code || "SUPER_ADMIN",
     aksesGrup: ["Grup 1"],
-    aplikasiUtama: "APP 1 - Konfigurasi",
     pengelola: "Sewa",
     nama: "",
     jabatan: "Staff",
@@ -294,7 +129,7 @@ const openCreateModal = () => {
     noTelp: "",
     perNr: "",
     nip: "",
-    alamat: ""
+    alamat: "",
   };
   clearErrors();
   modalOpen.value = true;
@@ -312,20 +147,38 @@ const detailModalSubtitle = computed(() => "Form View Data Pengguna");
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const items: DetailDataItem[] = [
-    { label: "Nama Lengkap", value: detailRecord.value.nama || detailRecord.value.full_name },
+    {
+      label: "Nama Lengkap",
+      value: detailRecord.value.nama || detailRecord.value.full_name,
+    },
     { label: "Email", value: detailRecord.value.email || "-" },
     { label: "Username", value: detailRecord.value.username || "-" },
     { label: "NIP", value: detailRecord.value.nip || "-" },
-    { label: "PerNr", value: detailRecord.value.prnr || detailRecord.value.perNr || "-" },
-    { label: "Organisasi", value: detailRecord.value.organisasi || detailRecord.value.organization || "-" },
-    { label: "Role Akses", value: detailRecord.value.aksesLevel || detailRecord.value.role_assignments?.[0]?.role_code || "-" },
+    {
+      label: "PerNr",
+      value: detailRecord.value.prnr || detailRecord.value.perNr || "-",
+    },
+    {
+      label: "Organisasi",
+      value:
+        detailRecord.value.organisasi || detailRecord.value.organization || "-",
+    },
+    {
+      label: "Role Akses",
+      value:
+        detailRecord.value.aksesLevel ||
+        detailRecord.value.role_assignments?.[0]?.role_code ||
+        "-",
+    },
     {
       label: "Status Karyawan",
-      value: detailRecord.value.statusKaryawan || (detailRecord.value.status === 1 ? "Aktif" : "Nonaktif"),
-      isStatus: true
+      value:
+        detailRecord.value.statusKaryawan ||
+        (detailRecord.value.status === 1 ? "Aktif" : "Nonaktif"),
+      isStatus: true,
     },
     { label: "Alamat", value: detailRecord.value.alamat || "-" },
-    { label: "No. Telp", value: detailRecord.value.noTelp || "-" }
+    { label: "No. Telp", value: detailRecord.value.noTelp || "-" },
   ];
   return items;
 });
@@ -347,7 +200,8 @@ const handleEdit = (row: any) => {
     ...row,
     nama: row.nama || row.full_name,
     organisasi: row.organisasi || row.organization,
-    aksesLevel: row.aksesLevel || row.role_assignments?.[0]?.role_code || "SUPER_ADMIN"
+    aksesLevel:
+      row.aksesLevel || row.role_assignments?.[0]?.role_code || "SUPER_ADMIN",
   };
   clearErrors();
   modalOpen.value = true;
@@ -402,7 +256,10 @@ const handleSave = async () => {
   try {
     const roleCode = formData.value.aksesLevel || formData.value.role || "USER";
     if (modalMode.value === "create") {
-      const username = formData.value.username || formData.value.email?.split("@")[0] || `user_${Date.now()}`;
+      const username =
+        formData.value.username ||
+        formData.value.email?.split("@")[0] ||
+        `user_${Date.now()}`;
       await createUser({
         email: formData.value.email || `${username}@pln.co.id`,
         username,
@@ -411,7 +268,7 @@ const handleSave = async () => {
         organization: formData.value.organisasi || "BaseTambora",
         nip: formData.value.nip || "",
         prnr: formData.value.perNr || formData.value.prnr || "",
-        role_assignments: [{ role_code: roleCode, scope_codes: [] }]
+        role_assignments: [{ role_code: roleCode, scope_codes: [] }],
       });
     } else {
       await updateUser(formData.value.id, {
@@ -420,7 +277,7 @@ const handleSave = async () => {
         nip: formData.value.nip,
         prnr: formData.value.perNr || formData.value.prnr,
         status: formData.value.statusKaryawan === "Nonaktif" ? 0 : 1,
-        role_assignments: [{ role_code: roleCode, scope_codes: [] }]
+        role_assignments: [{ role_code: roleCode, scope_codes: [] }],
       });
     }
     modalOpen.value = false;
@@ -451,7 +308,10 @@ const handleSave = async () => {
         >
           <!-- Left: Search input + Export button -->
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Nama / Email / NIP..." />
+            <BaseSearchInput
+              v-model="searchQuery"
+              placeholder="Cari Nama / Email / NIP..."
+            />
             <BaseExportButton @click="handleExport" />
           </div>
 
@@ -470,8 +330,10 @@ const handleSave = async () => {
         >
           <!-- Status Karyawan Cell Slot -->
           <template #statusKaryawan-data="{ row }">
-            <BaseBadge :variant="row.statusKaryawan === 'Aktif' ? 'success' : 'danger'">
-              {{ row.statusKaryawan || 'Aktif' }}
+            <BaseBadge
+              :variant="row.statusKaryawan === 'Aktif' ? 'success' : 'danger'"
+            >
+              {{ row.statusKaryawan || "Aktif" }}
             </BaseBadge>
           </template>
 

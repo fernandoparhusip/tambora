@@ -117,15 +117,9 @@ export const menuItems: MenuItem[] = [
       },
       {
         key: 'pagu',
-        label: 'Pagu Anggaran',
-        pageTitle: 'Pagu Anggaran',
+        label: 'Pagu',
+        pageTitle: 'Pagu',
         path: '/home/transaksi/pagu',
-      },
-      {
-        key: 'pagu-bidang',
-        label: 'Pagu Bidang',
-        pageTitle: 'Pagu Bidang',
-        path: '/home/transaksi/pagu-bidang',
       },
       {
         key: 'prognosa',

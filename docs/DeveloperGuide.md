@@ -153,16 +153,18 @@ export const useContoh = () => {
     });
   };
 
+  // Standard Tambora: Update menggunakan POST ke /contoh/:id
   const updateItem = async (id: string, payload: Partial<CreateContohRequest>) => {
     return await api(`/contoh/${id}`, {
-      method: 'PUT',
+      method: 'POST',
       body: payload
     });
   };
 
+  // Standard Tambora: Delete menggunakan POST ke /contoh/:id/delete
   const deleteItem = async (id: string) => {
-    return await api(`/contoh/${id}`, {
-      method: 'DELETE'
+    return await api(`/contoh/${id}/delete`, {
+      method: 'POST'
     });
   };
 
@@ -176,6 +178,12 @@ export const useContoh = () => {
   };
 };
 ```
+
+> [!IMPORTANT]
+> **Kebijakan HTTP Methods Proyek Tambora:**
+> * Method `PUT` dan `DELETE` dilarang digunakan di backend/frontend.
+> * Operasi **Update / Edit** wajib menggunakan `POST /{resource}/{id}`.
+> * Operasi **Delete / Hapus** wajib menggunakan `POST /{resource}/{id}/delete`.
 
 ---
 
