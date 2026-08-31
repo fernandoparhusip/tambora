@@ -91,12 +91,29 @@ export function parseApiError(error: any): ApiErrorResult {
         summary: 'Gangguan Server',
         detail: backendMessage || 'Terjadi gangguan internal pada server. Silakan coba beberapa saat lagi.'
       }
-    default:
+    default: {
+      const rawMsg = typeof error?.message === 'string' ? error.message : ''
+      const isTechnicalError =
+        rawMsg.startsWith('[') ||
+        rawMsg.includes('Failed to fetch') ||
+        rawMsg.includes('fetch failed') ||
+        rawMsg.includes('NetworkError') ||
+        rawMsg.includes('<no response>') ||
+        rawMsg.includes('http://') ||
+        rawMsg.includes('https://')
+
+      const detailMessage =
+        backendMessage ||
+        (isTechnicalError || !rawMsg
+          ? 'Gagal terhubung ke server atau terjadi kendala jaringan.'
+          : rawMsg)
+
       return {
-        statusCode: status,
+        statusCode: status || 0,
         severity: 'error',
         summary: 'Terjadi Kesalahan',
-        detail: backendMessage || error?.message || 'Gagal terhubung ke server atau terjadi kendala jaringan.'
+        detail: detailMessage,
       }
+    }
   }
 }

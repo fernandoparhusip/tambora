@@ -1,4 +1,5 @@
 import { useAuthStore } from '~/stores/auth';
+import { parseApiError } from '~/utils/apiError'
 import { ref } from 'vue'
 
 export interface LoginPayload {
@@ -92,7 +93,8 @@ export const useAuth = () => {
 
       return response
     } catch (e: any) {
-      const msg = e.data?.message || e.message || 'Email atau password salah.'
+      const parsed = parseApiError(e)
+      const msg = parsed.detail || 'Email atau password yang dimasukkan salah.'
       errorMessage.value = msg
       throw new Error(msg)
     } finally {

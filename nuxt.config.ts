@@ -2,8 +2,6 @@ import { defineNuxtConfig } from "nuxt/config";
 import { useNuxt } from "@nuxt/kit";
 import Aura from "@primeuix/themes/aura";
 
-const apiBackend = process.env.NUXT_BACKEND_URL || 'http://88.222.242.143:9090';
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default (defineNuxtConfig as (config: any) => any)({
   compatibilityDate: "2026-07-21",
@@ -11,11 +9,6 @@ export default (defineNuxtConfig as (config: any) => any)({
   app: {
     pageTransition: { name: 'page', mode: 'out-in' },
     layoutTransition: { name: 'layout', mode: 'out-in' },
-  },
-  routeRules: {
-    '/api/v1/**': {
-      proxy: `${apiBackend}/api/v1/**`,
-    },
   },
   runtimeConfig: {
     backendUrl: process.env.NUXT_BACKEND_URL || 'http://88.222.242.143:9090',

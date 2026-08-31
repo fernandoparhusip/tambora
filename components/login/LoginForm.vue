@@ -251,7 +251,19 @@ async function performLogin() {
     const redirectTarget = (route.query.redirect as string) || "/home";
     await navigateTo(redirectTarget);
   } catch (err: any) {
-    errorMessage.value = err?.message || "Email atau password yang dimasukkan salah.";
+    const rawMsg = String(err?.message || "");
+    const isTechnicalError =
+      rawMsg.startsWith("[") ||
+      rawMsg.includes("Failed to fetch") ||
+      rawMsg.includes("fetch failed") ||
+      rawMsg.includes("NetworkError") ||
+      rawMsg.includes("http://") ||
+      rawMsg.includes("https://");
+
+    errorMessage.value =
+      isTechnicalError || !rawMsg
+        ? "Gagal terhubung ke server atau terjadi kendala jaringan."
+        : rawMsg;
     nextTick(() => triggerForgotPasswordGuide());
   } finally {
     isLoading.value = false;
