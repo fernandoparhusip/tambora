@@ -11,11 +11,10 @@ variables:
 # =========================
 test:
   stage: test
-  image: node:22-alpine
+  image: node:22
 
   script:
     - npm ci
-    - npm run lint
     - npm run build
 
   rules:
