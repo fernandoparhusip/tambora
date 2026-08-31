@@ -42,9 +42,9 @@ const handleConfirm = () => {
     content-transition="vfm-fade"
     :click-to-close="!loading"
     :esc-to-close="!loading"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4"
-    content-class="relative z-50 bg-white w-full max-w-sm sm:max-w-md rounded-2xl p-6 sm:p-7 flex flex-col items-center text-center shadow-2xl border border-gray-100/90 my-auto select-none"
-    overlay-class="fixed inset-0 bg-gray-950/40 backdrop-blur-xs"
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    content-class="relative z-[100] bg-white w-full max-w-sm sm:max-w-md rounded-2xl p-6 sm:p-7 flex flex-col items-center text-center shadow-2xl border border-gray-100/90 my-auto select-none"
+    overlay-class="fixed inset-0 bg-gray-950/40 backdrop-blur-xs z-[99]"
   >
     <!-- Warning / Danger Icon Badge -->
     <div

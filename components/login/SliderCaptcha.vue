@@ -17,8 +17,6 @@ const props = defineProps({
   },
 });
 
-import localImageFallback from "@/assets/image/LowRes/image1.png";
-
 // Define image list for random selection (High-speed CDN)
 const imageList = [
   "https://images.unsplash.com/photo-1509390144018-eeaf65052242?auto=format&fit=crop&w=800&h=450&q=80", // Solar/Energy
@@ -31,11 +29,9 @@ const imageList = [
   "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&h=450&q=80", // Foggy hills
 ];
 
-const fallbackImage =
-  localImageFallback ||
-  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><rect width="800" height="450" fill="url(#g)"/></svg>'
-  )}`;
+const fallbackImage = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><rect width="800" height="450" fill="url(#g)"/></svg>'
+)}`;
 
 // Reactive state
 const imageSrc = ref("");
