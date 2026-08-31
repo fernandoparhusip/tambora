@@ -6,41 +6,26 @@ stages:
 variables:
   DOCKER_IMAGE: "$CI_REGISTRY_IMAGE/frontend"
 
-# =========================================================
-# TEST / BUILD CHECK
-# =========================================================
-
+# =========================
+# TEST
+# =========================
 test:
   stage: test
-  image: node:22
+  image: node:22-alpine
 
   script:
-    - echo "Node version:"
-    - node --version
-    - echo "NPM version:"
-    - npm --version
-
-    # Pastikan dependency dibuat ulang di environment Linux
-    - rm -rf node_modules
-    - rm -f package-lock.json
-
-    - echo "Installing dependencies..."
-    - npm install
-
-    - echo "Building Nuxt application..."
+    - npm ci
+    - npm run lint
     - npm run build
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
-
-# =========================================================
+# =========================
 # BUILD DOCKER IMAGE
-# =========================================================
-
+# =========================
 build:
   stage: build
-
   image: docker:27
 
   services:
@@ -48,57 +33,34 @@ build:
       alias: docker
 
   variables:
-    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
 
   before_script:
-    - echo "Docker version:"
-    - docker --version
-
-    - echo "Login GitLab Container Registry..."
-    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" \
-        -u "$CI_REGISTRY_USER" \
-        --password-stdin
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
 
   script:
-    - echo "Building Docker image..."
-
-    - docker build \
-        --pull \
-        -t "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA" \
-        -t "$DOCKER_IMAGE:latest" \
-        .
-
-    - echo "Pushing image $CI_COMMIT_SHORT_SHA..."
+    - docker build -t "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA" .
+    - docker tag "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA" "$DOCKER_IMAGE:latest"
     - docker push "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
-
-    - echo "Pushing latest..."
     - docker push "$DOCKER_IMAGE:latest"
-
-    - echo "Docker image successfully pushed."
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
-
-# =========================================================
+# =========================
 # DEPLOY TO VPS
-# =========================================================
-
+# =========================
 deploy:
   stage: deploy
-
   image: alpine:3.22
 
   before_script:
     - apk add --no-cache openssh-client
 
-    - echo "Preparing SSH..."
-
     - mkdir -p ~/.ssh
 
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-
     - chmod 600 ~/.ssh/id_ed25519
 
     - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
@@ -107,56 +69,33 @@ deploy:
     - |
       ssh -i ~/.ssh/id_ed25519 root@$VPS_HOST << EOF
 
-      set -e
-
-      echo "=========================================="
       echo "Login VPS berhasil"
-      echo "=========================================="
 
-      echo "Docker login..."
+      docker login $CI_REGISTRY \
+        -u $CI_REGISTRY_USER \
+        -p $CI_REGISTRY_PASSWORD
 
-      echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" \
-        -u "$CI_REGISTRY_USER" \
-        --password-stdin
-
-      echo "=========================================="
       echo "Pull frontend image..."
-      echo "=========================================="
 
-      docker pull "$DOCKER_IMAGE:latest"
+      docker pull $DOCKER_IMAGE:latest
 
-      echo "=========================================="
       echo "Stop container lama..."
-      echo "=========================================="
 
       docker stop tambora-frontend || true
-
-      echo "Remove container lama..."
-
       docker rm tambora-frontend || true
 
-      echo "=========================================="
       echo "Start container baru..."
-      echo "=========================================="
 
       docker run -d \
         --name tambora-frontend \
         --restart unless-stopped \
         -p 9091:3000 \
         --env-file /opt/tambora/frontend/.env \
-        "$DOCKER_IMAGE:latest"
+        $DOCKER_IMAGE:latest
 
-      echo "=========================================="
       echo "Deployment frontend selesai"
-      echo "=========================================="
 
-      echo "Container status:"
-
-      docker ps --filter "name=tambora-frontend"
-
-      echo "=========================================="
-      echo "Frontend deployment berhasil"
-      echo "=========================================="
+      docker ps
 
       EOF
 
