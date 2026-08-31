@@ -1,38 +1,26 @@
-# =========================================================
-# BUILD STAGE
-# =========================================================
-
-FROM node:22 AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
+COPY package*.json ./
 
-# Install dependencies di Linux
-RUN rm -rf node_modules && npm install
+RUN npm ci --legacy-peer-deps
 
-# Copy source code
 COPY . .
 
-# Build Nuxt
 RUN npm run build
 
 
-# =========================================================
-# PRODUCTION STAGE
-# =========================================================
-
-FROM node:22-slim AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
 
-# Copy hasil build Nuxt
 COPY --from=builder /app/.output ./.output
 
-# Nuxt production server
 EXPOSE 3000
 
 CMD ["node", ".output/server/index.mjs"]
