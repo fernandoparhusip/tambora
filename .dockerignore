@@ -6,7 +6,8 @@ node_modules
 .vscode
 .idea
 npm-debug.log
-yarn-error.log
-.DS_Store
+Dockerfile
+.dockerignore
 .env
 .env.*
+!.env.example
