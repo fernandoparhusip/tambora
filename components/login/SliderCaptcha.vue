@@ -17,18 +17,25 @@ const props = defineProps({
   },
 });
 
-// Define image list for random selection
+import localImageFallback from "@/assets/image/LowRes/image1.png";
+
+// Define image list for random selection (High-speed CDN)
 const imageList = [
-  "https://picsum.photos/id/1015/800/450",
-  "https://picsum.photos/id/1016/800/450",
-  "https://picsum.photos/id/1025/800/450",
-  "https://picsum.photos/id/1035/800/450",
-  "https://picsum.photos/id/1043/800/450",
-  "https://picsum.photos/id/1050/800/450",
-  "https://picsum.photos/id/1068/800/450",
+  "https://images.unsplash.com/photo-1509390144018-eeaf65052242?auto=format&fit=crop&w=800&h=450&q=80", // Solar/Energy
+  "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=800&h=450&q=80", // Wind turbine/Power
+  "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=800&h=450&q=80", // Green energy
+  "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&h=450&q=80", // Forest/Nature
+  "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=800&h=450&q=80", // Mountain
+  "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&h=450&q=80", // Landscape
+  "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&h=450&q=80", // Night city
+  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&h=450&q=80", // Foggy hills
 ];
 
-const fallbackImage = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><rect width="800" height="450" fill="url(#g)"/></svg>')}`;
+const fallbackImage =
+  localImageFallback ||
+  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><rect width="800" height="450" fill="url(#g)"/></svg>'
+  )}`;
 
 // Reactive state
 const imageSrc = ref("");
@@ -63,7 +70,7 @@ const debugInfo = ref({
   dimensionUpdates: 0,
 });
 
-function preloadImage(src, timeoutMs = 7000) {
+function preloadImage(src, timeoutMs = 2000) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const timer = setTimeout(() => reject(new Error("timeout")), timeoutMs);
@@ -90,7 +97,7 @@ async function assignRandomImage() {
 
   for (const src of getShuffledImages()) {
     try {
-      await preloadImage(src);
+      await preloadImage(src, 2000);
       if (token !== imageLoadToken.value) return;
       imageSrc.value = src;
       imageLoading.value = false;

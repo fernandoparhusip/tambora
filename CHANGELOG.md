@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-31
+
+### 📶 Remote Resilience & Low-Bandwidth Optimization (Sumbawa Edition)
+* **form-draft:** Created `composables/useFormDraft.ts` with debounced (500ms) automatic draft saving to browser storage, recovery banner with timestamp in `BaseFormModal.vue`, and auto-cleanup on successful submit.
+* **transaksi-drafts:** Integrated unique `draft-key` across all 7 Transaksi pages (`operasi-harian`, `pemakaian-bahan-bakar`, `pembebanan`, `pagu`, `pagu-bidang`, `prognosa`, `nko`).
+* **swr-api-cache:** Created `composables/useApiCache.ts` providing Stale-While-Revalidate (SWR) caching with configurable TTL, sessionStorage persistence, concurrent request deduplication, and prefix-based cache invalidation.
+* **smart-network-retry:** Upgraded `composables/useApi.ts` with automated retry policy (up to 2 retries with 1000ms backoff) for network errors and gateway timeouts (408, 429, 500, 502, 503, 504).
+* **captcha-cdn:** Upgraded `SliderCaptcha.vue` to use high-speed Unsplash CDN image pool with randomized shuffling, accelerated 2000ms preload timeout, and local asset fallback.
+* **developer-guide:** Published comprehensive [`docs/DeveloperGuide.md`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/docs/DeveloperGuide.md) documenting the 5-step SOP for adding new Master & Transaksi modules.
+* **ci-cd-fix:** Purged platform-specific Windows binaries (`@oxc-parser/binding-win32-x64-msvc`, `@rolldown/binding-win32-x64-msvc`, `oxc-parser`) from `package.json` devDependencies to resolve `EBADPLATFORM` failure on Linux Alpine GitLab CI/CD runners and Docker container builds.
+* **tests:** Added `test/composables/formDraft.test.ts` and `test/composables/apiCache.test.ts` achieving **72/72 tests passed (100% green)** across 14 test suites.
+
+---
+
 ## [0.6.0] - 2026-08-28
 
 ### 📶 Network Resilience & Offline Detection

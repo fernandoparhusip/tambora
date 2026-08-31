@@ -11,6 +11,9 @@ export const useApi = () => {
 
   const api = $fetch.create({
     baseURL: config.public.apiBaseUrl,
+    retry: 2,
+    retryStatusCodes: [408, 429, 500, 502, 503, 504],
+    retryDelay: 1000,
 
     headers: {
       Accept: 'application/json'

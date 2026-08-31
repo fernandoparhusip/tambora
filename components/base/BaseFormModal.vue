@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { VueFinalModal } from "vue-final-modal";
+import { FileText, RotateCcw, X } from "@lucide/vue";
 import type { FormSectionConfig } from "~/types";
+import { useFormDraft, type FormDraftData } from "~/composables/useFormDraft";
 
 interface Props {
   title: string;
@@ -10,6 +12,8 @@ interface Props {
   submitting?: boolean;
   errors?: Record<string, string>;
   variant?: "drawer" | "centered";
+  /** Optional unique key for auto-saving form drafts to prevent data loss */
+  draftKey?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -17,6 +21,7 @@ const props = withDefaults(defineProps<Props>(), {
   submitting: false,
   errors: () => ({}),
   variant: "drawer",
+  draftKey: "",
 });
 
 const emit = defineEmits<{
@@ -29,21 +34,87 @@ const formData = defineModel<Record<string, any>>("formData", {
   default: () => ({}),
 });
 
+// Draft handling
+const { saveDraft, getDraft, clearDraft } = useFormDraft();
+const existingDraft = ref<FormDraftData | null>(null);
+const showDraftBanner = ref(false);
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 // State for unsaved changes guard
 const initialSnapshot = ref("");
 const showUnsavedPrompt = ref(false);
 
-// Record initial snapshot whenever modal opens
+// Record initial snapshot and check for existing drafts whenever modal opens
 watch(
   isOpen,
   (open) => {
     if (open) {
       showUnsavedPrompt.value = false;
       initialSnapshot.value = JSON.stringify(formData.value || {});
+
+      // Check for available draft
+      if (props.draftKey) {
+        const found = getDraft(props.draftKey);
+        if (found && found.data) {
+          // Only show banner if draft data is different from current form data
+          const currentStr = JSON.stringify(formData.value || {});
+          const draftStr = JSON.stringify(found.data);
+          if (currentStr !== draftStr) {
+            existingDraft.value = found;
+            showDraftBanner.value = true;
+          }
+        }
+      }
+    } else {
+      showDraftBanner.value = false;
+      existingDraft.value = null;
     }
   },
   { immediate: true }
 );
+
+// Auto-save draft on form input changes (debounced 500ms)
+watch(
+  formData,
+  (newVal) => {
+    if (!isOpen.value || !props.draftKey) return;
+
+    if (saveDebounceTimer) {
+      clearTimeout(saveDebounceTimer);
+    }
+
+    saveDebounceTimer = setTimeout(() => {
+      if (props.draftKey && isOpen.value) {
+        saveDraft(props.draftKey, newVal || {});
+      }
+    }, 500);
+  },
+  { deep: true }
+);
+
+onBeforeUnmount(() => {
+  if (saveDebounceTimer) {
+    clearTimeout(saveDebounceTimer);
+  }
+});
+
+const restoreDraft = () => {
+  if (existingDraft.value?.data) {
+    formData.value = {
+      ...formData.value,
+      ...existingDraft.value.data,
+    };
+  }
+  showDraftBanner.value = false;
+};
+
+const discardDraft = () => {
+  if (props.draftKey) {
+    clearDraft(props.draftKey);
+  }
+  showDraftBanner.value = false;
+  existingDraft.value = null;
+};
 
 // Check if form data has been modified by the user
 const isDirty = computed(() => {
@@ -97,6 +168,9 @@ const continueEditing = () => {
 
 const handleSubmit = () => {
   if (!isFormValid.value || props.submitting) return;
+  if (props.draftKey) {
+    clearDraft(props.draftKey);
+  }
   emit("submit");
 };
 </script>
@@ -166,6 +240,56 @@ const handleSubmit = () => {
 
       <!-- Drawer Body (Full height scrollable, bg-[#F6FAFD]) -->
       <div class="flex-1 overflow-y-auto p-6 bg-[#F6FAFD] space-y-6">
+        <!-- Draft Recovery Banner -->
+        <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="transform -translate-y-2 opacity-0"
+          enter-to-class="transform translate-y-0 opacity-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="transform translate-y-0 opacity-100"
+          leave-to-class="transform -translate-y-2 opacity-0"
+        >
+          <div
+            v-if="showDraftBanner"
+            class="p-4 bg-amber-50/90 border border-amber-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+          >
+            <div class="flex items-start sm:items-center gap-3">
+              <div class="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0">
+                <FileText class="w-4 h-4" />
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-amber-900">
+                  Ditemukan Draft Tersimpan
+                </p>
+                <p class="text-[11px] text-amber-700 mt-0.5">
+                  Tersimpan otomatis
+                  <span v-if="existingDraft?.formattedTime">pukul {{ existingDraft.formattedTime }}</span>.
+                  Pulihkan data input sebelumnya?
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              <button
+                type="button"
+                class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                @click="restoreDraft"
+              >
+                <RotateCcw class="w-3.5 h-3.5" />
+                <span>Pulihkan Draft</span>
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1.5 text-amber-700 hover:bg-amber-100 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                title="Abaikan dan hapus draft"
+                @click="discardDraft"
+              >
+                <X class="w-3.5 h-3.5" />
+                <span>Abaikan</span>
+              </button>
+            </div>
+          </div>
+        </Transition>
+
         <form
           id="base-form-modal-form"
           class="space-y-6"

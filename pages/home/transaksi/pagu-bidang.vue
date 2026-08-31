@@ -255,6 +255,7 @@ const detailItems = computed<DetailDataItem[]>(() => {
       :subtitle="modalSubtitle"
       :sections="formSections"
       :submitting="submitting"
+      draft-key="transaksi-pagu-bidang"
       @submit="handleSubmit"
       @cancel="modalOpen = false"
     />

@@ -12,7 +12,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-64_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-72_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 
 </div>
 
@@ -22,7 +22,7 @@
 
 **Tambora Web App** adalah platform enterprise modern berbasis *Single Page & Server-Side Rendering (Universal SSR)* yang dirancang khusus untuk memonitor stabilitas sistem ketenagalistrikan, neraca daya, dan tata kelola master data pembangkitan di lingkungan **PT PLN (Persero)**.
 
-Platform ini mengintegrasikan pemetaan spasial geografis sentral pembangkit (GIS), analitik kurva beban *real-time*, mesin formulir dinamis (*Schema-Driven Dynamic Form Engine*), modul transaksi pencatatan daya dan anggaran, sistem otentikasi aman terintegrasi, serta rangkaian animasi mikro modern berstandar enterprise (*60 FPS Hardware-Accelerated*).
+Platform ini mengintegrasikan pemetaan spasial geografis sentral pembangkit (GIS), analitik kurva beban *real-time*, mesin formulir dinamis (*Schema-Driven Dynamic Form Engine*), modul transaksi pencatatan daya dan anggaran, sistem otentikasi aman terintegrasi, fitur ketangguhan jaringan terpencil (*Low-Bandwidth Resilience & Form Auto-Save*), serta rangkaian animasi mikro modern berstandar enterprise (*60 FPS Hardware-Accelerated*).
 
 ```mermaid
 graph LR
@@ -31,6 +31,7 @@ graph LR
         UI --> TABLE["BaseTable (Column Visibility Toggle & GSAP Stagger)"]
         UI --> GIS["GIS Map Monitoring (OpenLayers v10 + MapTiler Positron)"]
         UI --> TOAST["Modern Toast Notification System (useAppToast)"]
+        UI --> DRAFT["Auto-Save Form Drafts (useFormDraft) & SWR Cache (useApiCache)"]
     end
 
     subgraph PROXY["Nitro Server Engine"]
@@ -56,7 +57,7 @@ graph LR
 | **⚡ Dashboard Operasi** | Monitoring metrik real-time: **DMN** (Daya Mampu Nyata), **DMP** (Daya Mampu Pasok), **Beban Sistem**, **Unit Max**, dan **Cadangan Total/Putar**. |
 | **🗺️ GIS Sentral Map** | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan marker status visual (*Operasi*, *Gangguan*, *Pemeliharaan/Standby*), popup detail unit, dan filter wilayah. |
 | **📈 Analisis Beban & Grafik** | Visualisasi kurva beban harian/mingguan dan tren neraca energi bertenaga **Apache ECharts**. |
-| **📶 Offline Network Detection** | Deteksi instan status koneksi jaringan (`navigator.onLine`) yang memicu notifikasi Toast elegan dan indicator pill halus tanpa banner mengambang. |
+| **📶 Remote Resilience (Sumbawa Edition)** | **Auto-Save Form Drafts** (pencegah kehilangan ketikan saat sinyal mati), **SWR API Client Cache** (buka tabel instan 0ms), dan **Smart Network Retry** (otomatis coba ulang request saat koneksi drop). |
 | **🎨 Modern GSAP & GPU Animations** | Transisi halaman mulus (*Page Route Transitions*), efek baris tabel meluncur berjenjang (**GSAP Row Stagger**), **5-row Shimmer Skeleton Loader**, dan efek klik tombol membal (**Tactile Micro-Interactions**). |
 | **🍞 Floating Toast & Form Guard** | Sistem notifikasi mengambang pojok kanan atas dengan **Timer Countdown Progress Bar** (`useAppToast`), serta perlindungan data form (*Unsaved Changes Guard* di `BaseFormModal.vue`). |
 | **📝 Dynamic Form Engine** | Formulir berbasis skema deklaratif di `schemas/master/` dan `schemas/transaksi/` dengan dukungan *conditional field visibility* (`hidden`), *functional disabled*, dan validasi otomatis. |
@@ -172,14 +173,18 @@ Proyek ini menerapkan standar **SonarQube Grade A** dan **Clean Architecture Pol
  ✓ test/utils/apiError.test.ts (9 tests)
  ✓ test/utils/operasiPembangkitUtils.test.ts (3 tests)
  ✓ test/utils/formatNumber.test.ts (8 tests)
+ ✓ test/composables/apiCache.test.ts (4 tests)
+ ✓ test/composables/formDraft.test.ts (4 tests)
+ ✓ test/composables/toast.test.ts (3 tests)
+ ✓ test/composables/network.test.ts (1 test)
  ✓ test/stores/auth.test.ts (6 tests)
  ✓ test/composables/idleTimer.test.ts (3 tests)
  ✓ test/composables/master_phase3.test.ts (9 tests)
  ✓ test/composables/master.test.ts (8 tests)
  ✓ test/composables/transaksi.test.ts (8 tests)
 
- Test Files  10 passed (10)
-      Tests  60 passed (60)
+ Test Files  14 passed (14)
+      Tests  72 passed (72)
    Coverage  > 85% Code Coverage
    ESLint    0 Errors, 0 Warnings
 ```
@@ -190,6 +195,7 @@ Proyek ini menerapkan standar **SonarQube Grade A** dan **Clean Architecture Pol
 
 Untuk membaca pedoman arsitektur dan spesifikasi mendalam, silakan merujuk ke folder [`/docs`](docs/):
 
+* 📘 [**Developer Guide**](docs/DeveloperGuide.md) — Panduan teknis & SOP 5 langkah membuat modul Master & Transaksi baru.
 * 📄 [**Product Requirements Document (PRD)**](docs/PRD.md) — Spesifikasi kebutuhan bisnis dan alur operasional.
 * 🏗️ [**System Architecture**](docs/Architecture.md) — Arsitektur layering, standar composable, dan security proxy.
 * 📊 [**Data Schemas & Contracts**](docs/Schema.md) — Definisi tipe data domain, DTO, dan konfigurasi form/table.
