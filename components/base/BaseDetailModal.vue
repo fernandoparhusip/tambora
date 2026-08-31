@@ -78,15 +78,15 @@ const handleEdit = () => {
     :esc-to-close="true"
     :class="
       variant === 'centered'
-        ? 'fixed inset-0 z-50 flex items-center justify-center p-4'
-        : 'fixed inset-0 z-50 flex justify-end'
+        ? 'fixed inset-0 z-[100] flex items-center justify-center p-4'
+        : 'fixed inset-0 z-[100] flex justify-end'
     "
     :content-class="
       variant === 'centered'
-        ? 'relative z-40 bg-[#F6FAFD] w-full max-w-4xl rounded-2xl flex flex-col shadow-2xl border border-gray-200/60 overflow-hidden max-h-[92vh] my-auto'
-        : 'absolute z-40 top-0 right-0 bg-[#F6FAFD] w-4/5 sm:w-3/4 md:w-2/3 lg:w-3/5 h-screen flex flex-col shadow-2xl border-l border-gray-200/60 overflow-hidden'
+        ? 'relative z-[100] bg-[#F6FAFD] w-full max-w-4xl rounded-2xl flex flex-col shadow-2xl border border-gray-200/60 overflow-hidden max-h-[92vh] my-auto'
+        : 'absolute z-[100] top-0 right-0 bg-[#F6FAFD] w-4/5 sm:w-3/4 md:w-2/3 lg:w-3/5 h-screen flex flex-col shadow-2xl border-l border-gray-200/60 overflow-hidden'
     "
-    overlay-class="fixed inset-0 bg-gray-950/40 backdrop-blur-xs"
+    overlay-class="fixed inset-0 bg-gray-950/40 backdrop-blur-xs z-[99]"
   >
     <!-- Modal Header -->
     <div
