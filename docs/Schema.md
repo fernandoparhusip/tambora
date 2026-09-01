@@ -35,13 +35,17 @@ export interface SystemSummary {
 }
 ```
 
-### 1.3. Master Entities (`types/master.types.ts`)
-* `UserDTO`: Manajemen akun, NIP, PRNR, Organisasi, dan Status.
-* `DriverDTO`: Master pengemudi operasional PLN.
-* `OrganizationDTO`: Struktur hierarki unit/induk/wilayah (*parent-child*).
-* `SystemDTO`: Master sistem ketenagalistrikan.
-* `RoleDTO`, `PermissionItem`, & `ScopeDTO`: Akses kontrol, katalog hak akses (Permission), & cakupan unit organisasi.
-* `AssetDTO` & `MachineConditionDTO`: Inventaris mesin pembangkit dan status kesiapan.
+### 1.3. Konfigurasi Aplikasi & Master Entities (`types/master.types.ts`)
+* **Konfigurasi Aplikasi**:
+  * `ScopeItem` (Master Akses Level): Kode, Nama, Tipe Scope (`Organization`), Deskripsi, dan Audit Trail.
+  * `RoleItem` (Master Akses Grup): Kode, Nama, Deskripsi, Tipe System/Custom, Hak Akses (`permissions`), dan Audit Trail.
+* **Master Data**:
+  * `UserItem` (`CreateUserRequest` & `UpdateUserRequest`): 20-field enterprise schema (`access_level`, `address`, `akses_grup`, `approval_code`, `description`, `email`, `full_name`, `is_pengelola`, `is_sso`, `jabatan`, `jenis_pengguna`, `main_application`, `nip`, `organization`, `organization_id`, `password`, `permission_overrides`, `pernr`, `phone_number`, `role_assignments`, `status_karyawan`).
+  * `PermissionItem`: Auto-generated `permission_key` (`{ResourceCode}.{ActionCode}`), resource ID, action ID, dan deskripsi.
+  * `DriverDTO`: Master pengemudi operasional PLN.
+  * `OrganizationDTO`: Struktur hierarki unit/induk/wilayah (*parent-child*).
+  * `SystemDTO`: Master sistem ketenagalistrikan.
+  * `AssetDTO` & `MachineConditionDTO`: Inventaris mesin pembangkit dan status kesiapan.
 
 ### 1.4. Transaksi Entities (`types/transaksi.types.ts`)
 Kontrak DTO live untuk seluruh 7 modul transaksi pembangkitan:

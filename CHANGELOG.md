@@ -4,7 +4,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] - 2026-08-31
+## [0.5.0] - 2026-09-01
+
+### ⚙️ Modul Konfigurasi Aplikasi, User 20-Field Payload, Rich Permission Tooltip & BaseTable Sticky Fix
+
+- **konfigurasi-aplikasi-module:** Created dedicated `konfigurasi-aplikasi` module with clean separation from master data:
+  - **Pages:** [`pages/home/konfigurasi-aplikasi/akses-level.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/akses-level.vue) (migrated from Scope) and [`pages/home/konfigurasi-aplikasi/akses-grup.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/akses-grup.vue) (migrated from Role).
+  - **Composables:** [`composables/konfigurasi-aplikasi/useAksesLevel.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/konfigurasi-aplikasi/useAksesLevel.ts) and [`composables/konfigurasi-aplikasi/useAksesGrup.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/konfigurasi-aplikasi/useAksesGrup.ts) covering all 5 REST endpoints each (`GET list`, `POST create`, `GET detail`, `POST update`, `POST delete`) with isolated `detailLoading`.
+  - **Schemas:** [`schemas/konfigurasi-aplikasi/akses-level.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/konfigurasi-aplikasi/akses-level.schema.ts) and [`schemas/konfigurasi-aplikasi/akses-grup.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/konfigurasi-aplikasi/akses-grup.schema.ts).
+  - **Navigation:** Added `konfigurasi-aplikasi` menu category in [`config/navigation.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/config/navigation.ts) with `KonfigurasiAplikasiIcon.svg` mapped in [`AppSidebar.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/AppSidebar.vue).
+- **user-create-update-payload:** Aligned user create and update requests to strictly match the 20-field backend OpenAPI schema (`access_level`, `address`, `akses_grup`, `approval_code`, `description`, `email`, `full_name`, `is_pengelola`, `is_sso`, `jabatan`, `jenis_pengguna`, `main_application`, `nip`, `organization`, `organization_id`, `password`, `permission_overrides`, `pernr`, `phone_number`, `role_assignments`, `status_karyawan`) in [`pages/home/master/user.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/user.vue) and [`types/master.types.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/types/master.types.ts).
+- **permission-detail-interactive-ui:** Enhanced detail modal in `akses-grup.vue` and `user.vue` with real-time permission search filter (`> 6 items`), badge counters, Indonesian timestamp formatting, dynamic activity logs, and rich HTML tooltips (`v-tooltip.top`) breaking down module and action.
+- **base-table-sticky-border:** Resolved browser table border collapse bug on scrolling by switching `BaseTable.vue` to `border-separate border-spacing-0` and adding explicit `border-b border-gray-200` to `th` elements. Removed hardcoded left shadow on `actions` column for a clean seamless UI.
+- **permission-auto-key-and-payload:** Updated Permission form to strictly send 4-field Go struct (`permission_key`, `resource_id`, `action_id`, `description`) with auto-generated disabled `permission_key` from selected resource and action code.
+- **tests:** Expanded Vitest suite to **112 passing tests across 18 test suites (100% green)**.
+
+### 🔄 Centralized Table Reload, Lucide Icons & Navigation Menu Alignment
+
+- **navigation-titles:** Aligned menu item titles in [`config/navigation.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/config/navigation.ts) (`Role & Hak Akses` -> `Role`, `Katalog Hak Akses (Permission)` -> `Akses Permission`) with standardized TypeScript formatting.
+- **centralized-table-reload:** Added interactive `[ 🔄 Muat Ulang ]` button in empty state inside [`components/base/BaseTable.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseTable.vue) that emits `@reload`. Wired `@reload` across all 15 Master Data and Transaksi pages for on-demand asynchronous table re-fetching.
+- **lucide-icon-components:** Standardized table empty state with official `<Database />` and `<RotateCw />` components from `@lucide/vue` replacing inline manual SVGs.
+- **detail-loading-isolation:** Separated `detailLoading` from list `loading` in [`composables/master/useUser.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/master/useUser.ts) and [`composables/master/usePermission.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/master/usePermission.ts) to prevent main table reloading/flicker when opening detail modals.
+- **permission-detail-fetch:** Wired `getPermissionById(row.id)` (`GET /api/v1/permissions/:id`) on view action in [`pages/home/master/permission.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/permission.vue).
+- **type-safety-fix:** Fixed prop binding `:items="tabOptions"` on `<BaseTabFilter>` in [`pages/home/transaksi/pagu.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/transaksi/pagu.vue).
+- **tests:** Maintained **105 passing tests (100% green)** across 17 Vitest test suites.
+
+### 👥 User Permissions Multi-Select, Form Control Styling & Nuxt Single-Root Fix
+
+- **user-permissions-multiselect:** Replaced legacy `aksesGrup` with dynamic `permissions` searchable multi-select in [`schemas/master/user.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/user.schema.ts) and [`pages/home/master/user.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/user.vue).
+- **permissions-combo-sync:** Integrated `fetchPermissionsCombo` in `composables/master/usePermission.ts` (`POST /api/v1/permissions/combo`) with graceful fallback to `getUserById` (`GET /api/v1/users/:id`), synchronizing active user permissions on edit.
+- **form-controls-light-theme:** Fixed native `<input type="radio">` and `<input type="checkbox">` rendering with dark/black filled appearance in Chromium by adding `color-scheme: light !important`, `accent-color: #2563eb !important`, and white background overrides in `assets/css/primevue-overrides.css` and `components/base/FormFieldRenderer.vue`.
+- **single-root-fix:** Resolved `[NUXT_E4004]` template warning in `pages/home.vue` by encapsulating top-level comments inside the main container `<div>`.
+- **table-state-composable:** Created generic [`composables/useTableState.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/useTableState.ts) for reusable multi-field searching, pagination slicing, and automatic page reset, reducing boilerplate across views.
+- **schema-validation-ssot:** Centralized Zod validation schema inside [`schemas/master/user.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/user.schema.ts) as Single Source of Truth (SSOT).
+- **tests:** Expanded Vitest suite to **105 passing tests (100% green)** across 17 test suites including `test/composables/tableState.test.ts`.
+
+---
+
+## [0.4.0] - 2026-08-31
 
 ### 🛡️ Enterprise Security, Device Metadata, Tabbed Pagu & Strict POST Policy
 
@@ -15,11 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **permission-crud:** Created [`schemas/master/permission.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/permission.schema.ts) and upgraded [`pages/home/master/permission.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/permission.vue) with full CRUD operations (`createPermission`, `updatePermission`, `deletePermission`) and confirmation dialog.
 - **form-draft-discard-fix:** Enhanced `confirmDiscardChanges()` in [`components/base/BaseFormModal.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseFormModal.vue) to cleanly purge draft from storage and cancel pending debounces when choosing "Buang & Tutup".
 - **modal-layering:** Fixed `BaseIdleWarningModal.vue` z-index layering with `z-[100]` container and `fixed inset-0 z-[99]` backdrop overlay to guarantee complete full-screen coverage over sticky headers and tables.
-- **tests:** Expanded Vitest test suites to **88 passing tests (100% green)** across 15 test suites including `test/utils/deviceMeta.test.ts`.
-
----
-
-## [0.7.0] - 2026-08-31
 
 ### 📶 Remote Resilience & Low-Bandwidth Optimization (Sumbawa Edition)
 
@@ -30,16 +62,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **captcha-cdn:** Upgraded `SliderCaptcha.vue` to use high-speed Unsplash CDN image pool with randomized shuffling, accelerated 2000ms preload timeout, and local asset fallback.
 - **developer-guide:** Published comprehensive [`docs/DeveloperGuide.md`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/docs/DeveloperGuide.md) documenting the 5-step SOP for adding new Master & Transaksi modules.
 - **ci-cd-fix:** Purged platform-specific Windows binaries (`@oxc-parser/binding-win32-x64-msvc`, `@rolldown/binding-win32-x64-msvc`, `oxc-parser`) from `package.json` devDependencies to resolve `EBADPLATFORM` failure on Linux Alpine GitLab CI/CD runners and Docker container builds.
-- **tests:** Added `test/composables/formDraft.test.ts` and `test/composables/apiCache.test.ts` achieving **72/72 tests passed (100% green)** across 14 test suites.
+- **tests:** Added `test/composables/formDraft.test.ts` and `test/composables/apiCache.test.ts` achieving **88/88 tests passed (100% green)** across 15 test suites.
 
 ---
 
-## [0.6.0] - 2026-08-28
+## [0.3.0] - 2026-08-28
 
 ### 📶 Network Resilience & Offline Detection
 
 - **network-status:** Integrated `composables/useNetworkStatus.ts` listening to browser online/offline events, notifying user seamlessly via floating Toast notifications and subtle top header pill indicator without obtrusive UI banners.
-- **tests:** Added `test/composables/network.test.ts` achieving **64/64 tests passed (100% green)** across 12 test suites.
 
 ### 🎨 Modern UI/UX & GSAP Animation Suite
 
@@ -67,21 +98,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **form-guard:** Integrated Unsaved Changes Guard in `BaseFormModal.vue` with left-aligned enterprise card layout and `<Teleport to="body">` full-screen backdrop to prevent accidental data loss with prompt dialog ("Lanjut Mengisi" vs "Buang & Tutup").
 - **modal-standardization:** Standardized 100% of Master and Transaksi form modals to unified Right Drawer (`variant="drawer"`), eliminating inconsistent centered popup dialogs across `role.vue`, `scope.vue`, and `machine-condition.vue`.
 - **toast-system:** Created global `composables/useAppToast.ts` and `components/base/BaseToastContainer.vue` with animated timer countdown progress bars.
-- **tests:** Added `test/composables/toast.test.ts` achieving **63/63 tests passed (100% green)** across 11 test suites.
 
----
-
-## [0.5.0] - 2026-08-28
-
-### 🔒 Features & Authentication Modernization
+### 🔒 Authentication Modernization & Session Security
 
 - **auth-store:** Refactored Pinia store with 24h work-shift cookie lifecycle, `refreshSession()`, single-flight mutex on 401, and `BroadcastChannel('tambora_auth_channel')` cross-tab sync in `stores/auth.ts`.
 - **auth-guard:** Updated `middleware/auth.global.ts` with preserve `redirect` query parameter support and automatic redirection to intended route upon login.
 - **idle-timeout:** Added `components/base/BaseIdleWarningModal.vue` and `composables/useIdleTimer.ts` providing 28-minute inactivity detection with a 2-minute grace countdown modal.
 - **api-interceptor:** Upgraded `composables/useApi.ts` with single-flight mutex refresh queue to prevent race conditions during concurrent 401 responses.
-- **tests:** Added `test/composables/idleTimer.test.ts` and `test/composables/transaksi.test.ts` unit tests, achieving **60/60 tests passed (100% green)** across 10 test suites.
 
-### ⚡ Features & Transaksi Integration (7 Live Modules)
+### ⚡ Transaksi Integration (7 Live Modules)
 
 - **transaksi-schemas:** Standardized dedicated form schema engine for all 7 Transaksi modules in `schemas/transaksi/` with root barrel export in `schemas/index.ts`.
 - **transaksi-operasi-harian:** Integrated `/api/v1/operasi-harian` CRUD with power parameters (DMN, DMP, Terpasang, Aktual), energy production, fuel consumption, and Excel export in `pages/home/transaksi/operasi-harian.vue`.
@@ -95,10 +120,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **map:** Resolved MapTiler API Key integration (`VITE_MAPTILER_KEY` / `NUXT_PUBLIC_MAPTILER_KEY`) and configured clean Positron tile layer in `components/base/BaseMap.vue`.
 - **animations:** Added realistic typewriter text animation for greeting on `/home` and description on `/login` with clean static state after finish.
 - **types:** Added comprehensive DTOs and payloads for all 7 transaction modules in `types/transaksi.types.ts`.
+- **tests:** Added unit tests achieving **64/64 tests passed (100% green)** across 12 test suites.
 
 ---
 
-## [0.4.0] - 2026-08-27
+## [0.2.0] - 2026-08-27
 
 ### 🚀 Features & Architecture Modernization
 
@@ -109,17 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **export:** Add `utils/exportExcel.ts` utility with UTF-8 BOM support for Microsoft Excel compatibility, replacing all dummy alerts on `BaseExportButton`.
 - **types:** Modularize `types/` directory into isolated domain files (`form.types.ts`, `table.types.ts`, `auth.types.ts`, `master.types.ts`, `operasi.types.ts`) with seamless barrel export in `types/index.ts`.
 
-### 🧪 Testing & Quality Gate
-
-- **tests:** Add `test/utils/exportExcel.test.ts` unit tests, achieving **49/49 passed tests** across 8 test suites (100% green).
-- **lint:** Enforce strict ESLint rules with **0 errors and 0 warnings**.
-- **docs:** Update `docs/Schema.md` and `docs/Architecture.md` to reflect the new dynamic form schema and modular types architecture.
-
----
-
-## [0.3.0] - 2026-08-27
-
-### 🏛️ Features & Master Data Integration
+### 🏛️ Master Data Integration
 
 - **master-organization:** Integrated `/api/v1/organization` CRUD with parent-child hierarchy, geographical coordinates (lat/lng), drawer form, and detail modal.
 - **master-machine-condition:** Integrated `/api/v1/machine-conditions` CRUD with operational descriptions, active status switch, and centered modal.
@@ -140,10 +156,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **home-welcome:** Created responsive centered welcome screen with dynamic 80% `LogoWelcome.png` scaling and realistic typewriter typing greeting in `pages/home/index.vue`.
 - **login-typewriter:** Upgraded login welcome description animation to letter-by-letter typewriter typing effect in `components/login/LoginForm.vue`.
 - **maptiler-integration:** Integrated MapTiler high-resolution tile service with API key support in `.env`, `.env.example`, `nuxt.config.ts`, and `components/base/BaseMap.vue`.
+- **tests:** Added `test/utils/exportExcel.test.ts` unit tests, achieving **49/49 passed tests** across 8 test suites (100% green).
 
 ---
 
-## [0.2.0] - 2026-08-26
+## [0.1.0] - 2026-08-26
 
 ### 🔐 Authentication & Network Proxy
 

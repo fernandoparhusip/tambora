@@ -1,3 +1,11 @@
+export interface SelectOption {
+  label: string;
+  value: any;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+}
+
 export interface FormFieldConfig {
   key: string;
   label: string;
@@ -18,7 +26,7 @@ export interface FormFieldConfig {
     | 'password'
     | 'switch';
   placeholder?: string;
-  options?: { label: string; value: any }[];
+  options?: SelectOption[];
   colSpan?: number; // Dynamic col-span from 1 to 12
   required?: boolean;
   disabled?: boolean | ((formData: Record<string, any>) => boolean);

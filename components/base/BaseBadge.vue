@@ -49,7 +49,7 @@ const sizeClass = computed(() => {
 
 <template>
   <span
-    class="inline-flex items-center rounded-md font-semibold border transition-colors select-none"
+    class="inline-flex items-center justify-center text-center rounded-md font-semibold border transition-colors select-none"
     :class="[variantClass, sizeClass]"
   >
     <slot>{{ label }}</slot>

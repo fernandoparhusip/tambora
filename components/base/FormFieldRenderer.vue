@@ -83,6 +83,7 @@ const triggerRef = ref<HTMLElement | null>(null);
 const popupRef = ref<HTMLElement | null>(null);
 const selectSearchInputRef = ref<HTMLInputElement | null>(null);
 const dropdownPos = ref({ top: 0, left: 0, width: 200 });
+const uniqueDropdownId = `${props.field.key}-${Math.random().toString(36).substring(2, 9)}`;
 
 const teleportTarget = computed(() => {
   if (
@@ -106,12 +107,26 @@ const updatePosition = () => {
 
 const toggleDropdown = async () => {
   if (!isOpen.value) {
+    if (import.meta.client) {
+      window.dispatchEvent(
+        new CustomEvent("form-field-dropdown-open", {
+          detail: { id: uniqueDropdownId },
+        })
+      );
+    }
     updatePosition();
     isOpen.value = true;
     await nextTick();
     updatePosition();
     selectSearchInputRef.value?.focus();
   } else {
+    isOpen.value = false;
+  }
+};
+
+const handleOtherDropdownOpen = (e: Event) => {
+  const ce = e as CustomEvent;
+  if (ce.detail?.id !== uniqueDropdownId) {
     isOpen.value = false;
   }
 };
@@ -124,14 +139,27 @@ const popupStyle = computed(() => ({
 
 const selectedOptionLabel = computed(() => {
   const opt = props.field.options?.find((o) => o.value === value.value);
-  return opt ? opt.label : "";
+  if (!opt) return "";
+  if (opt.title && (opt.description || opt.subtitle)) {
+    return `${opt.title} (${opt.description || opt.subtitle})`;
+  }
+  return opt.label || opt.title || String(opt.value);
 });
 
 const filteredOptions = computed(() => {
   const opts = props.field.options || [];
   if (!selectSearchQuery.value) return opts;
   const q = selectSearchQuery.value.toLowerCase();
-  return opts.filter((o) => o.label.toLowerCase().includes(q));
+  return opts.filter((o) => {
+    const labelMatch = o.label && o.label.toLowerCase().includes(q);
+    const titleMatch = o.title && o.title.toLowerCase().includes(q);
+    const descMatch =
+      (o.description || o.subtitle) &&
+      (o.description || o.subtitle)!.toLowerCase().includes(q);
+    const valMatch =
+      typeof o.value === "string" && o.value.toLowerCase().includes(q);
+    return Boolean(labelMatch || titleMatch || descMatch || valMatch);
+  });
 });
 
 const selectOption = (optValue: any) => {
@@ -164,6 +192,7 @@ onMounted(() => {
     document.addEventListener("click", handleOutsideClick);
     window.addEventListener("scroll", handleScrollOrResize, true);
     window.addEventListener("resize", handleScrollOrResize);
+    window.addEventListener("form-field-dropdown-open", handleOtherDropdownOpen);
   }
 });
 
@@ -172,6 +201,10 @@ onBeforeUnmount(() => {
     document.removeEventListener("click", handleOutsideClick);
     window.removeEventListener("scroll", handleScrollOrResize, true);
     window.removeEventListener("resize", handleScrollOrResize);
+    window.removeEventListener(
+      "form-field-dropdown-open",
+      handleOtherDropdownOpen
+    );
   }
 });
 
@@ -253,8 +286,8 @@ const onTimeSelect = (
           :name="field.key"
           :value="opt.value"
           :disabled="isDisabled"
-          class="w-4 h-4 accent-blue-600 border-gray-300 cursor-pointer"
-          style="accent-color: #2563eb"
+          class="w-4 h-4 text-blue-600 bg-white border-gray-300 focus:ring-blue-500 cursor-pointer"
+          style="color-scheme: light; accent-color: #2563eb;"
         >
         <span>{{ opt.label }}</span>
       </label>
@@ -412,13 +445,25 @@ const onTimeSelect = (
                 class="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-blue-50 transition-colors flex items-center justify-between cursor-pointer"
                 @click.stop="toggleMultiSelectOption(opt.value)"
               >
-                <div class="flex items-center gap-2.5">
+                <div class="flex items-center gap-2.5 flex-1 min-w-0">
                   <input
                     type="checkbox"
                     :checked="isMultiSelected(opt.value)"
-                    class="w-3.5 h-3.5 text-blue-600 rounded-xs border-gray-300 pointer-events-none"
+                    class="w-3.5 h-3.5 text-blue-600 bg-white rounded-xs border-gray-300 pointer-events-none shrink-0"
+                    style="color-scheme: light; accent-color: #2563eb;"
                   >
-                  <span>{{ opt.label }}</span>
+                  <div
+                    v-if="opt.description || opt.subtitle"
+                    class="flex flex-col gap-0.5 text-left py-0.5 min-w-0"
+                  >
+                    <span class="font-bold text-xs text-gray-900 leading-tight truncate">{{
+                      opt.title || opt.label
+                    }}</span>
+                    <span class="text-[11px] text-gray-500 font-normal leading-tight truncate">{{
+                      opt.description || opt.subtitle
+                    }}</span>
+                  </div>
+                  <span v-else class="truncate">{{ opt.label }}</span>
                 </div>
               </button>
               <div
@@ -531,14 +576,38 @@ const onTimeSelect = (
                 v-for="opt in filteredOptions"
                 :key="opt.value"
                 type="button"
-                class="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center justify-between cursor-pointer"
+                class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center justify-between cursor-pointer"
                 :class="{
                   'bg-blue-50/80 font-semibold text-blue-600':
                     value === opt.value,
                 }"
                 @click.stop="selectOption(opt.value)"
               >
-                <span>{{ opt.label }}</span>
+                <div
+                  v-if="opt.description || opt.subtitle"
+                  class="flex flex-col gap-0.5 text-left py-0.5 flex-1 min-w-0"
+                >
+                  <span class="font-bold text-xs text-gray-900 leading-tight truncate">{{
+                    opt.title || opt.label
+                  }}</span>
+                  <span class="text-[11px] text-gray-500 font-normal leading-tight truncate">{{
+                    opt.description || opt.subtitle
+                  }}</span>
+                </div>
+                <span v-else class="flex-1 truncate">{{ opt.label }}</span>
+                <svg
+                  v-if="value === opt.value"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-4 h-4 text-blue-600 shrink-0 ml-2"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
               </button>
               <div
                 v-if="filteredOptions.length === 0"

@@ -14,7 +14,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-88_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-112_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 
 </div>
 
@@ -29,7 +29,7 @@ Platform ini mengintegrasikan pemetaan spasial geografis sentral pembangkit (GIS
 ```mermaid
 graph LR
     subgraph CLIENT["Client Layer (Nuxt 4 / PrimeVue Aura)"]
-        UI["Dashboard, Master & Transaksi Views"] --> FORM["Dynamic Schema Engine (schemas/master & schemas/transaksi)"]
+        UI["Dashboard, Master, Transaksi & Konfigurasi Views"] --> FORM["Dynamic Schema Engine (schemas/master, schemas/transaksi & schemas/konfigurasi-aplikasi)"]
         UI --> TABLE["BaseTable (Column Visibility Toggle & GSAP Stagger)"]
         UI --> GIS["GIS Map Monitoring (OpenLayers v10 + MapTiler Positron)"]
         UI --> TOAST["Modern Toast Notification System (useAppToast)"]
@@ -62,9 +62,10 @@ graph LR
 | **📶 Remote Resilience (Sumbawa Edition)** | **Auto-Save Form Drafts** (pencegah kehilangan ketikan saat sinyal mati), **SWR API Client Cache** (buka tabel instan 0ms), dan **Smart Network Retry** (otomatis coba ulang request saat koneksi drop).                          |
 | **🎨 Modern GSAP & GPU Animations**        | Transisi halaman mulus (_Page Route Transitions_), efek baris tabel meluncur berjenjang (**GSAP Row Stagger**), **5-row Shimmer Skeleton Loader**, dan efek klik tombol membal (**Tactile Micro-Interactions**).                  |
 | **🍞 Floating Toast & Form Guard**         | Sistem notifikasi mengambang pojok kanan atas dengan **Timer Countdown Progress Bar** (`useAppToast`), serta perlindungan data form (_Unsaved Changes Guard_ di `BaseFormModal.vue`).                                             |
-| **📝 Dynamic Form Engine**                 | Formulir berbasis skema deklaratif di `schemas/master/` dan `schemas/transaksi/` dengan dukungan _conditional field visibility_ (`hidden`), _functional disabled_, dan validasi otomatis.                                         |
-| **📊 Smart Data Table**                    | Komponen tabel terpadu (`BaseTable.vue`) dengan fitur **Show/Hide Kolom** (_Column Visibility Toggle_), filter pencarian instan, sorting dinamis, dan _local persistence_.                                                        |
-| **🏛️ 8 Modul Master Data**                 | Tata kelola CRUD lengkap: _User_, _Role_, _Permission (Katalog Hak Akses)_, _Scope_, _Driver_, _Organisasi (Hierarki Parent-Child)_, _Sistem Pembangkit_, _Aset Mesin_, dan _Kondisi Mesin_.                                    |
+| **📝 Dynamic Form Engine**                 | Formulir berbasis skema deklaratif di `schemas/master/`, `schemas/transaksi/`, dan `schemas/konfigurasi-aplikasi/` dengan dukungan _conditional field visibility_ (`hidden`), _functional disabled_, dan validasi otomatis.    |
+| **📊 Smart Data Table**                    | Komponen tabel terpadu (`BaseTable.vue`) dengan sticky header border fix, **Show/Hide Kolom** (_Column Visibility Toggle_), filter pencarian instan, sorting dinamis, dan _local persistence_.                                  |
+| **⚙️ Modul Konfigurasi Aplikasi**          | Pengaturan hak akses granular: **Master Akses Level** (Scopes) dan **Master Akses Grup** (Roles & Permissions dengan rich HTML tooltip breakdown).                                                                                 |
+| **🏛️ 6 Modul Master Data**                 | Tata kelola CRUD lengkap: _User (20-field payload)_, _Akses Permission (Auto Key Gen)_, _Driver_, _Organisasi (Hierarki Parent-Child)_, _Sistem Pembangkit_, _Aset Mesin_, dan _Kondisi Mesin_.                                 |
 | **⚡ Modul Transaksi Terpadu**             | Pencatatan operasional & keuangan: _Operasi Harian_, _Pemakaian Bahan Bakar_, _Pembebanan Generator_, _Pagu Anggaran (Tab Dinamis Unit & Bidang)_, _Prognosa Kinerja (PLTU & Non-PLTU)_, dan _Perhitungan NKO (KPI)_.         |
 | **📥 Real Excel/CSV Export**               | Generator file spreadsheet asli (`utils/exportExcel.ts`) dengan standar **UTF-8 BOM** terintegrasi di seluruh tombol export tabel serta endpoint backend native export `.xls`.                                                    |
 | **🛡️ Unified Modal Dialogs**               | Modal konfirmasi hapus modern (`BaseConfirmDialog`) dan modal sukses (`BaseSuccessModal`) menggantikan dialog native browser.                                                                                                     |
@@ -81,12 +82,14 @@ tambora-frontend/
 │   ├── 📁 base/           # Core Base Components (BaseTable, BaseFormModal, BaseDateFilter, BaseMap, BaseChart, dll)
 │   └── 📁 login/          # Komponen login, form credentials, dan typewriter animation
 ├── 📁 composables/        # State Management & Business Logic (Composables Pattern)
+│   ├── 📁 konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup
 │   ├── 📁 master/         # CRUD Logic per entitas master (useUser, usePermission, useAsset, useDriver, dll)
 │   └── 📁 transaksi/      # CRUD Logic transaksi (useOperasiHarian, usePagu, usePrognosa, dll)
 ├── 📁 docs/               # Dokumentasi Teknis Standar Proyek (PRD, Architecture, Schema, Rules, DeveloperGuide)
-├── 📁 pages/              # Nuxt 4 File-Based Routing (home/dashboard, home/master, home/transaksi, login)
+├── 📁 pages/              # Nuxt 4 File-Based Routing (home/dashboard, home/konfigurasi-aplikasi, home/master, home/transaksi, login)
 ├── 📁 schemas/            # Definisi Skema Formulir Deklaratif
-│   ├── 📁 master/         # 9 Berkas Skema Form Master (user, role, permission, driver, asset, system, dll)
+│   ├── 📁 konfigurasi-aplikasi/ # Skema Form Akses Level & Akses Grup
+│   ├── 📁 master/         # Berkas Skema Form Master (user, permission, driver, asset, system, dll)
 │   └── 📁 transaksi/      # Berkas Skema Form Transaksi (operasi, pagu, pagu-bidang, prognosa, nko, dll)
 ├── 📁 stores/             # Pinia Global Store (auth: session, security, token)
 ├── 📁 test/               # Vitest Unit Test Suites & Testing Mocks

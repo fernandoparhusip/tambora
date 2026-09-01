@@ -3,18 +3,19 @@ import { exportToExcel } from "~/utils/exportExcel";
 import type { TableColumn } from "~/types";
 
 describe("exportExcel utility", () => {
+  let clickMock: any;
+  let appendChildMock: any;
+  let removeChildMock: any;
+
   beforeEach(() => {
-    // Mock DOM download elements
+    clickMock = vi.fn();
+    appendChildMock = vi.fn();
+    removeChildMock = vi.fn();
+
     vi.stubGlobal("URL", {
       createObjectURL: vi.fn(() => "blob:mock-url"),
       revokeObjectURL: vi.fn(),
     });
-  });
-
-  it("should format and trigger download correctly for rows and columns", () => {
-    const clickMock = vi.fn();
-    const appendChildMock = vi.fn();
-    const removeChildMock = vi.fn();
 
     vi.spyOn(document, "createElement").mockImplementation((tag) => {
       if (tag === "a") {
@@ -28,7 +29,9 @@ describe("exportExcel utility", () => {
 
     vi.spyOn(document.body, "appendChild").mockImplementation(appendChildMock);
     vi.spyOn(document.body, "removeChild").mockImplementation(removeChildMock);
+  });
 
+  it("should format and trigger download correctly for rows and columns", () => {
     const cols: TableColumn[] = [
       { key: "no", label: "No" },
       { key: "nama", label: "Nama User" },
@@ -45,5 +48,53 @@ describe("exportExcel utility", () => {
 
     expect(clickMock).toHaveBeenCalled();
     expect(appendChildMock).toHaveBeenCalled();
+  });
+
+  it("should handle empty data rows gracefully", () => {
+    const cols: TableColumn[] = [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Name" },
+    ];
+
+    exportToExcel(cols, [], { fileName: "Empty_Export" });
+
+    expect(clickMock).toHaveBeenCalled();
+    expect(appendChildMock).toHaveBeenCalled();
+  });
+
+  it("should exclude action columns from export", () => {
+    const cols: TableColumn[] = [
+      { key: "id", label: "ID" },
+      { key: "actions", label: "Aksi" },
+      { key: "action", label: "Action" },
+    ];
+
+    const data = [{ id: 1, actions: "edit", action: "delete" }];
+
+    exportToExcel(cols, data);
+
+    expect(clickMock).toHaveBeenCalled();
+  });
+
+  it("should format null and undefined values as empty string", () => {
+    const cols: TableColumn[] = [
+      { key: "name", label: "Name" },
+      { key: "email", label: "Email" },
+    ];
+
+    const data = [{ name: null, email: undefined }];
+
+    exportToExcel(cols, data, { fileName: "Null_Values" });
+
+    expect(clickMock).toHaveBeenCalled();
+  });
+
+  it("should use fallback default filename when options is omitted", () => {
+    const cols: TableColumn[] = [{ key: "title", label: "Title" }];
+    const data = [{ title: "Report" }];
+
+    exportToExcel(cols, data);
+
+    expect(clickMock).toHaveBeenCalled();
   });
 });

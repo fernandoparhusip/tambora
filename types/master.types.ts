@@ -16,6 +16,7 @@ export interface UserItem {
   username: string;
   full_name: string;
   organization?: string;
+  organisasi?: string;
   nip?: string;
   prnr?: string;
   status: number | string;
@@ -23,6 +24,7 @@ export interface UserItem {
   role_assignments?: UserRoleAssignment[];
   nama?: string;
   alamat?: string;
+  address?: string;
   noTelp?: string;
   jabatan?: string;
   aksesLevel?: string;
@@ -31,31 +33,102 @@ export interface UserItem {
   kategori?: string;
 }
 
+
 export interface CreateUserRequest {
+  access_level?: string;
+  address?: string;
+  akses_grup?: string;
+  approval_code?: string;
+  description?: string;
   email: string;
-  username: string;
   full_name: string;
-  password: string;
-  organization?: string;
+  is_pengelola?: boolean;
+  is_sso?: boolean;
+  jabatan?: string;
+  jenis_pengguna?: string;
+  main_application?: string;
   nip?: string;
-  prnr?: string;
-  role_assignments?: UserRoleAssignment[];
+  organization?: string;
+  organization_id?: string;
+  password?: string;
   permission_overrides?: { permission_key: string; is_granted: boolean }[];
+  pernr?: string;
+  phone_number?: string;
+  role_assignments?: UserRoleAssignment[];
+  status_karyawan?: string;
+  // Backward compatibility
+  username?: string;
+  permissions?: string[];
+  prnr?: string;
 }
 
 export interface UpdateUserRequest {
+  access_level?: string;
+  address?: string;
+  akses_grup?: string;
+  approval_code?: string;
+  description?: string;
+  email?: string;
   full_name?: string;
-  organization?: string;
+  is_pengelola?: boolean;
+  is_sso?: boolean;
+  jabatan?: string;
+  jenis_pengguna?: string;
+  main_application?: string;
   nip?: string;
-  prnr?: string;
-  status?: number;
-  role_assignments?: UserRoleAssignment[];
+  organization?: string;
+  organization_id?: string;
+  password?: string;
   permission_overrides?: { permission_key: string; is_granted: boolean }[];
+  pernr?: string;
+  phone_number?: string;
+  role_assignments?: UserRoleAssignment[];
+  status_karyawan?: string;
+  status?: number;
+  // Backward compatibility
+  username?: string;
+  permissions?: string[];
+  prnr?: string;
 }
 
 export interface UpdateUserPasswordRequest {
   password: string;
 }
+
+export interface UserDetailRole {
+  role_id: string;
+  role_code: string;
+  role_name: string;
+}
+
+export interface UserDetailMenu {
+  id?: string;
+  code?: string;
+  name?: string;
+  path?: string;
+  icon?: string;
+  [key: string]: any;
+}
+
+export interface UserDetailPermission {
+  ID: string;
+  Key: string;
+  ResourceCode: string;
+  ActionCode: string;
+  Description?: string;
+}
+
+export interface UserDetailAccess {
+  menus?: UserDetailMenu[];
+  permissions?: UserDetailPermission[];
+}
+
+export interface UserDetailData {
+  user: UserItem;
+  roles?: UserDetailRole[];
+  access?: UserDetailAccess;
+}
+
 
 /** Master Role DTOs */
 export interface RoleItem {
@@ -66,6 +139,10 @@ export interface RoleItem {
   is_system?: boolean;
   status: number;
   permissions?: string[];
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
 }
 
 export interface CreateRoleRequest {
@@ -87,28 +164,30 @@ export interface PermissionItem {
   id: string;
   permission_key: string;
   description: string;
+  resource_id?: string;
+  action_id?: string;
   resource_code: string;
   resource_name: string;
   action_code: string;
   action_name: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
 }
 
 export interface CreatePermissionRequest {
   permission_key: string;
-  description?: string;
-  resource_code?: string;
-  resource_name?: string;
-  action_code?: string;
-  action_name?: string;
+  description?: string | null;
+  resource_id: string;
+  action_id: string;
 }
 
 export interface UpdatePermissionRequest {
-  permission_key?: string;
-  description?: string;
-  resource_code?: string;
-  resource_name?: string;
-  action_code?: string;
-  action_name?: string;
+  permission_key: string;
+  description?: string | null;
+  resource_id: string;
+  action_id: string;
 }
 
 /** Master Scope DTOs */
@@ -121,6 +200,10 @@ export interface ScopeItem {
   scope_type_code?: string;
   scope_type_name?: string;
   parent_id?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
 }
 
 export interface CreateScopeRequest {

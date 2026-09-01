@@ -14,23 +14,26 @@ tambora-frontend/
 │   ├── layout/         # Komponen layout (AppSidebar, AppHeader, BasePageHeader)
 │   └── login/          # Komponen login & slider captcha
 ├── composables/        # State reaktif, auth, SWR cache, form draft, dan API CRUD
-│   ├── master/         # useUser, useRole, useOrganization, useAsset, dll.
+│   ├── konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup
+│   ├── master/         # useUser, usePermission, useOrganization, useAsset, dll.
 │   └── transaksi/      # useOperasiHarian, usePagu, usePrognosa, dll.
 ├── config/             # Konfigurasi navigasi sidebar (config/navigation.ts)
 ├── docs/               # Dokumentasi arsitektur, PRD, schema, dan developer guide
 ├── pages/              # Halaman routing Nuxt
 │   ├── home/
 │   │   ├── dashboard/  # Halaman GIS & ECharts monitoring
+│   │   ├── konfigurasi-aplikasi/ # Halaman Akses Level & Akses Grup
 │   │   ├── master/     # Halaman CRUD data master
 │   │   └── transaksi/  # Halaman CRUD modul transaksi
 │   └── login.vue       # Halaman autentikasi
 ├── schemas/            # Definisi deklaratif Form Engine (12-column grid system)
+│   ├── konfigurasi-aplikasi/ # Form schema untuk Akses Level & Akses Grup
 │   ├── master/         # Form schema untuk master data
 │   └── transaksi/      # Form schema untuk transaksi
 ├── stores/             # Pinia stores (auth.ts)
 ├── types/              # TypeScript interface & DTO contracts
 ├── utils/              # Pure utility functions (exportExcel, formatNumber, apiError)
-└── test/               # Vitest unit test suite (100% green required)
+└── test/               # Vitest unit test suite (112 tests across 18 suites, 100% green required)
 ```
 
 ---
@@ -214,8 +217,10 @@ Satukan komponen UI menggunakan template standar berikut:
 import { ref, computed, onMounted } from 'vue';
 import type { TableColumn, FormSectionConfig, ContohItemDTO } from '~/types';
 import { getContohFormSections } from '~/schemas';
+import { useTableState } from '~/composables/useTableState';
 
 const { list, loading, fetchList, createItem, deleteItem } = useContoh();
+const { searchQuery, currentPage, pageSize, activeFilteredData, paginatedData } = useTableState(list, { defaultPageSize: 10 });
 
 const columns: TableColumn[] = [
   { key: 'no', label: 'No' },
@@ -270,12 +275,26 @@ const handleSubmit = async () => {
           <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
         </div>
 
-        <!-- Table -->
-        <BaseTable :columns="columns" :rows="list" :loading="loading" class="flex-1 min-h-0">
+        <!-- Table (with Centralized Reload & Lucide Icons) -->
+        <BaseTable
+          :columns="columns"
+          :rows="paginatedData"
+          :loading="loading"
+          class="flex-1 min-h-0"
+          @reload="fetchList"
+        >
           <template #no-data="{ index }">
             <span class="text-xs text-gray-700 font-medium">{{ index + 1 }}.</span>
           </template>
         </BaseTable>
+
+        <!-- Pagination -->
+        <BasePagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="activeFilteredData.length"
+          class="shrink-0 pt-3 border-t border-gray-100"
+        />
       </div>
     </div>
 

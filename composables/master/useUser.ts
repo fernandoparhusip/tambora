@@ -2,6 +2,7 @@ import { useApi } from '~/composables/useApi';
 import { ref, computed } from 'vue'
 import type {
   UserItem,
+  UserDetailData,
   CreateUserRequest,
   UpdateUserRequest,
   UpdateUserPasswordRequest,
@@ -12,7 +13,9 @@ export const useUser = () => {
   const api = useApi()
   const users = ref<UserItem[]>([])
   const currentUser = ref<UserItem | null>(null)
+  const userDetail = ref<UserDetailData | null>(null)
   const loading = ref(false)
+  const detailLoading = ref(false)
   const total = ref(0)
   const error = ref<string | null>(null)
 
@@ -53,19 +56,52 @@ export const useUser = () => {
   }
 
   const getUserById = async (id: string) => {
-    loading.value = true
+    detailLoading.value = true
     error.value = null
     try {
-      const res = await api<ApiResponse<UserItem>>(`/users/${id}`)
+      const res = await api<ApiResponse<UserDetailData | UserItem>>(`/users/${id}`)
       if (res?.data) {
-        currentUser.value = res.data
+        if ('user' in res.data && res.data.user) {
+          const detail = res.data as UserDetailData
+          userDetail.value = detail
+          const userObj: UserItem = {
+            ...detail.user,
+            nama: detail.user.full_name || detail.user.username,
+            statusKaryawan: detail.user.status === 1 || detail.user.status === '1' || detail.user.status === 'Aktif' ? 'Aktif' : 'Nonaktif',
+            organisasi: detail.user.organization || 'PLN Unit',
+            aksesLevel: detail.roles?.[0]?.role_code || 'USER',
+            aksesGrup: 'Grup Operations',
+            kategori: 'Pegawai'
+          }
+          currentUser.value = userObj
+          return detail
+        } else {
+          const u = res.data as UserItem
+          const userObj: UserItem = {
+            ...u,
+            nama: u.full_name || u.username,
+            statusKaryawan: u.status === 1 || u.status === '1' || u.status === 'Aktif' ? 'Aktif' : 'Nonaktif',
+            organisasi: u.organization || 'PLN Unit',
+            aksesLevel: u.role_assignments?.[0]?.role_code || 'USER',
+            aksesGrup: 'Grup Operations',
+            kategori: 'Pegawai'
+          }
+          currentUser.value = userObj
+          userDetail.value = {
+            user: userObj,
+            roles: u.role_assignments?.map(r => ({ role_id: '', role_code: r.role_code, role_name: r.role_code })) || [],
+            access: { menus: [], permissions: [] }
+          }
+          return userDetail.value
+        }
+
       }
-      return res?.data
+      return null
     } catch (err: any) {
       error.value = err?.message || 'Gagal mengambil detail user.'
       throw err
     } finally {
-      loading.value = false
+      detailLoading.value = false
     }
   }
 
@@ -123,11 +159,11 @@ export const useUser = () => {
     try {
       let res: any
       try {
-        res = await api<ApiResponse<null>>(`/users/${id}/delete`, {
+        res = await api<ApiResponse<null | { message?: string }>>(`/users/${id}/delete`, {
           method: 'POST'
         })
       } catch {
-        res = await api<ApiResponse<null>>(`/users/${id}`, {
+        res = await api<ApiResponse<null | { message?: string }>>(`/users/${id}`, {
           method: 'DELETE'
         })
       }
@@ -166,10 +202,13 @@ export const useUser = () => {
     }
   }
 
+
   return {
     users: computed(() => users.value),
     currentUser: computed(() => currentUser.value),
+    userDetail: computed(() => userDetail.value),
     loading: computed(() => loading.value),
+    detailLoading: computed(() => detailLoading.value),
     total: computed(() => total.value),
     error: computed(() => error.value),
     fetchUsers,
@@ -180,3 +219,4 @@ export const useUser = () => {
     updateUserPassword
   }
 }
+

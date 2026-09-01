@@ -330,6 +330,14 @@ const detailItems = computed<DetailDataItem[]>(() => {
     ];
   }
 });
+
+const handleReload = () => {
+  if (activeTab.value === "unit") {
+    fetchPaguUnitList();
+  } else {
+    fetchPaguBidangList();
+  }
+};
 </script>
 
 <template>
@@ -350,33 +358,24 @@ const detailItems = computed<DetailDataItem[]>(() => {
           <div class="flex flex-wrap items-center gap-3.5">
             <BaseSearchInput
               v-model="searchQuery"
-              placeholder="Cari Data"
-              class="w-48 sm:w-60 shrink-0"
+              :placeholder="activeTab === 'unit' ? 'Cari Scope / Jenis Pagu...' : 'Cari Pagu Unit / Bidang...'"
             />
-
-            <!-- Date Filter using BaseDateFilter -->
-            <BaseDateFilter
+            <BaseDateInput
               v-model="selectedDate"
-              placeholder="27 April 2026"
-              class="w-48 sm:w-56 shrink-0"
+              placeholder="Pilih Tanggal Input"
             />
-
-            <!-- Export Button -->
             <BaseExportButton @click="handleExport" />
           </div>
 
-          <!-- Right controls: Tab Pills & Tambah Data -->
-          <div class="flex items-center gap-3 self-end lg:self-auto">
-            <!-- Tab Switcher: Unit | Bidang -->
+          <!-- Right Action: Tab Filter Pill & Create Button -->
+          <div class="flex flex-wrap items-center gap-3 self-end lg:self-auto">
+            <!-- Pure Component Tab: Unit / Bidang -->
             <BaseTabFilter
-              v-model:active-tab="activeTab"
+              v-model="activeTab"
               :items="tabOptions"
-              container-bg-color="#F1F5F9"
-              indicator-bg-color="#FFFFFF"
-              active-text-color="#1E293B"
-              inactive-text-color="#64748B"
             />
 
+            <!-- Create Button -->
             <BaseCreateButton
               label="TAMBAH DATA"
               @click="openCreateModal"
@@ -390,6 +389,7 @@ const detailItems = computed<DetailDataItem[]>(() => {
           :rows="paginatedList"
           :loading="currentLoading"
           class="flex-1 min-h-0"
+          @reload="handleReload"
         >
           <template #no-data="{ index }">
             <span class="text-xs text-gray-700 font-medium">

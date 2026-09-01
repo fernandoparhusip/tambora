@@ -1,8 +1,26 @@
+import { z } from "zod";
 import type { FormSectionConfig } from "~/types";
+
+export const userValidationSchema = z.object({
+  nama: z.string().min(1, "Nama lengkap wajib diisi"),
+  email: z.string().email("Format email tidak valid"),
+  tipe: z.string().optional(),
+  organisasi: z.string().optional(),
+  aksesLevel: z.string().optional(),
+  permissions: z.array(z.string()).optional(),
+  statusKaryawan: z.string().optional(),
+  jabatan: z.string().optional(),
+  nip: z.string().optional(),
+  perNr: z.string().optional(),
+  noTelp: z.string().optional(),
+  alamat: z.string().optional(),
+  akunPengelola: z.boolean().optional(),
+});
 
 export interface UserSchemaOptions {
   orgOptions?: { label: string; value: any }[];
   roleOptions?: { label: string; value: any }[];
+  permissionOptions?: { label: string; value: any }[];
 }
 
 export const getUserFormSections = (
@@ -10,6 +28,7 @@ export const getUserFormSections = (
 ): FormSectionConfig[] => {
   const orgOptions = options.orgOptions || [];
   const roleOptions = options.roleOptions || [];
+  const permissionOptions = options.permissionOptions || [];
 
   return [
     {
@@ -48,25 +67,21 @@ export const getUserFormSections = (
         },
         {
           key: "aksesLevel",
-          label: "Akses Level (Role)",
+          label: "Akses Grup",
           type: "searchable-select",
-          placeholder: "Pilih Role...",
+          placeholder: "Pilih Akses Grup...",
           options: roleOptions,
-          helpText: "Pilih role hak akses pengguna",
+          helpText: "Pilih Akses Grup hak akses pengguna",
           colSpan: 12,
           required: true,
           hidden: (formData) => formData.akunPengelola === true,
         },
         {
-          key: "aksesGrup",
-          label: "Akses Grup",
+          key: "permissions",
+          label: "Akses Permission",
           type: "searchable-multi-select",
-          placeholder: "Pilih Akses Grup...",
-          options: [
-            { label: "Grup 1", value: "Grup 1" },
-            { label: "Grup 2", value: "Grup 2" },
-            { label: "Grup Operations", value: "Grup Operations" },
-          ],
+          placeholder: "Pilih Akses Permission...",
+          options: permissionOptions,
           colSpan: 12,
           required: false,
           hidden: (formData) => formData.akunPengelola === true,
@@ -92,6 +107,16 @@ export const getUserFormSections = (
           placeholder: "Masukkan nama lengkap...",
           colSpan: 12,
           required: true,
+        },
+        {
+          key: "password",
+          label: "Password",
+          type: "password",
+          placeholder: "Masukkan password akun (Default: PLN@Tambora123)...",
+          colSpan: 12,
+          required: false,
+          hidden: (formData) => formData.tipe === "SSO PLN",
+          helpText: "Kosongkan jika ingin menggunakan password default PLN@Tambora123",
         },
         {
           key: "jabatan",

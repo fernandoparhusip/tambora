@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
 import { gsap } from "gsap";
+import { RotateCw, Database } from "@lucide/vue";
 import type { TableColumn } from "~/types";
 
 interface Props {
@@ -16,6 +17,14 @@ const props = withDefaults(defineProps<Props>(), {
   enableColumnToggle: true,
   tableId: "",
 });
+
+const emit = defineEmits<{
+  (e: "reload"): void;
+}>();
+
+const handleReload = () => {
+  emit("reload");
+};
 
 // Table body ref for GSAP row stagger animations
 const tbodyRef = ref<HTMLTableSectionElement | null>(null);
@@ -271,7 +280,8 @@ onBeforeUnmount(() => {
               >
                 <input
                   type="checkbox"
-                  class="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 border-gray-300 transition-colors"
+                  class="rounded text-blue-600 bg-white focus:ring-blue-500 w-3.5 h-3.5 border-gray-300 transition-colors"
+                  style="color-scheme: light; accent-color: #2563eb;"
                   :checked="visibleKeys.includes(col.key)"
                   :disabled="isColumnLocked(col)"
                   @change="toggleColumn(col)"
@@ -295,20 +305,20 @@ onBeforeUnmount(() => {
       class="flex-1 overflow-auto rounded-xl border border-gray-100 bg-white flex flex-col min-h-0"
     >
       <table
-        class="w-full text-left border-collapse"
+        class="w-full text-left border-separate border-spacing-0"
         :class="[
           rows.length > 0 || loading
             ? 'min-w-[800px]'
             : 'min-w-full h-full flex-1',
         ]"
       >
-        <!-- Table Header -->
-        <thead class="sticky top-0 bg-white border-b border-gray-100 z-20 shrink-0">
+        <!-- Table Header (Sticky with permanent bottom border) -->
+        <thead class="sticky top-0 z-20 shrink-0">
           <tr>
             <th
               v-for="col in visibleColumns"
               :key="col.key"
-              class="py-3.5 px-4 text-[13px] font-semibold text-[#486284] select-none whitespace-nowrap"
+              class="py-3.5 px-4 text-[13px] font-semibold text-[#486284] bg-white border-b border-gray-200 select-none whitespace-nowrap"
               :class="[
                 col.align === 'right'
                   ? 'text-right'
@@ -318,7 +328,7 @@ onBeforeUnmount(() => {
                 col.stickyLeft
                   ? 'sticky left-0 bg-white z-30 shadow-[6px_0_10px_-4px_rgba(0,0,0,0.06)]'
                   : '',
-                col.key === 'actions' || col.stickyRight
+                col.stickyRight
                   ? 'sticky right-0 bg-white z-30 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]'
                   : '',
               ]"
@@ -331,7 +341,6 @@ onBeforeUnmount(() => {
         <!-- Table Body -->
         <tbody
           ref="tbodyRef"
-          class="divide-y divide-gray-100/90"
           :class="{ 'h-full': rows.length === 0 }"
         >
           <!-- Shimmer Skeleton Loading State (5 animated skeleton rows) -->
@@ -344,7 +353,7 @@ onBeforeUnmount(() => {
               <td
                 v-for="col in visibleColumns"
                 :key="`skel-col-${col.key}`"
-                class="py-4 px-4 whitespace-nowrap"
+                class="py-4 px-4 whitespace-nowrap border-b border-gray-100"
               >
                 <div
                   class="h-3.5 bg-gradient-to-r from-gray-100 via-gray-200/70 to-gray-100 rounded-md"
@@ -363,20 +372,8 @@ onBeforeUnmount(() => {
               class="h-full text-center align-middle select-none p-4"
             >
               <div class="w-full h-full flex flex-col items-center justify-center gap-1.5 py-4">
-                <!-- Database Cylinders Icon -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="w-10 h-10 text-gray-400/80 mb-1 stroke-[1.6]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <ellipse cx="12" cy="5" rx="9" ry="3" />
-                  <path d="M3 5V19A9 3 0 0 0 21 19V5" />
-                  <path d="M3 12A9 3 0 0 0 21 12" />
-                </svg>
+                <!-- Database Icon from Lucide -->
+                <Database class="w-10 h-10 text-gray-400/80 mb-1 stroke-[1.6]" />
 
                 <h4 class="text-sm font-semibold text-[#2C3E50]">
                   Tidak ada data
@@ -384,6 +381,16 @@ onBeforeUnmount(() => {
                 <p class="text-xs text-gray-400 font-normal">
                   Maaf, Data Anda belum tersedia
                 </p>
+
+                <!-- Muat Ulang Button with Lucide RotateCw Icon -->
+                <button
+                  type="button"
+                  class="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/80 hover:bg-blue-100 active:scale-95 text-[#2671D9] text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                  @click="handleReload"
+                >
+                  <RotateCw class="w-3.5 h-3.5 stroke-[2.2]" />
+                  <span>Muat Ulang</span>
+                </button>
               </div>
             </td>
           </tr>
@@ -398,7 +405,7 @@ onBeforeUnmount(() => {
             <td
               v-for="col in visibleColumns"
               :key="col.key"
-              class="py-3.5 px-4 text-xs text-gray-700 whitespace-nowrap"
+              class="py-3.5 px-4 text-xs text-gray-700 whitespace-nowrap border-b border-gray-100"
               :class="[
                 col.align === 'right'
                   ? 'text-right'
@@ -408,7 +415,7 @@ onBeforeUnmount(() => {
                 col.stickyLeft
                   ? 'sticky left-0 bg-white group-hover:bg-[#F6FAFD] transition-colors z-10 shadow-[6px_0_10px_-4px_rgba(0,0,0,0.06)]'
                   : '',
-                col.key === 'actions' || col.stickyRight
+                col.stickyRight
                   ? 'sticky right-0 bg-white group-hover:bg-[#F6FAFD] transition-colors z-10 shadow-[-6px_0_10px_-4px_rgba(0,0,0,0.06)]'
                   : '',
               ]"

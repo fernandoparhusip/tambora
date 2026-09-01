@@ -1,140 +1,157 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import { menuItems, type MenuItem, type SubMenuItem } from '~/config/navigation'
+import { ref, watch, nextTick } from "vue";
+import {
+  menuItems,
+  type MenuItem,
+  type SubMenuItem,
+} from "~/config/navigation";
 
 // Logo Assets
-import LogoFullPLN from '@/assets/logo/LogoFullPLN.svg'
-import LogoTamboraSidebar from '@/assets/logo/LogoTamboraSidebar.svg'
+import LogoFullPLN from "@/assets/logo/LogoFullPLN.svg";
+import LogoTamboraSidebar from "@/assets/logo/LogoTamboraSidebar.svg";
 
 // Menu Icons Auto-Loader (Vite glob)
-const menuIcons = import.meta.glob('@/assets/icon/menu/*.svg', { eager: true, import: 'default' }) as Record<string, string>
+const menuIcons = import.meta.glob("@/assets/icon/menu/*.svg", {
+  eager: true,
+  import: "default",
+}) as Record<string, string>;
 
 const getMenuIcon = (key: string): string => {
   const iconNameMap: Record<string, string> = {
-    dashboard: 'DashboardIcon',
-    master: 'MasterIcon',
-    transaksi: 'TransaksiIcon',
-  }
-  const targetName = iconNameMap[key]
-  if (!targetName) return ''
+    dashboard: "DashboardIcon",
+    master: "MasterIcon",
+    transaksi: "TransaksiIcon",
+    konfigurasiAplikasi: "KonfigurasiAplikasiIcon",
+    "konfigurasi-aplikasi": "KonfigurasiAplikasiIcon",
+  };
+  const targetName = iconNameMap[key];
+  if (!targetName) return "";
 
   for (const [filePath, iconSrc] of Object.entries(menuIcons)) {
     if (filePath.includes(targetName)) {
-      return iconSrc
+      return iconSrc;
     }
   }
-  return ''
-}
+  return "";
+};
 
 // State & Router
-const route = useRoute()
-const isExpanded = ref(false)
-const openKeys = ref<string[]>([])
-const openSubKeys = ref<string[]>([])
+const route = useRoute();
+const isExpanded = ref(false);
+const openKeys = ref<string[]>([]);
+const openSubKeys = ref<string[]>([]);
 
 // Auto-scroll active menu item into view
 const scrollToActiveItem = () => {
-  if (!import.meta.client) return
+  if (!import.meta.client) return;
   nextTick(() => {
-    const activeEl = document.querySelector('aside nav a.bg-\\[\\#E9F1FB\\], aside nav button.bg-\\[\\#E9F1FB\\]')
+    const activeEl = document.querySelector(
+      "aside nav a.bg-\\[\\#E9F1FB\\], aside nav button.bg-\\[\\#E9F1FB\\]",
+    );
     if (activeEl) {
-      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  })
-}
+  });
+};
 
 // Sync open accordion sections with the active route
 const syncOpenKeysWithRoute = () => {
-  const currentPath = route.path
-  const newOpenKeys: string[] = []
-  const newOpenSubKeys: string[] = []
+  const currentPath = route.path;
+  const newOpenKeys: string[] = [];
+  const newOpenSubKeys: string[] = [];
 
   menuItems.forEach((item) => {
     if (item.children) {
       const hasActiveChild = item.children.some((sub) => {
-        if (sub.path && currentPath === sub.path) return true
+        if (sub.path && currentPath === sub.path) return true;
         if (sub.children) {
-          const hasActiveLeaf = sub.children.some((c) => currentPath === c.path)
+          const hasActiveLeaf = sub.children.some(
+            (c) => currentPath === c.path,
+          );
           if (hasActiveLeaf) {
-            newOpenSubKeys.push(sub.key)
-            return true
+            newOpenSubKeys.push(sub.key);
+            return true;
           }
         }
-        return false
-      })
+        return false;
+      });
 
       if (hasActiveChild) {
-        newOpenKeys.push(item.key)
+        newOpenKeys.push(item.key);
       }
     }
-  })
+  });
 
-  openKeys.value = newOpenKeys
-  openSubKeys.value = newOpenSubKeys
-  scrollToActiveItem()
-}
+  openKeys.value = newOpenKeys;
+  openSubKeys.value = newOpenSubKeys;
+  scrollToActiveItem();
+};
 
 // Initial sync & sync on route navigation
-syncOpenKeysWithRoute()
-watch(() => route.path, () => {
-  syncOpenKeysWithRoute()
-})
+syncOpenKeysWithRoute();
+watch(
+  () => route.path,
+  () => {
+    syncOpenKeysWithRoute();
+  },
+);
 
 // Active status helpers
 const isGroupActive = (item: MenuItem): boolean => {
-  if (item.path && item.path !== '/home' && route.path === item.path) return true
+  if (item.path && item.path !== "/home" && route.path === item.path)
+    return true;
   if (item.children) {
     return item.children.some((sub) => {
-      if (sub.path && route.path === sub.path) return true
+      if (sub.path && route.path === sub.path) return true;
       if (sub.children) {
-        return sub.children.some((c) => route.path === c.path)
+        return sub.children.some((c) => route.path === c.path);
       }
-      return false
-    })
+      return false;
+    });
   }
-  return false
-}
+  return false;
+};
 
 const isSubGroupActive = (sub: SubMenuItem): boolean => {
-  if (sub.path && route.path === sub.path) return true
+  if (sub.path && route.path === sub.path) return true;
   if (sub.children) {
-    return sub.children.some((c) => route.path === c.path)
+    return sub.children.some((c) => route.path === c.path);
   }
-  return false
-}
+  return false;
+};
 
 const isChildActive = (childPath: string): boolean => {
-  return route.path === childPath
-}
+  return route.path === childPath;
+};
 
 const toggleItem = (item: MenuItem) => {
   if (item.children) {
     if (!isExpanded.value) {
-      isExpanded.value = true
+      isExpanded.value = true;
     }
-    const idx = openKeys.value.indexOf(item.key)
+    const idx = openKeys.value.indexOf(item.key);
     if (idx === -1) {
-      openKeys.value.push(item.key)
+      openKeys.value.push(item.key);
     } else {
-      openKeys.value.splice(idx, 1)
+      openKeys.value.splice(idx, 1);
     }
   } else if (item.path) {
-    navigateTo(item.path)
+    navigateTo(item.path);
   }
-}
+};
 
 const toggleSubItem = (key: string) => {
-  const idx = openSubKeys.value.indexOf(key)
+  const idx = openSubKeys.value.indexOf(key);
   if (idx === -1) {
-    openSubKeys.value.push(key)
+    openSubKeys.value.push(key);
   } else {
-    openSubKeys.value.splice(idx, 1)
+    openSubKeys.value.splice(idx, 1);
   }
-}
+};
 
 const handleMouseLeave = () => {
-  isExpanded.value = false
-}
+  isExpanded.value = false;
+};
 </script>
 
 <template>
@@ -145,25 +162,37 @@ const handleMouseLeave = () => {
     @mouseleave="handleMouseLeave"
   >
     <!-- ── Logo Header ────────────────────────────────────────── -->
-    <div class="h-16 flex items-center shrink-0 px-4 overflow-hidden border-b border-gray-50 relative">
+    <div
+      class="h-16 flex items-center shrink-0 px-4 overflow-hidden border-b border-gray-50 relative"
+    >
       <!-- Logo Tambora Sidebar (collapsed default) -->
       <img
         :src="LogoTamboraSidebar"
         alt="Tambora Logo"
         class="h-15 w-auto object-contain shrink-0 transition-all duration-300 ease-in-out transform"
-        :class="isExpanded ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'"
-      >
+        :class="
+          isExpanded
+            ? 'opacity-0 scale-90 pointer-events-none'
+            : 'opacity-100 scale-100'
+        "
+      />
       <!-- Full logo PLN (expanded) -->
       <img
         :src="LogoFullPLN"
         alt="PLN Logo"
         class="h-10 w-auto object-contain absolute left-4 transition-all duration-300 ease-in-out transform"
-        :class="isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'"
-      >
+        :class="
+          isExpanded
+            ? 'opacity-100 scale-100'
+            : 'opacity-0 scale-95 pointer-events-none'
+        "
+      />
     </div>
 
     <!-- ── Navigation Items ───────────────────────────────────── -->
-    <nav class="flex-1 py-3 px-3.5 overflow-y-auto overflow-x-hidden space-y-2 custom-scrollbar">
+    <nav
+      class="flex-1 py-3 px-3.5 overflow-y-auto overflow-x-hidden space-y-2 custom-scrollbar"
+    >
       <div v-for="item in menuItems" :key="item.key" class="relative">
         <!-- Level 1 Parent Button -->
         <div class="relative">
@@ -179,7 +208,11 @@ const handleMouseLeave = () => {
             <!-- Active/Hover Left Accent Indicator attached directly to button's left edge -->
             <div
               class="absolute left-0 top-1/2 -translate-y-1/2 w-[2.5px] h-6 bg-[#2671D9] rounded-r-md transition-all duration-200"
-              :class="isGroupActive(item) ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'"
+              :class="
+                isGroupActive(item)
+                  ? 'opacity-100 scale-100'
+                  : 'opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100'
+              "
             />
             <!-- Icon -->
             <span class="shrink-0 w-7 h-7 flex items-center justify-center">
@@ -187,8 +220,12 @@ const handleMouseLeave = () => {
                 :src="getMenuIcon(item.key)"
                 :alt="item.label"
                 class="object-contain transition-all duration-200"
-                :class="isGroupActive(item) ? 'opacity-100 scale-105' : 'opacity-70 group-hover:opacity-100 group-hover:scale-105'"
-              >
+                :class="
+                  isGroupActive(item)
+                    ? 'opacity-100 scale-105'
+                    : 'opacity-70 group-hover:opacity-100 group-hover:scale-105'
+                "
+              />
             </span>
 
             <!-- Label (Expanded only) -->
@@ -205,14 +242,20 @@ const handleMouseLeave = () => {
               xmlns="http://www.w3.org/2000/svg"
               class="w-4 h-4 shrink-0 transition-transform duration-200"
               :class="[
-                openKeys.includes(item.key) ? 'rotate-180 text-[#2671D9]' : 'text-gray-400 group-hover:text-[#2671D9]',
+                openKeys.includes(item.key)
+                  ? 'rotate-180 text-[#2671D9]'
+                  : 'text-gray-400 group-hover:text-[#2671D9]',
               ]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
               stroke-width="2"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
         </div>
@@ -249,17 +292,27 @@ const handleMouseLeave = () => {
                   "
                   @click="toggleSubItem(subItem.key)"
                 >
-                  <span class="truncate whitespace-nowrap">{{ subItem.label }}</span>
+                  <span class="truncate whitespace-nowrap">{{
+                    subItem.label
+                  }}</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                    :class="openSubKeys.includes(subItem.key) ? 'rotate-180 text-[#2671D9]' : 'text-gray-400 group-hover:text-[#2671D9]'"
+                    :class="
+                      openSubKeys.includes(subItem.key)
+                        ? 'rotate-180 text-[#2671D9]'
+                        : 'text-gray-400 group-hover:text-[#2671D9]'
+                    "
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                     stroke-width="2"
                   >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
 
@@ -276,7 +329,11 @@ const handleMouseLeave = () => {
                     >
                       <span
                         class="absolute -left-[17px] -top-1 -bottom-1 w-[2.5px] bg-[#2671D9] z-10 transition-opacity duration-150"
-                        :class="isChildActive(leaf.path) ? 'opacity-100' : 'opacity-0 group-hover/leaf:opacity-100'"
+                        :class="
+                          isChildActive(leaf.path)
+                            ? 'opacity-100'
+                            : 'opacity-0 group-hover/leaf:opacity-100'
+                        "
                       />
                       <NuxtLink
                         :to="leaf.path"
@@ -288,7 +345,9 @@ const handleMouseLeave = () => {
                             : 'text-[#5A6E85] hover:text-[#2671D9] hover:bg-[#E9F1FB] font-normal'
                         "
                       >
-                        <span class="truncate whitespace-nowrap">{{ leaf.label }}</span>
+                        <span class="truncate whitespace-nowrap">{{
+                          leaf.label
+                        }}</span>
                       </NuxtLink>
                     </div>
                   </div>
@@ -307,7 +366,9 @@ const handleMouseLeave = () => {
                       : 'text-[#5A6E85] hover:text-[#2671D9] hover:bg-[#E9F1FB] font-normal'
                   "
                 >
-                  <span class="truncate whitespace-nowrap">{{ subItem.label }}</span>
+                  <span class="truncate whitespace-nowrap">{{
+                    subItem.label
+                  }}</span>
                 </NuxtLink>
               </template>
             </div>
@@ -337,15 +398,33 @@ const handleMouseLeave = () => {
 .submenu-enter-active .group {
   animation: submenuItemFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.submenu-enter-active .group:nth-child(1) { animation-delay: 0.02s; }
-.submenu-enter-active .group:nth-child(2) { animation-delay: 0.04s; }
-.submenu-enter-active .group:nth-child(3) { animation-delay: 0.06s; }
-.submenu-enter-active .group:nth-child(4) { animation-delay: 0.08s; }
-.submenu-enter-active .group:nth-child(5) { animation-delay: 0.10s; }
-.submenu-enter-active .group:nth-child(6) { animation-delay: 0.12s; }
-.submenu-enter-active .group:nth-child(7) { animation-delay: 0.14s; }
-.submenu-enter-active .group:nth-child(8) { animation-delay: 0.16s; }
-.submenu-enter-active .group:nth-child(9) { animation-delay: 0.18s; }
+.submenu-enter-active .group:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.submenu-enter-active .group:nth-child(2) {
+  animation-delay: 0.04s;
+}
+.submenu-enter-active .group:nth-child(3) {
+  animation-delay: 0.06s;
+}
+.submenu-enter-active .group:nth-child(4) {
+  animation-delay: 0.08s;
+}
+.submenu-enter-active .group:nth-child(5) {
+  animation-delay: 0.1s;
+}
+.submenu-enter-active .group:nth-child(6) {
+  animation-delay: 0.12s;
+}
+.submenu-enter-active .group:nth-child(7) {
+  animation-delay: 0.14s;
+}
+.submenu-enter-active .group:nth-child(8) {
+  animation-delay: 0.16s;
+}
+.submenu-enter-active .group:nth-child(9) {
+  animation-delay: 0.18s;
+}
 
 @keyframes submenuItemFadeIn {
   from {

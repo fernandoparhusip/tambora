@@ -215,6 +215,7 @@ const detailItems = computed<DetailDataItem[]>(() => {
           :rows="paginatedList"
           :loading="loading"
           class="flex-1 min-h-0"
+          @reload="fetchList"
         >
           <template #no-data="{ index }">
             <span class="text-xs text-gray-700 font-medium">

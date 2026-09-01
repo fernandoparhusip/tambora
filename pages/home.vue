@@ -13,9 +13,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- Outer container: relative sebagai anchor untuk sidebar absolute -->
   <div class="h-screen w-screen flex overflow-hidden bg-gray-50 relative transition-colors duration-150">
-
+    <!-- Outer container: relative sebagai anchor untuk sidebar absolute -->
     <!-- Sidebar: absolute overlay saat expanded (w-[72px] -> w-[260px]) -->
     <BaseAppSidebar />
 

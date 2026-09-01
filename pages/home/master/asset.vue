@@ -274,6 +274,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           :rows="paginatedData"
           :loading="loading"
           class="flex-1 min-h-0"
+          @reload="fetchAssets"
         >
           <template #no-data="{ index }">
             <span class="text-xs text-gray-700 font-medium">

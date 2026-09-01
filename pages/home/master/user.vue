@@ -1,23 +1,49 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
-import { z } from "zod";
-import type { DetailDataItem } from "~/types/master.types";
+import { ref, computed, onMounted } from "vue";
+import type {
+  DetailDataItem,
+  CreateUserRequest,
+  UpdateUserRequest,
+} from "~/types/master.types";
 import type { TableColumn } from "~/types";
-import { getUserFormSections } from "~/schemas/master/user.schema";
+import {
+  getUserFormSections,
+  userValidationSchema,
+} from "~/schemas/master/user.schema";
 import { exportToExcel } from "~/utils/exportExcel";
+import { useTableState } from "~/composables/useTableState";
 
 // ── Composables ──────────────────────────────────────────────
-const { users, loading, fetchUsers, createUser, updateUser, deleteUser } =
-  useUser();
+const {
+  users,
+  userDetail,
+  loading,
+  fetchUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser,
+} = useUser();
 const { roles, fetchRoles } = useRole();
 const { organizations, fetchOrganizations } = useOrganization();
+const { permissions, fetchPermissions, fetchPermissionsCombo } =
+  usePermission();
+
+// ── Table State (Search & Pagination) ─────────────────────────
+const {
+  searchQuery,
+  currentPage,
+  pageSize,
+  activeFilteredData,
+  paginatedData,
+} = useTableState(users, { defaultPageSize: 10 });
 
 // ── Table Columns Config ──────────────────────────────────────
 const userTableColumns: TableColumn[] = [
+  { key: "email", label: "Email", sortable: true, type: "text" },
   { key: "nama", label: "Nama", sortable: true, type: "text" },
-  { key: "aksesLevel", label: "Akses Level", sortable: true, type: "text" },
+  { key: "nip", label: "NIP", sortable: true, type: "text" },
   { key: "organisasi", label: "Organisasi", sortable: true, type: "text" },
-  { key: "aksesGrup", label: "Akses Grup", sortable: true, type: "text" },
   {
     key: "statusKaryawan",
     label: "Status Karyawan",
@@ -41,28 +67,20 @@ const roleOptions = computed(() =>
   })),
 );
 
-const userValidationSchema = z.object({
-  nama: z.string().min(1, "Nama lengkap wajib diisi"),
-  email: z.string().email("Format email tidak valid"),
-  tipe: z.string().optional(),
-  organisasi: z.string().optional(),
-  aksesLevel: z.string().optional(),
-  statusKaryawan: z.string().optional(),
-  jabatan: z.string().optional(),
-  nip: z.string().optional(),
-  perNr: z.string().optional(),
-  noTelp: z.string().optional(),
-  alamat: z.string().optional(),
-  akunPengelola: z.boolean().optional(),
-});
-
-// Reactive States
-const searchQuery = ref("");
-const currentPage = ref(1);
-const pageSize = ref(10);
+const permissionOptions = computed(() =>
+  permissions.value.map((p: any) => ({
+    label: p.permission_key || p.description || p.id,
+    value: p.permission_key || p.id,
+  })),
+);
 
 onMounted(async () => {
-  await Promise.allSettled([fetchUsers(), fetchRoles(), fetchOrganizations()]);
+  await Promise.allSettled([
+    fetchUsers(),
+    fetchRoles(),
+    fetchOrganizations(),
+    fetchPermissions(),
+  ]);
 });
 
 // Dynamic Form Sections — schema driven with reactive conditional visibility
@@ -70,27 +88,8 @@ const activeFormSections = computed(() => {
   return getUserFormSections({
     orgOptions: orgOptions.value,
     roleOptions: roleOptions.value,
+    permissionOptions: permissionOptions.value,
   });
-});
-
-// Reset pagination on search
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
-
-// ── Filtered & Paginated ──────────────────────────────────────
-const activeFilteredData = computed(() => {
-  const list = users.value;
-  const q = searchQuery.value.toLowerCase();
-  if (!q) return list;
-  return list.filter((row: any) =>
-    Object.values(row).some((val) => String(val).toLowerCase().includes(q)),
-  );
-});
-
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return activeFilteredData.value.slice(start, start + pageSize.value);
 });
 
 // Modal states
@@ -120,7 +119,7 @@ const openCreateModal = () => {
     akunPengelola: false,
     organisasi: organizations.value[0]?.nama || "",
     aksesLevel: roles.value[0]?.code || "SUPER_ADMIN",
-    aksesGrup: ["Grup 1"],
+    permissions: [],
     pengelola: "Sewa",
     nama: "",
     jabatan: "Staff",
@@ -136,10 +135,15 @@ const openCreateModal = () => {
 };
 
 const isDetailModalOpen = ref(false);
+const isDetailLoading = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<any>(null);
 const isDeleting = ref(false);
 const detailRecord = ref<any>(null);
+const detailRoles = ref<any[]>([]);
+const detailPermissions = ref<any[]>([]);
+const permissionSearch = ref("");
+const hoveredPermission = ref<any>(null);
 
 const detailModalTitle = computed(() => "View Data Pengguna");
 const detailModalSubtitle = computed(() => "Form View Data Pengguna");
@@ -166,26 +170,112 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     {
       label: "Role Akses",
       value:
-        detailRecord.value.aksesLevel ||
-        detailRecord.value.role_assignments?.[0]?.role_code ||
-        "-",
+        detailRoles.value.length > 0
+          ? detailRoles.value
+              .map((r: any) => r.role_name || r.role_code)
+              .join(", ")
+          : detailRecord.value.aksesLevel ||
+            detailRecord.value.role_assignments?.[0]?.role_code ||
+            "-",
     },
     {
       label: "Status Karyawan",
       value:
         detailRecord.value.statusKaryawan ||
-        (detailRecord.value.status === 1 ? "Aktif" : "Nonaktif"),
+        (detailRecord.value.status === 1 || detailRecord.value.status === "1"
+          ? "Aktif"
+          : "Nonaktif"),
       isStatus: true,
     },
-    { label: "Alamat", value: detailRecord.value.alamat || "-" },
-    { label: "No. Telp", value: detailRecord.value.noTelp || "-" },
+    {
+      label: "Alamat",
+      value: detailRecord.value.address || detailRecord.value.alamat || "-",
+    },
+    {
+      label: "No. Telp",
+      value:
+        detailRecord.value.phone_number ||
+        detailRecord.value.noTelp ||
+        "-",
+    },
   ];
   return items;
 });
 
-const handleView = (row: any) => {
+const filteredDetailPermissions = computed(() => {
+  const q = permissionSearch.value.toLowerCase().trim();
+  if (!q) return detailPermissions.value;
+  return detailPermissions.value.filter(
+    (p: any) =>
+      p.Key?.toLowerCase().includes(q) ||
+      p.ResourceCode?.toLowerCase().includes(q) ||
+      p.ActionCode?.toLowerCase().includes(q) ||
+      p.permission_key?.toLowerCase().includes(q),
+  );
+});
+
+const getPermissionTooltipContent = (p: any) => {
+  const resource = p.ResourceCode || p.resource || "SISTEM";
+  const action = p.ActionCode || p.action || "AKSI";
+  const desc = p.Description || p.description;
+
+  if (desc) {
+    return `<div style="display: flex; flex-direction: column; gap: 2px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="color: #34d399; font-weight: 700; font-size: 11px;">${resource}</span>
+        <span style="color: #475569;">•</span>
+        <span style="color: #6ee7b7; font-size: 10px; font-family: monospace; font-weight: 600;">${action}</span>
+      </div>
+      <div style="color: #e2e8f0; font-size: 11px; line-height: 1.3;">${desc}</div>
+    </div>`;
+  }
+
+  return `<div style="display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 11px; line-height: 1;">
+    <span style="display: inline-block; width: 5px; height: 5px; border-radius: 9999px; background: #34d399; flex-shrink: 0;"></span>
+    <span style="color: #94a3b8; line-height: 1;">Modul:</span>
+    <span style="color: #f1f5f9; font-weight: 600; line-height: 1;">${resource}</span>
+    <span style="color: #475569; margin: 0 1px; line-height: 1;">|</span>
+    <span style="color: #94a3b8; line-height: 1;">Aksi:</span>
+    <span style="color: #34d399; font-weight: 700; line-height: 1;">${action}</span>
+  </div>`;
+};
+
+const handleView = async (row: any) => {
   detailRecord.value = row;
+  detailRoles.value = row.role_assignments || [];
+  detailPermissions.value = [];
+  permissionSearch.value = "";
+  hoveredPermission.value = null;
   isDetailModalOpen.value = true;
+  isDetailLoading.value = true;
+
+  try {
+    const res: any = await getUserById(row.id);
+    if (res) {
+      if (res.user) {
+        detailRecord.value = {
+          ...row,
+          ...res.user,
+          nama: res.user.full_name || res.user.username,
+          organisasi: res.user.organization || row.organisasi,
+          statusKaryawan:
+            res.user.status === 1 || res.user.status === "1"
+              ? "Aktif"
+              : "Nonaktif",
+        };
+      }
+      if (Array.isArray(res.roles)) {
+        detailRoles.value = res.roles;
+      }
+      if (Array.isArray(res.access?.permissions)) {
+        detailPermissions.value = res.access.permissions;
+      }
+    }
+  } catch {
+    // Fallback to table row data on fetch error
+  } finally {
+    isDetailLoading.value = false;
+  }
 };
 
 const openEditFromDetail = () => {
@@ -194,14 +284,99 @@ const openEditFromDetail = () => {
   }
 };
 
-const handleEdit = (row: any) => {
+const handleEdit = async (row: any) => {
   modalMode.value = "edit";
+  const matchedRole =
+    row.roles?.[0]?.role_code ||
+    row.role_assignments?.[0]?.role_code ||
+    row.aksesLevel ||
+    roles.value[0]?.code ||
+    "SUPER_ADMIN";
+
+  let userPermissions: string[] = [];
+
+  // 1. Fetch user detail & permissions via getUserById (GET /api/v1/users/:id)
+  try {
+    const userDetailRes: any = await getUserById(row.id);
+    if (
+      userDetailRes?.access?.permissions &&
+      Array.isArray(userDetailRes.access.permissions)
+    ) {
+      userPermissions = userDetailRes.access.permissions.map(
+        (p: any) =>
+          p.Key ||
+          p.permission_key ||
+          p.ID ||
+          `${p.ResourceCode}.${p.ActionCode}`,
+      );
+    }
+  } catch {
+    // fallback if getUserById fails
+  }
+
+  // 2. If permissions not in detail, attempt combo endpoint as fallback
+  if (userPermissions.length === 0) {
+    try {
+      const comboRes: any = await fetchPermissionsCombo(row.id);
+      if (Array.isArray(comboRes)) {
+        userPermissions = comboRes
+          .filter(
+            (item: any) =>
+              item.is_selected ||
+              item.selected ||
+              item.checked ||
+              typeof item === "string",
+          )
+          .map((item: any) =>
+            typeof item === "string"
+              ? item
+              : item.permission_key || item.key || item.id || item.code,
+          );
+        if (!userPermissions.length && comboRes.length) {
+          userPermissions = comboRes.map((item: any) =>
+            typeof item === "string"
+              ? item
+              : item.permission_key || item.key || item.id || item.code,
+          );
+        }
+      } else if (comboRes && Array.isArray(comboRes.permissions)) {
+        userPermissions = comboRes.permissions.map((p: any) =>
+          typeof p === "string" ? p : p.permission_key || p.key || p.id,
+        );
+      }
+    } catch {
+      if (Array.isArray(row.permissions)) {
+        userPermissions = row.permissions;
+      } else if (Array.isArray(row.permission_overrides)) {
+        userPermissions = row.permission_overrides
+          .filter((o: any) => o.is_granted)
+          .map((o: any) => o.permission_key);
+      }
+    }
+  }
+
   formData.value = {
     ...row,
+    id: row.id,
     nama: row.nama || row.full_name,
-    organisasi: row.organisasi || row.organization,
-    aksesLevel:
-      row.aksesLevel || row.role_assignments?.[0]?.role_code || "SUPER_ADMIN",
+    email: row.email || "",
+    organisasi: row.organisasi || row.organization || "",
+    nip: row.nip || "",
+    perNr: row.perNr || row.prnr || "",
+    statusKaryawan:
+      row.status === 0 ||
+      row.status === "0" ||
+      row.statusKaryawan === "Nonaktif"
+        ? "Nonaktif"
+        : "Aktif",
+    aksesLevel: matchedRole,
+    permissions: userPermissions,
+    tipe: row.tipe || "SSO PLN",
+    akunPengelola: row.akunPengelola || false,
+    pengelola: row.pengelola || "Sewa",
+    jabatan: row.jabatan || "Staff",
+    noTelp: row.noTelp || "",
+    alamat: row.alamat || "",
   };
   clearErrors();
   modalOpen.value = true;
@@ -254,30 +429,89 @@ const handleSave = async () => {
 
   submitting.value = true;
   try {
-    const roleCode = formData.value.aksesLevel || formData.value.role || "USER";
+    const roleCode =
+      formData.value.aksesGrup ||
+      formData.value.aksesLevel ||
+      formData.value.role ||
+      "SUPER_ADMIN";
+    const matchedOrg = organizations.value.find(
+      (o: any) =>
+        o.nama === formData.value.organisasi ||
+        o.id === formData.value.organization_id ||
+        o.kode === formData.value.organisasi,
+    );
+    const orgId =
+      matchedOrg?.id ||
+      formData.value.organization_id ||
+      "90000000-0000-0000-0000-000000000001";
+    const orgName =
+      matchedOrg?.nama ||
+      formData.value.organisasi ||
+      "PLN Unit Induk Distribusi";
+    const isSso =
+      formData.value.tipe === "SSO PLN" || formData.value.is_sso === true;
+    const isPengelola = Boolean(
+      formData.value.akunPengelola || formData.value.is_pengelola,
+    );
+    const statusKaryawan = formData.value.statusKaryawan || "Tetap";
+    const accessLevel =
+      formData.value.access_level ||
+      formData.value.aksesLevel ||
+      (isPengelola ? "Pusat" : "Unit");
+    const jabatan = formData.value.jabatan || "Manager Operasi";
+    const nip = formData.value.nip || "";
+    const pernr =
+      formData.value.perNr ||
+      formData.value.pernr ||
+      formData.value.prnr ||
+      "";
+    const phoneNumber =
+      formData.value.noTelp || formData.value.phone_number || "";
+    const approvalCode = formData.value.approval_code || "APP-001";
+    const description =
+      formData.value.description ||
+      (jabatan ? `User ${jabatan} wilayah` : "User manager operasi wilayah");
+    const password = formData.value.password || "PLN@Tambora123";
+    const permissionOverrides = formData.value.permission_overrides || [];
+    const roleAssignments = [
+      {
+        role_code: roleCode,
+        scope_codes: formData.value.scope_codes || [],
+      },
+    ];
+
+    const payload: CreateUserRequest = {
+      access_level: accessLevel,
+      address: formData.value.alamat || formData.value.address || "",
+      akses_grup: roleCode,
+      approval_code: approvalCode,
+      description: description,
+      email: formData.value.email,
+      full_name:
+        formData.value.nama || formData.value.full_name || "Pegawai PLN",
+      is_pengelola: isPengelola,
+      is_sso: isSso,
+      jabatan: jabatan,
+      jenis_pengguna: formData.value.jenis_pengguna || "Pegawai",
+      main_application: "TAMBORA",
+      nip: nip,
+      organization: orgName,
+      organization_id: orgId,
+      password: password,
+      permission_overrides: permissionOverrides,
+      pernr: pernr,
+      phone_number: phoneNumber,
+      role_assignments: roleAssignments,
+      status_karyawan: statusKaryawan,
+    };
+
     if (modalMode.value === "create") {
-      const username =
-        formData.value.username ||
-        formData.value.email?.split("@")[0] ||
-        `user_${Date.now()}`;
-      await createUser({
-        email: formData.value.email || `${username}@pln.co.id`,
-        username,
-        full_name: formData.value.nama || "Pegawai PLN",
-        password: formData.value.password || "PLN123!default",
-        organization: formData.value.organisasi || "BaseTambora",
-        nip: formData.value.nip || "",
-        prnr: formData.value.perNr || formData.value.prnr || "",
-        role_assignments: [{ role_code: roleCode, scope_codes: [] }],
-      });
+      await createUser(payload);
     } else {
       await updateUser(formData.value.id, {
-        full_name: formData.value.nama || formData.value.full_name,
-        organization: formData.value.organisasi,
-        nip: formData.value.nip,
-        prnr: formData.value.perNr || formData.value.prnr,
-        status: formData.value.statusKaryawan === "Nonaktif" ? 0 : 1,
-        role_assignments: [{ role_code: roleCode, scope_codes: [] }],
+        ...payload,
+        status:
+          statusKaryawan === "Nonaktif" || formData.value.status === 0 ? 0 : 1,
       });
     }
     modalOpen.value = false;
@@ -308,10 +542,7 @@ const handleSave = async () => {
         >
           <!-- Left: Search input + Export button -->
           <div class="flex items-center gap-3">
-            <BaseSearchInput
-              v-model="searchQuery"
-              placeholder="Cari Nama / Email / NIP..."
-            />
+            <BaseSearchInput v-model="searchQuery" placeholder="Cari Data" />
             <BaseExportButton @click="handleExport" />
           </div>
 
@@ -327,10 +558,12 @@ const handleSave = async () => {
           :rows="paginatedData"
           :loading="loading"
           class="flex-1 min-h-0"
+          @reload="fetchUsers"
         >
           <!-- Status Karyawan Cell Slot -->
           <template #statusKaryawan-data="{ row }">
             <BaseBadge
+              class="w-20 min-w-[76px]"
               :variant="row.statusKaryawan === 'Aktif' ? 'success' : 'danger'"
             >
               {{ row.statusKaryawan || "Aktif" }}
@@ -387,8 +620,121 @@ const handleSave = async () => {
       v-model:is-open="isDetailModalOpen"
       :title="detailModalTitle"
       :subtitle="detailModalSubtitle"
+      :record-id="detailRecord?.id"
+      :created-date="
+        detailRecord?.created_at
+          ? new Date(detailRecord.created_at).toLocaleString('id-ID', {
+              dateStyle: 'full',
+              timeStyle: 'short',
+            })
+          : 'Tidak tersedia'
+      "
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
-    />
+    >
+      <template #extra>
+        <div class="mt-4 pt-4 border-t border-gray-100 space-y-4">
+          <!-- Permissions Section -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span
+                class="text-xs font-bold text-gray-700 flex items-center gap-1.5"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-4 h-4 text-emerald-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                  />
+                </svg>
+                Akses Permission
+              </span>
+              <span
+                v-if="detailPermissions.length"
+                class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200"
+              >
+                {{ detailPermissions.length }} total
+              </span>
+            </div>
+
+            <!-- Permission Search if permissions count > 6 -->
+            <div v-if="detailPermissions.length > 6" class="mb-2.5">
+              <input
+                v-model="permissionSearch"
+                type="text"
+                placeholder="Cari akses permission..."
+                class="w-full text-xs px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-colors"
+              />
+            </div>
+
+            <div
+              v-if="isDetailLoading"
+              class="flex items-center justify-center py-4 text-xs text-gray-400 gap-2"
+            >
+              <svg
+                class="animate-spin h-4 w-4 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+              <span>Memuat relasi hak akses user...</span>
+            </div>
+
+            <div v-else>
+              <!-- Permission Badges List with PrimeVue Tooltip -->
+              <div
+                v-if="filteredDetailPermissions.length > 0"
+                class="max-h-56 overflow-y-auto p-1 flex flex-wrap gap-1.5"
+              >
+                <span
+                  v-for="(p, pIdx) in filteredDetailPermissions"
+                  :key="pIdx"
+                  v-tooltip.top="{
+                    value: getPermissionTooltipContent(p),
+                    escape: false,
+                    showDelay: 60,
+                    hideDelay: 50,
+                  }"
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-gray-100 border border-gray-200/80 text-gray-700 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-800 transition-colors cursor-pointer select-none"
+                >
+                  {{
+                    p.Key ||
+                    p.permission_key ||
+                    `${p.ResourceCode}.${p.ActionCode}`
+                  }}
+                </span>
+              </div>
+              <p v-else class="text-xs text-gray-400 italic">
+                {{
+                  detailPermissions.length === 0
+                    ? "Belum ada katalog hak akses yang terdata."
+                    : "Tidak ada izin yang cocok dengan kata kunci pencarian."
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </template>
+    </BaseDetailModal>
   </div>
 </template>

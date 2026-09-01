@@ -3,12 +3,17 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from "~/types/master.types";
 import { exportToExcel } from "~/utils/exportExcel";
 import type { TableColumn, PermissionItem } from "~/types";
-import { permissionFormSections } from "~/schemas/master/permission.schema";
+import { getPermissionFormSections } from "~/schemas/master/permission.schema";
 
 const {
   permissions,
+  resourcesCombo,
+  actionsCombo,
   loading,
   fetchPermissions,
+  fetchResourcesCombo,
+  fetchActionsCombo,
+  getPermissionById,
   createPermission,
   updatePermission,
   deletePermission,
@@ -27,6 +32,7 @@ const submitting = ref(false);
 
 // Detail Modal State
 const isDetailModalOpen = ref(false);
+const isDetailLoading = ref(false);
 const detailRecord = ref<PermissionItem | null>(null);
 
 // Delete Dialog State
@@ -47,10 +53,14 @@ const permissionColumns: TableColumn[] = [
 ];
 
 onMounted(async () => {
-  await fetchPermissions();
+  await Promise.allSettled([
+    fetchPermissions(),
+    fetchResourcesCombo(),
+    fetchActionsCombo(),
+  ]);
 });
 
-// Dynamic Resource unique options
+// Dynamic Resource unique options for filter
 const resourceList = computed(() => {
   const set = new Set<string>();
   permissions.value.forEach((p) => {
@@ -63,6 +73,85 @@ const resourceSelectOptions = computed(() => [
   { label: "Semua Resource", value: "" },
   ...resourceList.value.map((r) => ({ label: r, value: r })),
 ]);
+
+// Dynamic combo options with 2-line title & subtitle from API (/resources/combo and /actions/combo)
+const dynamicResourceOptions = computed(() => {
+  if (resourcesCombo.value && resourcesCombo.value.length > 0) {
+    return resourcesCombo.value;
+  }
+  // Fallback from existing permissions list
+  const map = new Map<string, string>();
+  permissions.value.forEach((p) => {
+    if (p.resource_code) {
+      map.set(p.resource_code, p.resource_name || p.resource_code);
+    }
+  });
+  return Array.from(map.entries()).map(([code, name]) => ({
+    value: code,
+    id: code,
+    code: code,
+    label: `${code} - ${name}`,
+    title: code,
+    subtitle: name,
+    description: name,
+  }));
+});
+
+const dynamicActionOptions = computed(() => {
+  if (actionsCombo.value && actionsCombo.value.length > 0) {
+    return actionsCombo.value;
+  }
+  // Fallback from existing permissions list
+  const map = new Map<string, string>();
+  permissions.value.forEach((p) => {
+    if (p.action_code) {
+      map.set(p.action_code, p.action_name || p.action_code);
+    }
+  });
+  return Array.from(map.entries()).map(([code, name]) => ({
+    value: code,
+    id: code,
+    code: code,
+    label: `${code} - ${name}`,
+    title: code,
+    subtitle: name,
+    description: name,
+  }));
+});
+
+const permissionFormSections = computed(() => {
+  return getPermissionFormSections({
+    resourceOptions: dynamicResourceOptions.value,
+    actionOptions: dynamicActionOptions.value,
+  });
+});
+
+// Auto-generate permission_key ('RESOURCE_CODE.ACTION_CODE') when Resource or Action changes
+watch(
+  [() => formData.value.resource_id, () => formData.value.action_id],
+  ([newResId, newActId]) => {
+    if (newResId && newActId) {
+      const resMatch = dynamicResourceOptions.value.find(
+        (r: any) => r.value === newResId || r.id === newResId,
+      );
+      const resCode = resMatch
+        ? resMatch.code || resMatch.title || newResId
+        : newResId;
+
+      const actMatch = dynamicActionOptions.value.find(
+        (a: any) => a.value === newActId || a.id === newActId,
+      );
+      const actCode = actMatch
+        ? actMatch.code || actMatch.title || newActId
+        : newActId;
+
+      formData.value.permission_key =
+        `${resCode}.${actCode}`.toUpperCase();
+    } else if (modalMode.value === "create") {
+      formData.value.permission_key = "";
+    }
+  },
+);
 
 // Reset pagination
 watch([searchQuery, selectedResource], () => {
@@ -102,10 +191,8 @@ const openCreateModal = () => {
   modalMode.value = "create";
   formData.value = {
     permission_key: "",
-    resource_code: "",
-    resource_name: "",
-    action_code: "VIEW",
-    action_name: "Lihat Data",
+    resource_id: "",
+    action_id: "",
     description: "",
   };
   isModalOpen.value = true;
@@ -113,13 +200,44 @@ const openCreateModal = () => {
 
 const handleEdit = (row: PermissionItem) => {
   modalMode.value = "edit";
-  formData.value = { ...row };
+  const matchedRes = dynamicResourceOptions.value.find(
+    (r: any) =>
+      r.id === (row as any).resource_id ||
+      r.code === row.resource_code ||
+      r.value === row.resource_code,
+  );
+  const matchedAct = dynamicActionOptions.value.find(
+    (a: any) =>
+      a.id === (row as any).action_id ||
+      a.code === row.action_code ||
+      a.value === row.action_code,
+  );
+
+  formData.value = {
+    ...row,
+    resource_id:
+      (row as any).resource_id || matchedRes?.value || row.resource_code,
+    action_id:
+      (row as any).action_id || matchedAct?.value || row.action_code,
+    description: row.description || "",
+  };
   isModalOpen.value = true;
 };
 
-const handleView = (row: PermissionItem) => {
+const handleView = async (row: PermissionItem) => {
   detailRecord.value = row;
   isDetailModalOpen.value = true;
+  isDetailLoading.value = true;
+  try {
+    const res = await getPermissionById(row.id);
+    if (res) {
+      detailRecord.value = res;
+    }
+  } catch {
+    // Fallback to row data from table list
+  } finally {
+    isDetailLoading.value = false;
+  }
 };
 
 const handleDelete = (row: PermissionItem) => {
@@ -132,11 +250,9 @@ const handleSubmit = async () => {
   try {
     const payload = {
       permission_key: formData.value.permission_key,
-      resource_code: formData.value.resource_code,
-      resource_name: formData.value.resource_name,
-      action_code: formData.value.action_code,
-      action_name: formData.value.action_name,
-      description: formData.value.description,
+      resource_id: formData.value.resource_id,
+      action_id: formData.value.action_id,
+      description: formData.value.description || null,
     };
 
     if (modalMode.value === "create") {
@@ -216,10 +332,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseExportButton @click="handleExport" />
           </div>
 
-          <BaseCreateButton
-            label="TAMBAH PERMISSION"
-            @click="openCreateModal"
-          />
+          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
         </div>
 
         <!-- Permission Table -->
@@ -228,6 +341,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           :rows="paginatedRows"
           :loading="loading"
           class="flex-1 min-h-0"
+          @reload="fetchPermissions"
         >
           <template #no-data="{ index }">
             <span class="text-xs text-gray-700 font-medium">
@@ -236,9 +350,11 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #permission_key-data="{ row }">
-            <BaseBadge variant="primary">
+            <code
+              class="inline-block font-mono text-[11px] font-semibold text-sky-800 bg-sky-50 px-2 py-0.5 rounded border border-sky-200/80 tracking-tight select-all"
+            >
               {{ row.permission_key }}
-            </BaseBadge>
+            </code>
           </template>
 
           <template #resource_name-data="{ row }">
@@ -254,6 +370,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <template #action_name-data="{ row }">
             <BaseBadge
+              class="w-18 min-w-[70px]"
               :variant="
                 row.action_code === 'CREATE'
                   ? 'success'
@@ -312,13 +429,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:form-data="formData"
       :title="
         modalMode === 'edit'
-          ? 'Edit Hak Akses (Permission)'
-          : 'Tambah Hak Akses (Permission)'
+          ? 'Edit Akses Permission'
+          : 'Tambah Akses Permission'
       "
       :subtitle="
         modalMode === 'edit'
-          ? 'Form Pembaruan Definisi Hak Akses'
-          : 'Form Pembuatan Definisi Hak Akses Baru'
+          ? 'Form Pembaruan Akses Permission'
+          : 'Form Pembuatan Akses Permission'
       "
       :sections="permissionFormSections"
       :submitting="submitting"
@@ -330,8 +447,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <!-- View Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Hak Akses (Permission)"
-      subtitle="Katalog Definisi Resource & Action RBAC"
+      title="Detail Akses Permission"
+      subtitle="Katalog Akses Permission"
       :data-items="detailDataItems"
       @close="isDetailModalOpen = false"
     />
@@ -339,7 +456,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <!-- Delete Confirmation Modal -->
     <BaseConfirmDialog
       v-model:is-open="isConfirmDialogOpen"
-      title="Hapus Hak Akses"
+      title="Hapus Akses Permission"
       :message="`Apakah Anda yakin ingin menghapus permission '${deleteTarget?.permission_key || ''}'?`"
       :loading="isDeleting"
       @confirm="handleConfirmDelete"

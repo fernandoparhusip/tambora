@@ -245,7 +245,11 @@ const handleEdit = () => {
               </span>
             </div>
           </div>
+
+          <!-- Extra Content Slot (e.g. Roles, Permissions, Nested Relations) -->
+          <slot name="extra" />
         </div>
+
 
         <!-- Right Activity Log Card (4 Cols Full Height) -->
         <div
