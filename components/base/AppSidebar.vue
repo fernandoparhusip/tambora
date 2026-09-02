@@ -175,7 +175,7 @@ const handleMouseLeave = () => {
             ? 'opacity-0 scale-90 pointer-events-none'
             : 'opacity-100 scale-100'
         "
-      />
+      >
       <!-- Full logo PLN (expanded) -->
       <img
         :src="LogoFullPLN"
@@ -186,7 +186,7 @@ const handleMouseLeave = () => {
             ? 'opacity-100 scale-100'
             : 'opacity-0 scale-95 pointer-events-none'
         "
-      />
+      >
     </div>
 
     <!-- ── Navigation Items ───────────────────────────────────── -->
@@ -225,7 +225,7 @@ const handleMouseLeave = () => {
                     ? 'opacity-100 scale-105'
                     : 'opacity-70 group-hover:opacity-100 group-hover:scale-105'
                 "
-              />
+              >
             </span>
 
             <!-- Label (Expanded only) -->
