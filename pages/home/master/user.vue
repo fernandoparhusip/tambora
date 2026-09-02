@@ -6,13 +6,12 @@ import type {
 } from "~/types/master.types";
 import type { TableColumn } from "~/types";
 import {
-  getUserFormSections,
   userValidationSchema,
 } from "~/schemas/master/user.schema";
 import { exportToExcel } from "~/utils/exportExcel";
 import { useTableState } from "~/composables/useTableState";
 import { useScope } from "~/composables/master/useScope";
-import { ShieldCheck, User, KeyRound, Search, CheckCircle2, XCircle, MinusCircle } from "@lucide/vue";
+import { User, KeyRound, Search, CheckCircle2, XCircle, MinusCircle } from "@lucide/vue";
 
 // ── Composables ──────────────────────────────────────────────
 const {
@@ -27,8 +26,7 @@ const {
 const { roles, fetchRoles } = useRole();
 const { scopes, fetchScopes } = useScope();
 const { organizations, fetchOrganizations } = useOrganization();
-const { permissions, fetchPermissions, fetchPermissionsCombo } =
-  usePermission();
+const { permissions, fetchPermissions } = usePermission();
 
 // ── Table State (Search & Pagination) ─────────────────────────
 const {
@@ -99,15 +97,6 @@ onMounted(async () => {
     fetchOrganizations(),
     fetchPermissions(),
   ]);
-});
-
-// Dynamic Form Sections
-const activeFormSections = computed(() => {
-  return getUserFormSections({
-    orgOptions: orgOptions.value,
-    roleOptions: roleOptions.value,
-    permissionOptions: permissionOptions.value,
-  });
 });
 
 // Modal states
@@ -413,7 +402,8 @@ const clearErrors = () => {
 
 const setOverrideState = (permKey: string, state: "DEFAULT" | "GRANTED" | "DENIED") => {
   if (state === "DEFAULT") {
-    delete userOverrides.value[permKey];
+    const { [permKey]: _removed, ...rest } = userOverrides.value;
+    userOverrides.value = rest;
   } else {
     userOverrides.value[permKey] = state;
   }
@@ -682,7 +672,7 @@ const handleSave = async () => {
                   placeholder="operator.manado@pln.co.id"
                   class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white"
                   :class="{ 'border-red-400': formErrors.email }"
-                />
+                >
                 <span v-if="formErrors.email" class="text-[11px] text-red-500 mt-1 block">
                   {{ formErrors.email }}
                 </span>
@@ -697,7 +687,7 @@ const handleSave = async () => {
                   type="text"
                   placeholder="operator_manado"
                   class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white font-mono"
-                />
+                >
               </div>
 
               <div>
@@ -710,7 +700,7 @@ const handleSave = async () => {
                   placeholder="Operator Cabang Manado"
                   class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white"
                   :class="{ 'border-red-400': formErrors.nama }"
-                />
+                >
                 <span v-if="formErrors.nama" class="text-[11px] text-red-500 mt-1 block">
                   {{ formErrors.nama }}
                 </span>
@@ -725,7 +715,7 @@ const handleSave = async () => {
                   type="password"
                   placeholder="Password123!"
                   class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white font-mono"
-                />
+                >
               </div>
 
               <div>
@@ -791,7 +781,7 @@ const handleSave = async () => {
                   type="text"
                   placeholder="Contoh: 8912345Z"
                   class="w-full text-xs px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono"
-                />
+                >
               </div>
             </div>
           </div>
@@ -819,7 +809,7 @@ const handleSave = async () => {
                   type="text"
                   placeholder="Cari izin fitur (e.g. SENTRAL.DELETE, CABANG.CREATE)..."
                   class="w-full text-xs pl-9 pr-3.5 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white"
-                />
+                >
               </div>
 
               <div class="text-xs text-gray-500 shrink-0">
