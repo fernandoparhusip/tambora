@@ -435,8 +435,9 @@ function getPermissionTooltipContent(permKey: string): string {
     (p) => p.permission_key === permKey || p.id === permKey
   );
   if (matched) {
+    const title = matched.permission_key || (matched.resource_name ? `${matched.resource_name} - ${matched.action_name}` : permKey);
     return `<div class="text-left font-sans">
-      <div class="font-bold text-xs">${matched.name || permKey}</div>
+      <div class="font-bold text-xs">${title}</div>
       <div class="text-[11px] text-gray-300">${matched.description || matched.resource_name || "-"}</div>
     </div>`;
   }
@@ -565,7 +566,7 @@ function getPermissionTooltipContent(permKey: string): string {
                 placeholder="Contoh: Operator Pembangkit Sentral"
                 class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all font-medium text-gray-800"
                 required
-              />
+              >
             </div>
 
             <div>
@@ -578,7 +579,7 @@ function getPermissionTooltipContent(permKey: string): string {
                 placeholder="Contoh: ROLE_OPERATOR_SENTRAL"
                 class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all font-mono font-semibold text-gray-800"
                 required
-              />
+              >
             </div>
 
             <div class="md:col-span-2">
@@ -588,7 +589,7 @@ function getPermissionTooltipContent(permKey: string): string {
                 rows="2"
                 placeholder="Contoh: Khusus staf operasional di unit sentral pembangkit"
                 class="w-full text-xs px-3.5 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all text-gray-800"
-              ></textarea>
+              />
             </div>
           </div>
 
@@ -614,7 +615,7 @@ function getPermissionTooltipContent(permKey: string): string {
                     type="text"
                     placeholder="Filter Modul..."
                     class="text-xs pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 w-44"
-                  />
+                  >
                 </div>
 
                 <button
@@ -664,7 +665,7 @@ function getPermissionTooltipContent(permKey: string): string {
                           class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300 cursor-pointer"
                           :title="row.permissionsByAction[act.key]?.permission_key"
                           @change="togglePermission(row.permissionsByAction[act.key]!)"
-                        />
+                        >
                       </template>
                       <template v-else>
                         <span class="text-gray-300 font-bold">-</span>
