@@ -1,13 +1,4 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    label?: string;
-  }>(),
-  {
-    label: "TAMBAH DATA",
-  },
-);
-
 defineEmits<{
   click: [];
 }>();
@@ -32,6 +23,6 @@ defineEmits<{
         d="M12 4.5v15m7.5-7.5h-15"
       />
     </svg>
-    <span>{{ label }}</span>
+    <span>TAMBAH DATA</span>
   </button>
 </template>

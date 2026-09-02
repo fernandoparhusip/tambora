@@ -14,26 +14,26 @@ tambora-frontend/
 │   ├── layout/         # Komponen layout (AppSidebar, AppHeader, BasePageHeader)
 │   └── login/          # Komponen login & slider captcha
 ├── composables/        # State reaktif, auth, SWR cache, form draft, dan API CRUD
-│   ├── konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup
-│   ├── master/         # useUser, usePermission, useOrganization, useAsset, dll.
+│   ├── konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup, useMenu
+│   ├── master/         # useRegional, useUiwUid, useUik, useUp2d, useUpk, useUnitLayanan, useSentral, useUser, dll.
 │   └── transaksi/      # useOperasiHarian, usePagu, usePrognosa, dll.
 ├── config/             # Konfigurasi navigasi sidebar (config/navigation.ts)
 ├── docs/               # Dokumentasi arsitektur, PRD, schema, dan developer guide
 ├── pages/              # Halaman routing Nuxt
 │   ├── home/
 │   │   ├── dashboard/  # Halaman GIS & ECharts monitoring
-│   │   ├── konfigurasi-aplikasi/ # Halaman Akses Level & Akses Grup
-│   │   ├── master/     # Halaman CRUD data master
+│   │   ├── konfigurasi-aplikasi/ # Halaman Akses Level, Akses Grup, Menu
+│   │   ├── master/     # Halaman CRUD data master (Regional, UIW/UID, UIK, UP2D, UPK, Unit Layanan, Sentral, dll.)
 │   │   └── transaksi/  # Halaman CRUD modul transaksi
 │   └── login.vue       # Halaman autentikasi
 ├── schemas/            # Definisi deklaratif Form Engine (12-column grid system)
-│   ├── konfigurasi-aplikasi/ # Form schema untuk Akses Level & Akses Grup
+│   ├── konfigurasi-aplikasi/ # Form schema untuk Akses Level, Akses Grup, Menu
 │   ├── master/         # Form schema untuk master data
 │   └── transaksi/      # Form schema untuk transaksi
 ├── stores/             # Pinia stores (auth.ts)
 ├── types/              # TypeScript interface & DTO contracts
 ├── utils/              # Pure utility functions (exportExcel, formatNumber, apiError)
-└── test/               # Vitest unit test suite (112 tests across 18 suites, 100% green required)
+└── test/               # Vitest unit test suite (122 tests across 20 suites, 100% green required)
 ```
 
 ---
@@ -57,6 +57,7 @@ Setiap modul baru (baik di kategori **Master Data** maupun **Transaksi**) wajib 
 ---
 
 ### Langkah 1: Definisikan Types & Kontrak DTO (`types/`)
+
 Buka `types/master.types.ts` atau `types/transaksi.types.ts` dan buat interface:
 
 ```typescript
@@ -79,59 +80,64 @@ export interface CreateContohRequest {
 ---
 
 ### Langkah 2: Buat Schema Form Deklaratif (`schemas/`)
+
 Buat file schema di `schemas/transaksi/contoh.schema.ts` (atau `schemas/master/contoh.schema.ts`):
 
 ```typescript
 // schemas/transaksi/contoh.schema.ts
-import type { FormSectionConfig } from '~/types';
+import type { FormSectionConfig } from "~/types";
 
 export interface ContohSchemaOptions {
   kategoriOptions?: { label: string; value: string }[];
 }
 
-export const getContohFormSections = (options: ContohSchemaOptions = {}): FormSectionConfig[] => [
+export const getContohFormSections = (
+  options: ContohSchemaOptions = {},
+): FormSectionConfig[] => [
   {
-    title: 'Informasi Utama',
+    title: "Informasi Utama",
     fields: [
       {
-        key: 'nama_kegiatan',
-        label: 'Nama Kegiatan',
-        type: 'text',
+        key: "nama_kegiatan",
+        label: "Nama Kegiatan",
+        type: "text",
         colSpan: 6,
         required: true,
-        placeholder: 'Masukkan nama kegiatan'
+        placeholder: "Masukkan nama kegiatan",
       },
       {
-        key: 'volume',
-        label: 'Volume (MWh)',
-        type: 'number',
+        key: "volume",
+        label: "Volume (MWh)",
+        type: "number",
         colSpan: 6,
         required: true,
-        placeholder: '0'
+        placeholder: "0",
       },
       {
-        key: 'tanggal',
-        label: 'Tanggal Pelaksanaan',
-        type: 'date',
+        key: "tanggal",
+        label: "Tanggal Pelaksanaan",
+        type: "date",
         colSpan: 12,
-        required: true
-      }
-    ]
-  }
+        required: true,
+      },
+    ],
+  },
 ];
 ```
+
 > **Catatan:** Daftarkan fungsi schema di [`schemas/index.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/index.ts) agar mudah diimpor secara terpusat.
 
 ---
 
 ### Langkah 3: Buat Composable CRUD API (`composables/`)
+
 Gunakan `useApi()` untuk memanggil backend proxy (`/api/v1`):
 
 ```typescript
 // composables/transaksi/useContoh.ts
-import { ref, computed } from 'vue';
-import { useApi } from '~/composables/useApi';
-import type { ContohItemDTO, CreateContohRequest, ApiResponse } from '~/types';
+import { ref, computed } from "vue";
+import { useApi } from "~/composables/useApi";
+import type { ContohItemDTO, CreateContohRequest, ApiResponse } from "~/types";
 
 export const useContoh = () => {
   const api = useApi();
@@ -141,7 +147,7 @@ export const useContoh = () => {
   const fetchList = async () => {
     loading.value = true;
     try {
-      const res = await api<ApiResponse<ContohItemDTO[]>>('/contoh');
+      const res = await api<ApiResponse<ContohItemDTO[]>>("/contoh");
       list.value = res?.data || [];
       return list.value;
     } finally {
@@ -150,24 +156,27 @@ export const useContoh = () => {
   };
 
   const createItem = async (payload: CreateContohRequest) => {
-    return await api('/contoh', {
-      method: 'POST',
-      body: payload
+    return await api("/contoh", {
+      method: "POST",
+      body: payload,
     });
   };
 
   // Standard Tambora: Update menggunakan POST ke /contoh/:id
-  const updateItem = async (id: string, payload: Partial<CreateContohRequest>) => {
+  const updateItem = async (
+    id: string,
+    payload: Partial<CreateContohRequest>,
+  ) => {
     return await api(`/contoh/${id}`, {
-      method: 'POST',
-      body: payload
+      method: "POST",
+      body: payload,
     });
   };
 
   // Standard Tambora: Delete menggunakan POST ke /contoh/:id/delete
   const deleteItem = async (id: string) => {
     return await api(`/contoh/${id}/delete`, {
-      method: 'POST'
+      method: "POST",
     });
   };
 
@@ -177,57 +186,66 @@ export const useContoh = () => {
     fetchList,
     createItem,
     updateItem,
-    deleteItem
+    deleteItem,
   };
 };
 ```
 
 > [!IMPORTANT]
 > **Kebijakan HTTP Methods Proyek Tambora:**
-> * Method `PUT` dan `DELETE` dilarang digunakan di backend/frontend.
-> * Operasi **Update / Edit** wajib menggunakan `POST /{resource}/{id}`.
-> * Operasi **Delete / Hapus** wajib menggunakan `POST /{resource}/{id}/delete`.
+>
+> - Method `PUT` dan `DELETE` dilarang digunakan di backend/frontend.
+> - Operasi **Update / Edit** wajib menggunakan `POST /{resource}/{id}`.
+> - Operasi **Delete / Hapus** wajib menggunakan `POST /{resource}/{id}/delete`.
 
 ---
 
 ### Langkah 4: Daftarkan Menu Sidebar (`config/navigation.ts`)
+
 Tambahkan rute menu baru ke array `masterItems` atau `transaksiItems`:
 
 ```typescript
 // config/navigation.ts
-import { Activity } from 'lucide-vue-next';
+import { Activity } from "lucide-vue-next";
 
 export const transaksiItems: NavigationItem[] = [
   // ...menu sebelumnya
   {
-    label: 'Contoh Transaksi',
-    to: '/home/transaksi/contoh',
-    icon: Activity
-  }
+    label: "Contoh Transaksi",
+    to: "/home/transaksi/contoh",
+    icon: Activity,
+  },
 ];
 ```
 
 ---
 
 ### Langkah 5: Buat Halaman Page (`pages/home/transaksi/contoh.vue`)
+
 Satukan komponen UI menggunakan template standar berikut:
 
 ```vue
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import type { TableColumn, FormSectionConfig, ContohItemDTO } from '~/types';
-import { getContohFormSections } from '~/schemas';
-import { useTableState } from '~/composables/useTableState';
+import { ref, computed, onMounted } from "vue";
+import type { TableColumn, FormSectionConfig, ContohItemDTO } from "~/types";
+import { getContohFormSections } from "~/schemas";
+import { useTableState } from "~/composables/useTableState";
 
 const { list, loading, fetchList, createItem, deleteItem } = useContoh();
-const { searchQuery, currentPage, pageSize, activeFilteredData, paginatedData } = useTableState(list, { defaultPageSize: 10 });
+const {
+  searchQuery,
+  currentPage,
+  pageSize,
+  activeFilteredData,
+  paginatedData,
+} = useTableState(list, { defaultPageSize: 10 });
 
 const columns: TableColumn[] = [
-  { key: 'no', label: 'No' },
-  { key: 'nama_kegiatan', label: 'Nama Kegiatan' },
-  { key: 'volume', label: 'Volume (MWh)' },
-  { key: 'tanggal', label: 'Tanggal' },
-  { key: 'actions', label: 'Aksi' }
+  { key: "no", label: "No" },
+  { key: "nama_kegiatan", label: "Nama Kegiatan" },
+  { key: "volume", label: "Volume (MWh)" },
+  { key: "tanggal", label: "Tanggal" },
+  { key: "actions", label: "Aksi" },
 ];
 
 const modalOpen = ref(false);
@@ -235,7 +253,9 @@ const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 const isSuccessModalOpen = ref(false);
 
-const formSections = computed<FormSectionConfig[]>(() => getContohFormSections());
+const formSections = computed<FormSectionConfig[]>(() =>
+  getContohFormSections(),
+);
 
 onMounted(async () => {
   await fetchList();
@@ -243,9 +263,9 @@ onMounted(async () => {
 
 const openCreateModal = () => {
   formData.value = {
-    nama_kegiatan: '',
+    nama_kegiatan: "",
     volume: 0,
-    tanggal: new Date().toISOString().split('T')[0]
+    tanggal: new Date().toISOString().split("T")[0],
   };
   modalOpen.value = true;
 };
@@ -268,11 +288,13 @@ const handleSubmit = async () => {
     <BasePageHeader />
 
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
-      <div class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0">
+      <div
+        class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
+      >
         <!-- Action Controls -->
         <div class="shrink-0 flex items-center justify-between mb-4">
-          <BaseSearchInput v-model="searchQuery" placeholder="Cari kegiatan..." />
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseSearchInput v-model="searchQuery" />
+          <BaseCreateButton @click="openCreateModal" />
         </div>
 
         <!-- Table (with Centralized Reload & Lucide Icons) -->
@@ -284,7 +306,9 @@ const handleSubmit = async () => {
           @reload="fetchList"
         >
           <template #no-data="{ index }">
-            <span class="text-xs text-gray-700 font-medium">{{ index + 1 }}.</span>
+            <span class="text-xs text-gray-700 font-medium"
+              >{{ index + 1 }}.</span
+            >
           </template>
         </BaseTable>
 
@@ -323,24 +347,25 @@ const handleSubmit = async () => {
 Semua halaman yang mengikuti pola di atas secara otomatis mendapatkan 3 perlindungan:
 
 1. **Auto-Save Draft Form (`draft-key`)**:
-   * Mengetik di modal otomatis disimpan ke `localStorage` (debounced 500ms).
-   * Jika laptop mati lampu / browser reload, muncul banner **[Pulihkan Draft]**.
-   * Draft otomatis terhapus saat form sukses disubmit.
+   - Mengetik di modal otomatis disimpan ke `localStorage` (debounced 500ms).
+   - Jika laptop mati lampu / browser reload, muncul banner **[Pulihkan Draft]**.
+   - Draft otomatis terhapus saat form sukses disubmit.
 2. **SWR Caching (`useApiCache`)**:
-   * Menampilkan data tabel instan 0ms saat navigasi antar tab, sambil revalidasi halus di background.
+   - Menampilkan data tabel instan 0ms saat navigasi antar tab, sambil revalidasi halus di background.
 3. **Smart Network Retry (`useApi`)**:
-   * Otomatis mencoba ulang request hingga 2x dengan jeda 1 detik jika koneksi drop/RTO.
+   - Otomatis mencoba ulang request hingga 2x dengan jeda 1 detik jika koneksi drop/RTO.
 
 ---
 
 ## 4. Checklist Kualitas & Testing
 
 Sebelum melakukan commit kode baru, pastikan:
+
 1. Jalankan unit test:
    ```bash
    npx vitest run
    ```
-   *(Wajib 100% test lulus)*.
+   _(Wajib 100% test lulus)_.
 2. Jalankan linter:
    ```bash
    npx eslint .

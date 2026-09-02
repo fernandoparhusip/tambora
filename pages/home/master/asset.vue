@@ -4,7 +4,6 @@ import type { DetailDataItem } from '~/types/master.types';
 import type { TableColumn, FormSectionConfig, AssetItem } from "~/types";
 import { getAssetFormSections } from "~/schemas/master/asset.schema";
 import { formatNumber } from "~/utils/formatNumber";
-import { exportToExcel } from "~/utils/exportExcel";
 
 const { assets, loading, fetchAssets, createAsset, updateAsset, deleteAsset } = useAsset();
 const { systems, fetchSystems } = useSystem();
@@ -210,12 +209,6 @@ const handleSave = async () => {
   }
 };
 
-const handleExport = () => {
-  exportToExcel(assetColumns, filteredData.value, {
-    fileName: "Data_Aset_Pembangkit_PLN",
-  });
-};
-
 const getConditionBadgeVariant = (kondisi?: string) => {
   const k = (kondisi || "").toLowerCase();
   if (k.includes("operasi") || k.includes("normal")) return "success";
@@ -261,11 +254,10 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Kode / Nama / Merk..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseCreateButton @click="openCreateModal" />
         </div>
 
         <!-- ── Table Container ───────────────────────────────────── -->

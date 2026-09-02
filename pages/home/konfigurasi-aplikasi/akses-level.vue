@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from "~/types/master.types";
-import { exportToExcel } from "~/utils/exportExcel";
 import type { ScopeItem, TableColumn } from "~/types";
 import { aksesLevelFormSections } from "~/schemas/konfigurasi-aplikasi/akses-level.schema";
 import { useAksesLevel } from "~/composables/konfigurasi-aplikasi/useAksesLevel";
@@ -85,12 +84,6 @@ const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   return filteredRows.value.slice(start, start + pageSize.value);
 });
-
-const handleExport = () => {
-  exportToExcel(aksesLevelColumns, filteredRows.value, {
-    fileName: "Data_Master_Akses_Level_PLN",
-  });
-};
 
 // Modal Handlers
 const openCreateModal = () => {
@@ -273,10 +266,9 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-5"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Data" />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseCreateButton @click="openCreateModal" />
         </div>
 
         <!-- Akses Level Table -->

@@ -152,6 +152,41 @@ const toggleSubItem = (key: string) => {
 const handleMouseLeave = () => {
   isExpanded.value = false;
 };
+
+// Precise runtime scrollHeight accordion animation (Emil Kowalski Model)
+const onSubmenuEnter = (el: Element) => {
+  const htmlEl = el as HTMLElement;
+  htmlEl.style.height = "0";
+  htmlEl.style.opacity = "0";
+  htmlEl.style.transform = "translateY(-4px)";
+  htmlEl.style.overflow = "hidden";
+  // Force reflow
+  void htmlEl.offsetHeight;
+  htmlEl.style.transition =
+    "height 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)";
+  htmlEl.style.height = `${htmlEl.scrollHeight}px`;
+  htmlEl.style.opacity = "1";
+  htmlEl.style.transform = "translateY(0)";
+};
+
+const onSubmenuAfterEnter = (el: Element) => {
+  const htmlEl = el as HTMLElement;
+  htmlEl.style.height = "auto";
+  htmlEl.style.overflow = "visible";
+};
+
+const onSubmenuLeave = (el: Element) => {
+  const htmlEl = el as HTMLElement;
+  htmlEl.style.height = `${htmlEl.scrollHeight}px`;
+  htmlEl.style.overflow = "hidden";
+  // Force reflow
+  void htmlEl.offsetHeight;
+  htmlEl.style.transition =
+    "height 0.18s cubic-bezier(0.4, 0, 1, 1), opacity 0.15s ease, transform 0.18s cubic-bezier(0.4, 0, 1, 1)";
+  htmlEl.style.height = "0";
+  htmlEl.style.opacity = "0";
+  htmlEl.style.transform = "translateY(-4px)";
+};
 </script>
 
 <template>
@@ -261,10 +296,15 @@ const handleMouseLeave = () => {
         </div>
 
         <!-- Level 2 Submenu Accordion (Expanded only) -->
-        <Transition name="submenu">
+        <Transition
+          :css="false"
+          @enter="onSubmenuEnter"
+          @after-enter="onSubmenuAfterEnter"
+          @leave="onSubmenuLeave"
+        >
           <div
             v-if="isExpanded && item.children && openKeys.includes(item.key)"
-            class="relative ml-6 pl-4 border-l-2 border-gray-200/80 my-2 space-y-1.5"
+            class="relative ml-6 pl-4 border-l-2 border-gray-200/80 my-2 space-y-1.5 will-change-[height,opacity]"
           >
             <div
               v-for="subItem in item.children"
@@ -284,11 +324,12 @@ const handleMouseLeave = () => {
               <!-- If Level 2 has children (Level 3 Nested Accordion) -->
               <template v-if="subItem.children">
                 <button
-                  class="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-150 whitespace-nowrap cursor-pointer"
+                  type="button"
+                  class="w-full flex items-center justify-between px-4 py-2 rounded-lg text-[12px] font-lato transition-all duration-150 cursor-pointer overflow-hidden"
                   :class="
                     isSubGroupActive(subItem)
                       ? 'bg-[#E9F1FB] text-[#2671D9] font-semibold'
-                      : 'text-[#5A6E85] hover:text-[#2671D9] hover:bg-[#E9F1FB]'
+                      : 'text-[#5A6E85] hover:text-[#2671D9] hover:bg-[#E9F1FB] font-normal'
                   "
                   @click="toggleSubItem(subItem.key)"
                 >
@@ -298,11 +339,11 @@ const handleMouseLeave = () => {
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                    :class="
+                    :class="[
                       openSubKeys.includes(subItem.key)
                         ? 'rotate-180 text-[#2671D9]'
-                        : 'text-gray-400 group-hover:text-[#2671D9]'
-                    "
+                        : 'text-gray-400',
+                    ]"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -316,40 +357,33 @@ const handleMouseLeave = () => {
                   </svg>
                 </button>
 
-                <!-- Level 3 Children -->
-                <Transition name="submenu">
+                <!-- Level 3 Nested Submenu Accordion -->
+                <Transition
+                  :css="false"
+                  @enter="onSubmenuEnter"
+                  @after-enter="onSubmenuAfterEnter"
+                  @leave="onSubmenuLeave"
+                >
                   <div
                     v-if="openSubKeys.includes(subItem.key)"
-                    class="relative ml-4 pl-4 border-l-2 border-gray-200/80 my-1 space-y-1"
+                    class="relative ml-3 pl-3 border-l border-gray-200 my-1 space-y-1 will-change-[height,opacity]"
                   >
-                    <div
-                      v-for="leaf in subItem.children"
-                      :key="leaf.path"
-                      class="group/leaf relative"
+                    <NuxtLink
+                      v-for="child in subItem.children"
+                      :key="child.path"
+                      :to="child.path"
+                      prefetch
+                      class="relative flex items-center px-3 py-1.5 rounded-lg text-[11px] font-lato transition-all duration-150 whitespace-nowrap overflow-hidden"
+                      :class="
+                        isChildActive(child.path)
+                          ? 'bg-[#E9F1FB] text-[#2671D9] font-semibold'
+                          : 'text-[#5A6E85] hover:text-[#2671D9] hover:bg-[#E9F1FB] font-normal'
+                      "
                     >
-                      <span
-                        class="absolute -left-[17px] -top-1 -bottom-1 w-[2.5px] bg-[#2671D9] z-10 transition-opacity duration-150"
-                        :class="
-                          isChildActive(leaf.path)
-                            ? 'opacity-100'
-                            : 'opacity-0 group-hover/leaf:opacity-100'
-                        "
-                      />
-                      <NuxtLink
-                        :to="leaf.path"
-                        prefetch
-                        class="relative flex items-center px-3.5 py-2.5 rounded-lg text-[13px] transition-all duration-150 whitespace-nowrap overflow-hidden"
-                        :class="
-                          isChildActive(leaf.path)
-                            ? 'bg-[#E9F1FB] text-[#2671D9] font-semibold'
-                            : 'text-[#5A6E85] hover:text-[#2671D9] hover:bg-[#E9F1FB] font-normal'
-                        "
-                      >
-                        <span class="truncate whitespace-nowrap">{{
-                          leaf.label
-                        }}</span>
-                      </NuxtLink>
-                    </div>
+                      <span class="truncate whitespace-nowrap">{{
+                        child.label
+                      }}</span>
+                    </NuxtLink>
                   </div>
                 </Transition>
               </template>
@@ -380,63 +414,6 @@ const handleMouseLeave = () => {
 </template>
 
 <style scoped>
-/* Submenu Accordion Animation */
-.submenu-enter-active,
-.submenu-leave-active {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: 500px;
-  overflow: hidden;
-}
-.submenu-enter-from,
-.submenu-leave-to {
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
-/* Stagger cascade entrance for submenu items */
-.submenu-enter-active .group {
-  animation: submenuItemFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.submenu-enter-active .group:nth-child(1) {
-  animation-delay: 0.02s;
-}
-.submenu-enter-active .group:nth-child(2) {
-  animation-delay: 0.04s;
-}
-.submenu-enter-active .group:nth-child(3) {
-  animation-delay: 0.06s;
-}
-.submenu-enter-active .group:nth-child(4) {
-  animation-delay: 0.08s;
-}
-.submenu-enter-active .group:nth-child(5) {
-  animation-delay: 0.1s;
-}
-.submenu-enter-active .group:nth-child(6) {
-  animation-delay: 0.12s;
-}
-.submenu-enter-active .group:nth-child(7) {
-  animation-delay: 0.14s;
-}
-.submenu-enter-active .group:nth-child(8) {
-  animation-delay: 0.16s;
-}
-.submenu-enter-active .group:nth-child(9) {
-  animation-delay: 0.18s;
-}
-
-@keyframes submenuItemFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Fade Logo */
 .fade-enter-active,
 .fade-leave-active {

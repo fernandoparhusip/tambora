@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, FormSectionConfig, PembebananDTO } from "~/types";
 import type { DetailDataItem } from '~/types/master.types';
 import { getPembebananFormSections } from "~/schemas/transaksi/pembebanan.schema";
-import { exportToExcel } from "~/utils/exportExcel";
 
 const { list, loading, fetchList, createItem, updateItem, deleteItem } = usePembebanan();
 const { organizations, fetchOrganizations } = useOrganization();
@@ -165,12 +164,6 @@ const handleConfirmDelete = async () => {
   }
 };
 
-const handleExport = () => {
-  exportToExcel(columns, filteredList.value, {
-    fileName: "Data_Pembebanan_Generator_Tambora"
-  });
-};
-
 const detailItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const r = detailRecord.value;
@@ -202,11 +195,10 @@ const detailItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari ID sentral atau tanggal..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton label="TAMBAH BEBAN" @click="openCreateModal" />
+          <BaseCreateButton @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->

@@ -9,7 +9,6 @@ import {
   getUserFormSections,
   userValidationSchema,
 } from "~/schemas/master/user.schema";
-import { exportToExcel } from "~/utils/exportExcel";
 import { useTableState } from "~/composables/useTableState";
 
 // ── Composables ──────────────────────────────────────────────
@@ -399,12 +398,6 @@ const confirmDelete = async () => {
   }
 };
 
-const handleExport = () => {
-  exportToExcel(userTableColumns, activeFilteredData.value, {
-    fileName: "Data_Pengguna_PLN",
-  });
-};
-
 const clearErrors = () => {
   formErrors.value = {};
 };
@@ -538,15 +531,14 @@ const handleSave = async () => {
         <div
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
-          <!-- Left: Search input + Export button -->
+          <!-- Left: Search input -->
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Data" />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
           <!-- Right: Create Data Button -->
           <div class="flex items-center gap-3">
-            <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+            <BaseCreateButton @click="openCreateModal" />
           </div>
         </div>
 

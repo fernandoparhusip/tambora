@@ -299,7 +299,7 @@ const breadcrumbs = computed<Crumb[]>(() => {
         >
           <div
             v-if="dropdownOpen"
-            class="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 origin-top-right"
+            class="absolute right-0 top-full mt-2 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl shadow-gray-900/10 ring-1 ring-black/5 border border-gray-100 py-1.5 z-50 origin-top-right"
           >
             <!-- Info user -->
             <div class="px-4 py-2.5 border-b border-gray-100">

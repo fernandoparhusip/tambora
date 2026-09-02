@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from "~/types/master.types";
-import { exportToExcel } from "~/utils/exportExcel";
 import type { TableColumn, PermissionItem } from "~/types";
 import { getPermissionFormSections } from "~/schemas/master/permission.schema";
 
@@ -180,12 +179,6 @@ const paginatedRows = computed(() => {
   return filteredRows.value.slice(start, start + pageSize.value);
 });
 
-const handleExport = () => {
-  exportToExcel(permissionColumns, filteredRows.value, {
-    fileName: "Katalog_Hak_Akses_PLN",
-  });
-};
-
 // Modal Handlers
 const openCreateModal = () => {
   modalMode.value = "create";
@@ -317,10 +310,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-5"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput
-              v-model="searchQuery"
-              placeholder="Cari Key atau Resource..."
-            />
+            <BaseSearchInput v-model="searchQuery" />
 
             <!-- Modern Premium BaseSelect Component -->
             <BaseSelect
@@ -329,10 +319,9 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
               placeholder="Semua Resource"
               width-class="w-60"
             />
-            <BaseExportButton @click="handleExport" />
           </div>
 
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseCreateButton @click="openCreateModal" />
         </div>
 
         <!-- Permission Table -->

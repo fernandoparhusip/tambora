@@ -22,24 +22,34 @@ Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terha
 - **GIS Map Monitoring (`BaseMap`)**: Visualisasi lokasi sentral pembangkit berbasis OpenLayers v10 + MapTiler Positron dengan marker status (Operasi, Gangguan, Pemeliharaan/Standby) dan popup detail.
 - **Beban & Grafik (`BaseChart`)**: Visualisasi kurva beban real-time bertenaga Apache ECharts.
 
-### 3.2. Tata Kelola 8 Modul Master Data
-1. **Master User**: Manajemen akun pegawai dan pengemudi.
-2. **Master Role & Permission**: Pengaturan hak akses granular per menu.
-3. **Master Scope**: Manajemen batas cakupan operasional.
-4. **Master Driver**: Data pengemudi kendaraan dinas operasional.
-5. **Master Organisasi**: Struktur hierarki unit/induk/wilayah (*parent-child*).
-6. **Master Sistem Pembangkit**: Manajemen kode dan nama sistem pembangkit.
-7. **Master Aset Mesin**: Inventarisasi generator dan unit mesin.
-8. **Master Kondisi Mesin**: Kategori status kesiapan mesin pembangkit.
+### 3.2. Tata Kelola Modul Konfigurasi Aplikasi & Master Data
+- **Konfigurasi Aplikasi**:
+  1. **Master Akses Level**: Manajemen batas cakupan operasional.
+  2. **Master Akses Grup**: Pengaturan hak akses & role granular per modul.
+  3. **Master Menu**: Tata kelola rute dan struktur navigasi aplikasi dinamis.
+- **Master Data**:
+  1. **Master Regional**: Manajemen entitas wilayah regional PLN.
+  2. **Master UIW / UID**: Tata kelola Unit Induk Wilayah / Distribusi.
+  3. **Master UIK**: Tata kelola Unit Induk Pembangkitan.
+  4. **Master UP2D**: Tata kelola Unit Pelaksana Pengatur Distribusi.
+  5. **Master UPK**: Tata kelola Unit Pelaksana Pembangkitan.
+  6. **Master Unit Layanan**: Tata kelola Unit Layanan Pembangkitan (ULPL).
+  7. **Master Sentral Pembangkit**: Profil lengkap unit pembangkit, lokasi, manajer, dan teknis.
+  8. **Master User**: Manajemen akun pegawai 20-field payload.
+  9. **Master Permission**: Katalog permission dinamis berbasis resource & action.
+  10. **Master Driver**: Data pengemudi kendaraan dinas operasional.
+  11. **Master Organisasi**: Struktur hierarki unit (*parent-child*).
+  12. **Master Sistem**: Manajemen kode dan nama sistem pembangkit.
+  13. **Master Aset Mesin**: Inventarisasi generator dan unit mesin.
+  14. **Master Kondisi Mesin**: Kategori status kesiapan mesin pembangkit.
 
-### 3.3. 7 Modul Transaksi Pembangkitan
+### 3.3. 6 Modul Transaksi Pembangkitan
 1. **Operasi Harian**: Pencatatan daya mampu netto/pasok/aktual, produksi kWh, dan konsumsi bahan bakar per jam/hari.
 2. **Pemakaian Bahan Bakar**: Monitoring konsumsi bahan bakar (Batubara, HSD, B30, MFO, Biomassa, Gas) dan sisa stok.
 3. **Pembebanan Generator**: Monitoring beban aktif (MW), tegangan (kV), frekuensi (Hz), dan faktor daya (Cos φ).
-4. **Pagu Anggaran**: Pengelolaan pagu AO/AKO, AI/AKI, POS 54, alur revisi bertingkat, dan ekspor data anggaran.
-5. **Pagu Bidang**: Alokasi anggaran operasional ke bidang Ophar, Adum, dan K3L.
-6. **Prognosa Kinerja**: Parameter kesiapan mesin (DMN, DMP, PH, SH, RSH, POH, MOH, FOH, AH, OMC) untuk PLTU & Non-PLTU.
-7. **Perhitungan NKO**: Evaluasi pencapaian KPI bulanan terhadap target dan polaritas.
+4. **Pagu Anggaran**: Pengelolaan pagu AO/AKO, AI/AKI, POS 54, alur revisi bertingkat, dan dedicated export endpoint backend (`/api/v1/pagu/export`).
+5. **Prognosa Kinerja**: Parameter kesiapan mesin (DMN, DMP, PH, SH, RSH, POH, MOH, FOH, AH, OMC) untuk PLTU & Non-PLTU dengan export endpoint backend (`/api/v1/prognosa/export`).
+6. **Perhitungan NKO**: Evaluasi pencapaian KPI bulanan terhadap target dan polaritas dengan export endpoint backend (`/api/v1/nko/export`).
 
 ### 3.4. Keamanan Sesi Enterprise
 - **Inactivity Idle Monitor**: Deteksi ketiadaan aktivitas operator selama 28 menit dengan modal hitung mundur 2 menit.
@@ -51,6 +61,6 @@ Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terha
 
 ## 4. Non-Functional Requirements (NFR)
 - **Performance**: Initial load < 2 detik, interaksi peta responsif tanpa memory leak.
-- **Reliability & Quality**: SonarQube Grade A, test coverage > 85% (**60/60 Vitest tests passing**).
+- **Reliability & Quality**: SonarQube Grade A, test coverage > 85% (**122/122 Vitest tests passing 100% green**).
 - **Security**: Autentikasi berbasis token JWT 24 jam, proteksi CSRF/XSS, dan proteksi idle timeout.
 - **Compatibility**: Responsive desktop & workstation tablet (min. breakpoint 1024px).

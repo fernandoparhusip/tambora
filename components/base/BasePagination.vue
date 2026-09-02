@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ChevronDown, Check, Layers } from "@lucide/vue";
 
 const props = withDefaults(
   defineProps<{
@@ -130,24 +131,31 @@ const visiblePages = computed(() => {
 
 <template>
   <div
-    class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 text-xs text-gray-500 select-none border-t border-gray-50"
+    class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 text-xs text-gray-500 select-none border-t border-gray-100/80"
   >
     <!-- Left: Page size control & Total info -->
     <div class="flex items-center gap-2">
-      <span>Menampilkan</span>
+      <span class="text-gray-500 text-xs font-medium">Menampilkan</span>
 
       <!-- Custom Page Size Input + Dropdown -->
       <div ref="dropdownRef" class="relative inline-flex items-center">
         <div
-          class="inline-flex items-center bg-gray-100 hover:bg-gray-200/60 border border-gray-200 rounded-md focus-within:bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all"
+          data-testid="page-size-trigger"
+          class="group inline-flex items-center bg-white hover:bg-gray-50/80 border rounded-lg shadow-2xs transition-all cursor-pointer"
+          :class="
+            showDropdown
+              ? 'border-blue-500 ring-2 ring-blue-500/15'
+              : 'border-gray-200 hover:border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15'
+          "
         >
           <input
+            data-testid="page-size-input"
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
             :value="pageSizeInput"
-            class="w-9 h-[30px] text-center font-semibold text-gray-700 bg-transparent border-none focus:outline-none text-xs"
-            title="Ketik jumlah data per halaman (khusus angka)"
+            class="w-8 h-8 text-center font-semibold text-gray-800 bg-transparent border-none focus:outline-none text-xs tracking-tight"
+            title="Ketik jumlah baris per halaman"
             @keydown="handleKeyDown"
             @input="handleInput"
             @blur="handleBlur"
@@ -155,59 +163,76 @@ const visiblePages = computed(() => {
           >
           <button
             type="button"
-            class="pr-1.5 pl-0.5 text-gray-400 hover:text-blue-600 focus:outline-none cursor-pointer"
+            class="h-8 pr-2 pl-0.5 flex items-center justify-center text-gray-400 group-hover:text-gray-600 focus:outline-none cursor-pointer transition-colors"
             title="Pilih opsi data per halaman"
+            aria-label="Pilih opsi data per halaman"
+            :aria-expanded="showDropdown"
             @click.stop="showDropdown = !showDropdown"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-3 h-3 stroke-[2.5]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            <ChevronDown
+              class="w-3.5 h-3.5 transition-transform duration-200"
+              :class="showDropdown ? 'rotate-180 text-blue-600' : 'text-gray-400 group-hover:text-gray-600'"
+            />
           </button>
         </div>
 
         <!-- Dropdown Popup Options (5, 10, 20) -->
-        <div
-          v-if="showDropdown"
-          class="absolute bottom-full left-0 mb-1 w-24 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-30"
+        <Transition
+          enter-active-class="transition duration-150 ease-out"
+          enter-from-class="transform scale-95 opacity-0 translate-y-1"
+          enter-to-class="transform scale-100 opacity-100 translate-y-0"
+          leave-active-class="transition duration-100 ease-in"
+          leave-from-class="transform scale-100 opacity-100 translate-y-0"
+          leave-to-class="transform scale-95 opacity-0 translate-y-1"
         >
           <div
-            class="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-0.5"
+            v-if="showDropdown"
+            data-testid="page-size-dropdown"
+            class="absolute bottom-full left-0 mb-1.5 w-32 bg-white/95 backdrop-blur-md border border-gray-100 rounded-xl shadow-xl shadow-gray-900/10 ring-1 ring-black/5 p-1.5 z-40"
           >
-            Opsi Data
-          </div>
-          <button
-            v-for="opt in pageSizeOptions"
-            :key="opt"
-            type="button"
-            class="w-full px-2.5 py-1 text-left text-xs font-medium transition-colors flex items-center justify-between cursor-pointer"
-            :class="
-              props.pageSize === opt
-                ? 'bg-blue-50 text-blue-600 font-semibold'
-                : 'text-gray-700 hover:bg-gray-50'
-            "
-            @click="selectOption(opt)"
-          >
-            <span>{{ opt }} Data</span>
-            <span v-if="props.pageSize === opt" class="text-blue-600 font-bold"
-              >✓</span
+            <!-- Dropdown Header -->
+            <div
+              class="px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-1 select-none"
             >
-          </button>
-        </div>
+              <Layers class="w-3 h-3 text-gray-400" />
+              <span>Opsi Data</span>
+            </div>
+
+            <!-- Options list -->
+            <div class="space-y-0.5">
+              <button
+                v-for="opt in pageSizeOptions"
+                :key="opt"
+                :data-testid="`page-size-option-${opt}`"
+                type="button"
+                class="w-full px-2.5 py-1.5 rounded-lg text-left text-xs font-medium transition-all flex items-center justify-between cursor-pointer group"
+                :class="
+                  props.pageSize === opt
+                    ? 'bg-blue-50 text-blue-600 font-semibold'
+                    : 'text-gray-700 hover:bg-gray-100/80 hover:text-gray-900'
+                "
+                @click="selectOption(opt)"
+              >
+                <span class="flex items-center gap-1.5">
+                  <span
+                    class="w-1.5 h-1.5 rounded-full transition-colors"
+                    :class="props.pageSize === opt ? 'bg-blue-600' : 'bg-transparent group-hover:bg-gray-300'"
+                  />
+                  <span>{{ opt }} Data</span>
+                </span>
+                <Check
+                  v-if="props.pageSize === opt"
+                  class="w-3.5 h-3.5 text-blue-600 stroke-[2.5]"
+                />
+              </button>
+            </div>
+          </div>
+        </Transition>
       </div>
 
-      <span
+      <span class="text-gray-500 text-xs font-medium"
         >dari
-        <strong class="text-gray-700 font-semibold">{{ total }}</strong>
+        <strong class="text-gray-800 font-semibold">{{ total }}</strong>
         Data</span
       >
     </div>

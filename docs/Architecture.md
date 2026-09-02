@@ -7,7 +7,7 @@
 - **GIS / Mapping**: OpenLayers (`ol` v10) + MapTiler Positron Vector/Raster Tiles
 - **Data Visualization**: Apache ECharts (`echarts` + `vue-echarts`)
 - **Form & Validation**: Schema-Driven Declarative Form Engine (`schemas/master/` & `schemas/transaksi/`)
-- **Testing**: Vitest + @vue/test-utils + Happy-DOM (Coverage: @vitest/coverage-v8) — **112/112 Tests Passing (100% Green)**
+- **Testing**: Vitest + @vue/test-utils + Happy-DOM (Coverage: @vitest/coverage-v8) — **122/122 Tests Passing (100% Green)**
 - **Code Quality**: Strict ESLint + SonarQube Quality Gate Grade A
 
 ---
@@ -24,10 +24,11 @@
                ▼                               ▼
 ┌───────────────────────────────┐ ┌───────────────────────────┐
 │     Composables & Stores      │ │      Schemas Layer        │
-│  (useAksesLevel, useAksesGrup,│ │  (schemas/konfigurasi-    │
-│   useOperasiHarian, usePagu,  │ │   aplikasi/*.ts,          │
-│   useIdleTimer, useAppToast,  │ │   schemas/master/*.ts,    │
-│   useNetwork, useAuthStore,   │ │   schemas/transaksi/*.ts) │
+│  (useAksesLevel, useMenu,     │ │  (schemas/konfigurasi-    │
+│   useRegional, useSentral,    │ │   aplikasi/*.ts,          │
+│   useOperasiHarian, usePagu,  │ │   schemas/master/*.ts,    │
+│   useIdleTimer, useAppToast,  │ │   schemas/transaksi/*.ts) │
+│   useNetwork, useAuthStore,   │ │                           │
 │   Pinia Stores)               │ │                           │
 └──────────────┬────────────────┘ └─────────────┬─────────────┘
                │                                │

@@ -2,7 +2,6 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { Key } from "@lucide/vue";
 import type { DetailDataItem } from "~/types/master.types";
-import { exportToExcel } from "~/utils/exportExcel";
 import type { RoleItem, TableColumn } from "~/types";
 import { aksesGrupFormSections } from "~/schemas/konfigurasi-aplikasi/akses-grup.schema";
 import { useAksesGrup } from "~/composables/konfigurasi-aplikasi/useAksesGrup";
@@ -85,12 +84,6 @@ const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   return filteredRows.value.slice(start, start + pageSize.value);
 });
-
-const handleExport = () => {
-  exportToExcel(aksesGrupColumns, filteredRows.value, {
-    fileName: "Data_Master_Akses_Grup_PLN",
-  });
-};
 
 // Modal Handlers
 const openCreateModal = () => {
@@ -312,10 +305,9 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-5"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Data" />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseCreateButton @click="openCreateModal" />
         </div>
 
         <!-- Akses Grup Table -->

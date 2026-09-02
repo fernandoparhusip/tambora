@@ -356,10 +356,7 @@ const handleReload = () => {
         >
           <!-- Left filters: Search, Date Filter, Export -->
           <div class="flex flex-wrap items-center gap-3.5">
-            <BaseSearchInput
-              v-model="searchQuery"
-              :placeholder="activeTab === 'unit' ? 'Cari Scope / Jenis Pagu...' : 'Cari Pagu Unit / Bidang...'"
-            />
+            <BaseSearchInput v-model="searchQuery" />
             <BaseDateInput
               v-model="selectedDate"
               placeholder="Pilih Tanggal Input"
@@ -377,7 +374,6 @@ const handleReload = () => {
 
             <!-- Create Button -->
             <BaseCreateButton
-              label="TAMBAH DATA"
               @click="openCreateModal"
             />
           </div>
