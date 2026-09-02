@@ -80,6 +80,18 @@ export const menuItems: MenuItem[] = [
         path: "/home/master/regional",
       },
       {
+        key: "cabang",
+        label: "Cabang",
+        pageTitle: "Master Cabang",
+        path: "/home/master/cabang",
+      },
+      {
+        key: "ranting",
+        label: "Ranting",
+        pageTitle: "Master Ranting",
+        path: "/home/master/ranting",
+      },
+      {
         key: "uiw-uid",
         label: "UIW / UID",
         pageTitle: "Master UIW / UID",

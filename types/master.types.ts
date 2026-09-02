@@ -33,7 +33,6 @@ export interface UserItem {
   kategori?: string;
 }
 
-
 export interface CreateUserRequest {
   access_level?: string;
   address?: string;
@@ -129,7 +128,6 @@ export interface UserDetailData {
   access?: UserDetailAccess;
 }
 
-
 /** Master Role DTOs */
 export interface RoleItem {
   id: string;
@@ -149,7 +147,8 @@ export interface CreateRoleRequest {
   code: string;
   name: string;
   description: string;
-  permissions: string[];
+  permissions?: string[];
+  permission_ids?: string[];
 }
 
 export interface UpdateRoleRequest {
@@ -157,6 +156,7 @@ export interface UpdateRoleRequest {
   name: string;
   description: string;
   permissions?: string[];
+  permission_ids?: string[];
 }
 
 /** Master Permission DTOs */
@@ -321,7 +321,7 @@ export interface SystemItem {
   id: string;
   code: string;
   name: string;
-  system_type: 'BESAR' | 'KECIL' | string;
+  system_type: "BESAR" | "KECIL" | string;
   upk_id?: string;
   service_unit_ids?: string[];
   latitude?: number;
@@ -418,6 +418,7 @@ export interface RegionalItem {
   nama_regional: string;
   latitude?: number;
   longitude?: number;
+  keterangan?: string;
   created_at?: string;
   created_by?: string;
   updated_at?: string;
@@ -429,6 +430,7 @@ export interface CreateRegionalRequest {
   nama_regional: string;
   latitude?: number;
   longitude?: number;
+  keterangan?: string;
 }
 
 export interface UpdateRegionalRequest {
@@ -436,6 +438,73 @@ export interface UpdateRegionalRequest {
   nama_regional?: string;
   latitude?: number;
   longitude?: number;
+  keterangan?: string;
+}
+
+/** Master Cabang DTOs */
+export interface CabangItem {
+  id: string;
+  kode_wilayah: string;
+  kode_regional?: string;
+  nama_wilayah?: string;
+  kode_cabang: string;
+  nama_cabang: string;
+  approve_status?: string;
+  keterangan?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateCabangRequest {
+  kode_wilayah: string;
+  kode_cabang: string;
+  nama_cabang: string;
+  approve_status?: string;
+  keterangan?: string;
+}
+
+export interface UpdateCabangRequest {
+  kode_wilayah?: string;
+  kode_cabang?: string;
+  nama_cabang?: string;
+  approve_status?: string;
+  keterangan?: string;
+}
+
+/** Master Ranting DTOs */
+export interface RantingItem {
+  id: string;
+  kode_cabang: string;
+  nama_cabang?: string;
+  kode_ranting: string;
+  nama_ranting: string;
+  status_ranting?: string;
+  approve_status?: string;
+  keterangan?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateRantingRequest {
+  kode_cabang: string;
+  kode_ranting: string;
+  nama_ranting: string;
+  status_ranting?: string;
+  approve_status?: string;
+  keterangan?: string;
+}
+
+export interface UpdateRantingRequest {
+  kode_cabang?: string;
+  kode_ranting?: string;
+  nama_ranting?: string;
+  status_ranting?: string;
+  approve_status?: string;
+  keterangan?: string;
 }
 
 /** Master UIW / UID DTOs */
@@ -576,8 +645,11 @@ export interface UpdateUnitLayananRequest {
 /** Master Sentral Pembangkit DTOs */
 export interface SentralItem {
   id: string;
-  nama_sentral: string;
+  kode_wilayah?: string;
+  kode_ranting?: string;
+  nama_ranting?: string;
   kode_sentral: string;
+  nama_sentral: string;
   kode_singkatan_sentral?: string;
   kode_jenis_pembangkit?: string;
   jenis_bahan_bakar?: string;
@@ -594,9 +666,7 @@ export interface SentralItem {
   kelurahan?: string;
   alamat?: string;
   nama_pulau?: string;
-  kode_wilayah?: string;
   kode_sistem?: string;
-  kode_ranting?: string;
   pengelola?: string;
   status_milik?: string;
   status_milik_detail?: string;
@@ -620,8 +690,10 @@ export interface SentralItem {
 }
 
 export interface CreateSentralRequest {
-  nama_sentral: string;
+  kode_wilayah?: string;
+  kode_ranting?: string;
   kode_sentral: string;
+  nama_sentral: string;
   kode_singkatan_sentral?: string;
   kode_jenis_pembangkit?: string;
   jenis_bahan_bakar?: string;
@@ -638,9 +710,7 @@ export interface CreateSentralRequest {
   kelurahan?: string;
   alamat?: string;
   nama_pulau?: string;
-  kode_wilayah?: string;
   kode_sistem?: string;
-  kode_ranting?: string;
   pengelola?: string;
   status_milik?: string;
   status_milik_detail?: string;
@@ -660,8 +730,10 @@ export interface CreateSentralRequest {
 }
 
 export interface UpdateSentralRequest {
-  nama_sentral?: string;
+  kode_wilayah?: string;
+  kode_ranting?: string;
   kode_sentral?: string;
+  nama_sentral?: string;
   kode_singkatan_sentral?: string;
   kode_jenis_pembangkit?: string;
   jenis_bahan_bakar?: string;
@@ -681,6 +753,7 @@ export interface UpdateSentralRequest {
   status_milik?: string;
   manager?: string;
   manager_phone?: string;
+  tahun_operasi?: number;
   approve_status?: string;
 }
 

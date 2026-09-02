@@ -206,7 +206,7 @@ Tambahkan rute menu baru ke array `masterItems` atau `transaksiItems`:
 
 ```typescript
 // config/navigation.ts
-import { Activity } from "lucide-vue-next";
+import { Activity } from "@lucide/vue";
 
 export const transaksiItems: NavigationItem[] = [
   // ...menu sebelumnya

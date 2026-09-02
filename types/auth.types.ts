@@ -42,3 +42,19 @@ export interface RefreshResponseData {
   token_type: string;
   expires_at: string;
 }
+
+/** RBAC Permission Override */
+export interface PermissionOverride {
+  permission_key: string;
+  is_granted: boolean;
+}
+
+/** RBAC User Access Response */
+export interface AccessResponseData {
+  permissions: string[];
+  scopes?: string[];
+  roles?: string[];
+  menus?: any[];
+  permission_overrides?: PermissionOverride[];
+}
+

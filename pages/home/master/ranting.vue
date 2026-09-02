@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type { TableColumn, RegionalItem } from "~/types";
-import { getRegionalFormSections } from "~/schemas/master/regional.schema";
+import type { TableColumn, RantingItem } from "~/types";
+import { getRantingFormSections } from "~/schemas/master/ranting.schema";
 import type { DetailDataItem } from "~/types/master.types";
-import { useRegional } from "~/composables/master/useRegional";
+import { useRanting } from "~/composables/master/useRanting";
+import { useCabang } from "~/composables/master/useCabang";
 import { useRbac } from "~/composables/useRbac";
 
 const {
-  regionalList,
+  rantingList,
   loading,
-  detailLoading,
-  fetchRegional,
-  getRegionalById,
-  createRegional,
-  updateRegional,
-  deleteRegional,
-} = useRegional();
+  fetchRanting,
+  createRanting,
+  updateRanting,
+  deleteRanting,
+} = useRanting();
+const { cabangList, fetchCabang } = useCabang();
 const { can } = useRbac();
 const toast = useAppToast();
 
@@ -29,26 +29,39 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 const isConfirmDialogOpen = ref(false);
-const deleteTarget = ref<RegionalItem | null>(null);
+const deleteTarget = ref<RantingItem | null>(null);
 const isDeleting = ref(false);
 
 // Detail Modal States
 const isDetailModalOpen = ref(false);
-const detailRecord = ref<RegionalItem | null>(null);
+const detailRecord = ref<RantingItem | null>(null);
 
-const regionalColumns: TableColumn[] = [
+const rantingColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode_regional", label: "Kode Regional" },
-  { key: "nama_regional", label: "Nama Regional" },
-  { key: "coordinates", label: "Koordinat (Lat, Lng)" },
+  { key: "kode_cabang", label: "Cabang" },
+  { key: "kode_ranting", label: "Kode Ranting" },
+  { key: "nama_ranting", label: "Nama Ranting" },
+  { key: "status_ranting", label: "Status Ranting" },
+  { key: "approve_status", label: "Status Approval" },
   { key: "keterangan", label: "Keterangan" },
   { key: "actions", label: "Aksi" },
 ];
 
-const formSections = computed(() => getRegionalFormSections());
+const cabangOptions = computed(() =>
+  cabangList.value.map((c) => ({
+    label: `${c.nama_cabang} (${c.kode_cabang})`,
+    value: c.kode_cabang,
+  })),
+);
+
+const formSections = computed(() =>
+  getRantingFormSections({
+    cabangOptions: cabangOptions.value,
+  }),
+);
 
 onMounted(async () => {
-  await fetchRegional();
+  await Promise.allSettled([fetchRanting(), fetchCabang()]);
 });
 
 watch(searchQuery, () => {
@@ -56,13 +69,15 @@ watch(searchQuery, () => {
 });
 
 const filteredData = computed(() => {
-  if (!searchQuery.value) return regionalList.value;
+  if (!searchQuery.value) return rantingList.value;
   const q = searchQuery.value.toLowerCase();
-  return regionalList.value.filter(
+  return rantingList.value.filter(
     (item) =>
-      (item.kode_regional && item.kode_regional.toLowerCase().includes(q)) ||
-      (item.nama_regional && item.nama_regional.toLowerCase().includes(q)) ||
-      (item.keterangan && item.keterangan.toLowerCase().includes(q)),
+      (item.kode_ranting && item.kode_ranting.toLowerCase().includes(q)) ||
+      (item.nama_ranting && item.nama_ranting.toLowerCase().includes(q)) ||
+      (item.kode_cabang && item.kode_cabang.toLowerCase().includes(q)) ||
+      (item.status_ranting && item.status_ranting.toLowerCase().includes(q)) ||
+      (item.approve_status && item.approve_status.toLowerCase().includes(q)),
   );
 });
 
@@ -72,38 +87,33 @@ const paginatedData = computed(() => {
 });
 
 const modalTitle = computed(() =>
-  modalMode.value === "create" ? "Tambah Data Regional" : "Ubah Data Regional",
+  modalMode.value === "create" ? "Tambah Data Ranting" : "Ubah Data Ranting",
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "create"
-    ? "Form Tambah Master Data Regional (Wilayah)"
-    : "Form Ubah Master Data Regional (Wilayah)",
+    ? "Form Tambah Master Data Ranting PLN"
+    : "Form Ubah Master Data Ranting PLN",
 );
 
 const openCreateModal = () => {
   modalMode.value = "create";
   formData.value = {
-    kode_regional: "",
-    nama_regional: "",
-    latitude: null,
-    longitude: null,
+    kode_cabang: cabangList.value[0]?.kode_cabang || "",
+    kode_ranting: "",
+    nama_ranting: "",
+    status_ranting: "RANTING",
+    approve_status: "APPROVED",
     keterangan: "",
   };
   modalOpen.value = true;
 };
 
-const handleView = async (row: RegionalItem) => {
+const handleView = (row: RantingItem) => {
   detailRecord.value = row;
   isDetailModalOpen.value = true;
-  try {
-    const fresh = await getRegionalById(row.id);
-    if (fresh) detailRecord.value = fresh;
-  } catch {
-    // Fallback
-  }
 };
 
-const handleEdit = (row: RegionalItem) => {
+const handleEdit = (row: RantingItem) => {
   modalMode.value = "edit";
   formData.value = { ...row };
   modalOpen.value = true;
@@ -115,7 +125,7 @@ const openEditFromDetail = () => {
   }
 };
 
-const handleDelete = (row: RegionalItem) => {
+const handleDelete = (row: RantingItem) => {
   deleteTarget.value = row;
   isConfirmDialogOpen.value = true;
 };
@@ -124,12 +134,12 @@ const confirmDelete = async () => {
   if (!deleteTarget.value) return;
   isDeleting.value = true;
   try {
-    await deleteRegional(deleteTarget.value.id || deleteTarget.value.kode_regional);
-    toast.success(`Regional '${deleteTarget.value.nama_regional}' berhasil dihapus.`, "Sukses");
+    await deleteRanting(deleteTarget.value.id || deleteTarget.value.kode_ranting);
+    toast.success(`Ranting '${deleteTarget.value.nama_ranting}' berhasil dihapus.`, "Sukses");
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (err: any) {
-    toast.error(err?.message || "Gagal menghapus regional.", "Gagal Hapus");
+    toast.error(err?.message || "Gagal menghapus ranting.", "Gagal Hapus");
   } finally {
     isDeleting.value = false;
   }
@@ -139,53 +149,55 @@ const handleSave = async (data: Record<string, any>) => {
   submitting.value = true;
   try {
     const payload = {
-      kode_regional: data.kode_regional,
-      nama_regional: data.nama_regional,
-      latitude: data.latitude ? Number(data.latitude) : undefined,
-      longitude: data.longitude ? Number(data.longitude) : undefined,
+      kode_cabang: data.kode_cabang,
+      kode_ranting: data.kode_ranting,
+      nama_ranting: data.nama_ranting,
+      status_ranting: data.status_ranting || "RANTING",
+      approve_status: data.approve_status || "APPROVED",
       keterangan: data.keterangan,
     };
 
     if (modalMode.value === "create") {
-      await createRegional(payload);
+      await createRanting(payload);
       modalOpen.value = false;
       isSuccessModalOpen.value = true;
     } else {
-      const id = formData.value.id || formData.value.kode_regional;
-      await updateRegional(id, payload);
+      const id = formData.value.id || formData.value.kode_ranting;
+      await updateRanting(id, payload);
       modalOpen.value = false;
-      toast.success("Data regional berhasil diperbarui.", "Sukses");
+      toast.success("Data ranting berhasil diperbarui.", "Sukses");
     }
   } catch (err: any) {
-    toast.error(err?.message || "Gagal menyimpan data regional.", "Terjadi Kesalahan");
+    toast.error(err?.message || "Gagal menyimpan data ranting.", "Terjadi Kesalahan");
   } finally {
     submitting.value = false;
   }
+};
+
+const getStatusBadgeVariant = (status?: string): any => {
+  const s = (status || "").toUpperCase();
+  if (s === "APPROVED") return "success";
+  if (s === "REJECTED") return "danger";
+  if (s === "DRAFT") return "warning";
+  return "default";
 };
 
 // Detail Data Items
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
-    { label: "Kode Regional", value: detailRecord.value.kode_regional },
-    { label: "Nama Regional", value: detailRecord.value.nama_regional },
-    { label: "Latitude", value: detailRecord.value.latitude ?? "-" },
-    { label: "Longitude", value: detailRecord.value.longitude ?? "-" },
+    { label: "Kode Cabang", value: detailRecord.value.kode_cabang },
+    { label: "Kode Ranting", value: detailRecord.value.kode_ranting },
+    { label: "Nama Ranting", value: detailRecord.value.nama_ranting },
+    { label: "Status Ranting", value: detailRecord.value.status_ranting || "RANTING" },
+    {
+      label: "Status Approval",
+      value: detailRecord.value.approve_status || "APPROVED",
+      isStatus: true,
+    },
     { label: "Keterangan", value: detailRecord.value.keterangan || "-" },
-    { label: "ID Record", value: detailRecord.value.id || detailRecord.value.kode_regional },
+    { label: "ID Record", value: detailRecord.value.id || detailRecord.value.kode_ranting },
   ];
-});
-
-const createdDateFormatted = computed(() => {
-  if (!detailRecord.value?.created_at) return "-";
-  try {
-    return new Date(detailRecord.value.created_at).toLocaleString("id-ID", {
-      dateStyle: "full",
-      timeStyle: "short",
-    });
-  } catch {
-    return detailRecord.value.created_at;
-  }
 });
 </script>
 
@@ -208,18 +220,18 @@ const createdDateFormatted = computed(() => {
           </div>
 
           <BaseCreateButton
-            v-if="can('REGIONAL.CREATE')"
+            v-if="can('RANTING.CREATE')"
             @click="openCreateModal"
           />
         </div>
 
         <!-- Table Container -->
         <BaseTable
-          :columns="regionalColumns"
+          :columns="rantingColumns"
           :rows="paginatedData"
           :loading="loading"
           class="flex-1 min-h-0"
-          @reload="fetchRegional"
+          @reload="fetchRanting"
         >
           <template #no-data="{ index }">
             <span class="text-xs text-gray-700 font-medium">
@@ -227,19 +239,26 @@ const createdDateFormatted = computed(() => {
             </span>
           </template>
 
-          <template #kode_regional-data="{ row }">
-            <span class="font-semibold text-gray-800 font-mono text-xs">{{ row.kode_regional }}</span>
+          <template #kode_cabang-data="{ row }">
+            <span class="text-xs font-semibold text-gray-800">{{ row.kode_cabang }}</span>
           </template>
 
-          <template #nama_regional-data="{ row }">
-            <span class="font-medium text-gray-900 text-xs">{{ row.nama_regional }}</span>
+          <template #kode_ranting-data="{ row }">
+            <span class="text-xs font-semibold text-primary-700">{{ row.kode_ranting }}</span>
           </template>
 
-          <template #coordinates-data="{ row }">
-            <span v-if="row.latitude != null && row.longitude != null" class="text-xs text-gray-600 font-mono">
-              {{ row.latitude }}, {{ row.longitude }}
-            </span>
-            <span v-else class="text-xs text-gray-400 italic">Belum diset</span>
+          <template #nama_ranting-data="{ row }">
+            <span class="text-xs font-medium text-gray-700">{{ row.nama_ranting }}</span>
+          </template>
+
+          <template #status_ranting-data="{ row }">
+            <span class="text-xs text-gray-600">{{ row.status_ranting || 'RANTING' }}</span>
+          </template>
+
+          <template #approve_status-data="{ row }">
+            <BaseBadge :variant="getStatusBadgeVariant(row.approve_status)">
+              {{ row.approve_status || 'APPROVED' }}
+            </BaseBadge>
           </template>
 
           <template #keterangan-data="{ row }">
@@ -253,15 +272,15 @@ const createdDateFormatted = computed(() => {
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
               <BaseActionButton
-                v-if="can('REGIONAL.UPDATE')"
+                v-if="can('RANTING.UPDATE')"
                 type="edit"
-                title="Ubah Regional"
+                title="Ubah Ranting"
                 @click="handleEdit(row)"
               />
               <BaseActionButton
-                v-if="can('REGIONAL.DELETE')"
+                v-if="can('RANTING.DELETE')"
                 type="delete"
-                title="Hapus Regional"
+                title="Hapus Ranting"
                 @click="handleDelete(row)"
               />
             </div>
@@ -294,19 +313,17 @@ const createdDateFormatted = computed(() => {
     <!-- Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Master Regional"
-      subtitle="Informasi data master regional PLN"
+      title="Detail Ranting"
+      subtitle="Informasi Master Ranting PLN"
       :data-items="detailDataItems"
-      :created-date="createdDateFormatted"
-      :loading="detailLoading"
       @edit="openEditFromDetail"
     />
 
     <!-- Confirm Delete Dialog -->
     <BaseConfirmDialog
       v-model:is-open="isConfirmDialogOpen"
-      title="Hapus Data Regional"
-      :message="`Apakah Anda yakin ingin menghapus Regional '${deleteTarget?.nama_regional || ''}'? Tindakan ini tidak dapat dibatalkan.`"
+      title="Hapus Data Ranting"
+      :message="`Apakah Anda yakin ingin menghapus Ranting '${deleteTarget?.nama_ranting || ''}'? Tindakan ini tidak dapat dibatalkan.`"
       :loading="isDeleting"
       @confirm="confirmDelete"
     />

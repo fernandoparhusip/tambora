@@ -82,17 +82,23 @@ export const useAuth = () => {
             nama: userData?.full_name || userData?.username || 'User Example',
             full_name: userData?.full_name || userData?.username || 'User Example',
             username: userData?.username || '',
-            role: userData?.organization || 'Admin',
+            role: userData?.role || userData?.organization || 'Admin',
             email: userData?.email || payload.email,
             organization: userData?.organization,
             nip: userData?.nip,
             prnr: userData?.prnr,
             status: userData?.status,
-            level_id: userData?.level_id || '1'
+            level_id: userData?.level_id || '1',
+            roles: userData?.roles || (userData?.role ? [userData.role] : []),
+            permissions: userData?.permissions || [],
+            scopes: userData?.scopes || [],
+            permission_overrides: userData?.permission_overrides || []
           },
           token,
           refreshToken
         )
+        // Fetch permissions & scopes from backend access endpoint
+        authStore.fetchUserAccess().catch(() => {})
       }
 
       return response

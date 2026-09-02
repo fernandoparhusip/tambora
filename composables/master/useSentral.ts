@@ -1,33 +1,59 @@
-import { ref } from 'vue';
-import { useApi } from '~/composables/useApi';
+import { ref } from "vue";
+import { useApi } from "~/composables/useApi";
 import type {
   SentralItem,
   CreateSentralRequest,
   UpdateSentralRequest,
-  ApiResponse
-} from '~/types';
+  ApiResponse,
+} from "~/types";
 
 export const useSentral = () => {
   const api = useApi();
-  const sentrals = ref<SentralItem[]>([]);
+  const sentralList = ref<SentralItem[]>([]);
   const currentSentral = ref<SentralItem | null>(null);
   const loading = ref(false);
   const detailLoading = ref(false);
+  const total = ref(0);
   const error = ref<string | null>(null);
+
+  const fetchSentral = async (
+    params: { limit?: number; offset?: number; search?: string; kode_wilayah?: string; kode_ranting?: string } = {}
+  ) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const query: Record<string, any> = {
+        limit: params.limit || 50,
+        offset: params.offset || 0,
+      };
+      if (params.search) query.search = params.search;
+      if (params.kode_wilayah) query.kode_wilayah = params.kode_wilayah;
+      if (params.kode_ranting) query.kode_ranting = params.kode_ranting;
+
+      const res = await api<any>("/sentral", { query });
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      sentralList.value = Array.isArray(list) ? list : [];
+      total.value = res?.meta?.total || sentralList.value.length;
+      return sentralList.value;
+    } catch (err: any) {
+      error.value = err?.message || "Gagal memuat daftar sentral.";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
   const fetchSentrals = async () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<SentralItem[]>>('/sentral');
-      if (res?.data && Array.isArray(res.data)) {
-        sentrals.value = res.data;
-      } else {
-        sentrals.value = [];
-      }
-      return sentrals.value;
+      const res = await api<any>("/sentral");
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      sentralList.value = Array.isArray(list) ? list : [];
+      total.value = res?.meta?.total || sentralList.value.length;
+      return sentralList.value;
     } catch (err: any) {
-      error.value = err?.message || 'Gagal memuat daftar sentral pembangkit.';
+      error.value = err?.message || "Gagal memuat daftar sentral pembangkit.";
       throw err;
     } finally {
       loading.value = false;
@@ -36,18 +62,19 @@ export const useSentral = () => {
 
   const getSentralById = async (id: string) => {
     detailLoading.value = true;
+    loading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`);
-      if (res?.data) {
-        currentSentral.value = res.data;
-      }
-      return res?.data;
+      const res = await api<any>(`/sentral/${id}`);
+      const data = res?.data || res;
+      currentSentral.value = data;
+      return data;
     } catch (err: any) {
-      error.value = err?.message || 'Gagal mengambil detail sentral pembangkit.';
+      error.value = err?.message || "Gagal mengambil detail sentral pembangkit.";
       throw err;
     } finally {
       detailLoading.value = false;
+      loading.value = false;
     }
   };
 
@@ -55,14 +82,14 @@ export const useSentral = () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<SentralItem>>('/sentral', {
-        method: 'POST',
-        body: payload
+      const res = await api<ApiResponse<SentralItem>>("/sentral", {
+        method: "POST",
+        body: payload,
       });
-      await fetchSentrals();
-      return res?.data;
+      await fetchSentral();
+      return res?.data || res;
     } catch (err: any) {
-      error.value = err?.message || 'Gagal membuat sentral pembangkit baru.';
+      error.value = err?.message || "Gagal membuat sentral pembangkit baru.";
       throw err;
     } finally {
       loading.value = false;
@@ -73,14 +100,22 @@ export const useSentral = () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`, {
-        method: 'POST',
-        body: payload
-      });
-      await fetchSentrals();
-      return res?.data;
+      let res: any;
+      try {
+        res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`, {
+          method: "POST",
+          body: payload,
+        });
+      } catch {
+        res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`, {
+          method: "PUT",
+          body: payload,
+        });
+      }
+      await fetchSentral();
+      return res?.data || res;
     } catch (err: any) {
-      error.value = err?.message || 'Gagal memperbarui sentral pembangkit.';
+      error.value = err?.message || "Gagal mengubah data sentral.";
       throw err;
     } finally {
       loading.value = false;
@@ -91,13 +126,37 @@ export const useSentral = () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<any>>(`/sentral/${id}/delete`, {
-        method: 'POST'
-      });
-      await fetchSentrals();
-      return res?.data;
+      let res: any;
+      try {
+        res = await api<ApiResponse<null>>(`/sentral/${id}/delete`, {
+          method: "POST",
+        });
+      } catch {
+        res = await api<ApiResponse<null>>(`/sentral/${id}`, {
+          method: "DELETE",
+        });
+      }
+      await fetchSentral();
+      return res;
     } catch (err: any) {
-      error.value = err?.message || 'Gagal menghapus sentral pembangkit.';
+      error.value = err?.message || "Gagal menghapus sentral pembangkit.";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const approveSentral = async (id: string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const res = await api<ApiResponse<SentralItem>>(`/sentral/${id}/approve`, {
+        method: "POST",
+      });
+      await fetchSentral();
+      return res?.data || res;
+    } catch (err: any) {
+      error.value = err?.message || "Gagal menyetujui (approve) sentral.";
       throw err;
     } finally {
       loading.value = false;
@@ -105,15 +164,19 @@ export const useSentral = () => {
   };
 
   return {
-    sentrals,
+    sentralList,
+    sentrals: sentralList,
     currentSentral,
     loading,
     detailLoading,
+    total,
     error,
+    fetchSentral,
     fetchSentrals,
     getSentralById,
     createSentral,
     updateSentral,
-    deleteSentral
+    deleteSentral,
+    approveSentral,
   };
 };
