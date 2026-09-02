@@ -33,7 +33,6 @@ export interface UserItem {
   kategori?: string;
 }
 
-
 export interface CreateUserRequest {
   access_level?: string;
   address?: string;
@@ -129,7 +128,6 @@ export interface UserDetailData {
   access?: UserDetailAccess;
 }
 
-
 /** Master Role DTOs */
 export interface RoleItem {
   id: string;
@@ -160,7 +158,6 @@ export interface UpdateRoleRequest {
   permissions?: string[];
   permission_ids?: string[];
 }
-
 
 /** Master Permission DTOs */
 export interface PermissionItem {
@@ -324,7 +321,7 @@ export interface SystemItem {
   id: string;
   code: string;
   name: string;
-  system_type: 'BESAR' | 'KECIL' | string;
+  system_type: "BESAR" | "KECIL" | string;
   upk_id?: string;
   service_unit_ids?: string[];
   latitude?: number;
@@ -510,7 +507,142 @@ export interface UpdateRantingRequest {
   keterangan?: string;
 }
 
-/** Master Sentral DTOs */
+/** Master UIW / UID DTOs */
+export interface UiwUidItem {
+  id: string;
+  kode: string;
+  nama: string;
+  alamat?: string;
+  keterangan?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateUiwUidRequest {
+  kode: string;
+  nama: string;
+  alamat?: string;
+  keterangan?: string;
+}
+
+export interface UpdateUiwUidRequest {
+  kode?: string;
+  nama?: string;
+  alamat?: string;
+  keterangan?: string;
+}
+
+/** Master UIK DTOs */
+export interface UikItem {
+  id: string;
+  kode: string;
+  nama: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateUikRequest {
+  kode: string;
+  nama: string;
+}
+
+export interface UpdateUikRequest {
+  kode?: string;
+  nama?: string;
+}
+
+/** Master UP2D DTOs */
+export interface Up2dItem {
+  id: string;
+  kode: string;
+  nama: string;
+  uiw_uid_id?: string;
+  uiw_uid_nama?: string;
+  alamat?: string;
+  keterangan?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateUp2dRequest {
+  kode: string;
+  nama: string;
+  uiw_uid_id?: string;
+  alamat?: string;
+  keterangan?: string;
+}
+
+export interface UpdateUp2dRequest {
+  kode?: string;
+  nama?: string;
+  uiw_uid_id?: string;
+  alamat?: string;
+  keterangan?: string;
+}
+
+/** Master UPK DTOs */
+export interface UpkItem {
+  id: string;
+  kode: string;
+  nama: string;
+  uik_id?: string;
+  uik_nama?: string;
+  is_active?: boolean;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateUpkRequest {
+  kode: string;
+  nama: string;
+  uik_id?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateUpkRequest {
+  kode?: string;
+  nama?: string;
+  uik_id?: string;
+  is_active?: boolean;
+}
+
+/** Master Unit Layanan DTOs */
+export interface UnitLayananItem {
+  id: string;
+  kode: string;
+  nama: string;
+  upk_id?: string;
+  upk_nama?: string;
+  is_active?: boolean;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateUnitLayananRequest {
+  kode: string;
+  nama: string;
+  upk_id?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateUnitLayananRequest {
+  kode?: string;
+  nama?: string;
+  upk_id?: string;
+  is_active?: boolean;
+}
+
+/** Master Sentral Pembangkit DTOs */
 export interface SentralItem {
   id: string;
   kode_wilayah?: string;
@@ -518,15 +650,39 @@ export interface SentralItem {
   nama_ranting?: string;
   kode_sentral: string;
   nama_sentral: string;
+  kode_singkatan_sentral?: string;
   kode_jenis_pembangkit?: string;
   jenis_bahan_bakar?: string;
   daya_terpasang?: number;
   daya_mampu?: number;
-  tahun_operasi?: number;
   kondisi?: string;
   latitude?: number;
   longitude?: number;
+  radius?: number;
+  color?: string;
+  provinsi?: string;
+  kota_kabupaten?: string;
+  kecamatan?: string;
+  kelurahan?: string;
+  alamat?: string;
+  nama_pulau?: string;
+  kode_sistem?: string;
+  pengelola?: string;
+  status_milik?: string;
+  status_milik_detail?: string;
+  pemegang_saham?: string;
+  nilai_asset_awal?: number;
+  tahun_operasi?: number;
+  sejarah?: string;
+  penghargaan?: string;
+  deskripsi?: string;
+  keterangan?: string;
+  manager?: string;
+  manager_phone?: string;
+  wakil_manager?: string;
+  wakil_manager_phone?: string;
   approve_status?: string;
+  photo?: string;
   created_at?: string;
   created_by?: string;
   updated_at?: string;
@@ -538,15 +694,39 @@ export interface CreateSentralRequest {
   kode_ranting?: string;
   kode_sentral: string;
   nama_sentral: string;
+  kode_singkatan_sentral?: string;
   kode_jenis_pembangkit?: string;
   jenis_bahan_bakar?: string;
   daya_terpasang?: number;
   daya_mampu?: number;
-  tahun_operasi?: number;
   kondisi?: string;
   latitude?: number;
   longitude?: number;
+  radius?: number;
+  color?: string;
+  provinsi?: string;
+  kota_kabupaten?: string;
+  kecamatan?: string;
+  kelurahan?: string;
+  alamat?: string;
+  nama_pulau?: string;
+  kode_sistem?: string;
+  pengelola?: string;
+  status_milik?: string;
+  status_milik_detail?: string;
+  pemegang_saham?: string;
+  nilai_asset_awal?: number;
+  tahun_operasi?: number;
+  sejarah?: string;
+  penghargaan?: string;
+  deskripsi?: string;
+  keterangan?: string;
+  manager?: string;
+  manager_phone?: string;
+  wakil_manager?: string;
+  wakil_manager_phone?: string;
   approve_status?: string;
+  photo?: string;
 }
 
 export interface UpdateSentralRequest {
@@ -554,14 +734,62 @@ export interface UpdateSentralRequest {
   kode_ranting?: string;
   kode_sentral?: string;
   nama_sentral?: string;
+  kode_singkatan_sentral?: string;
   kode_jenis_pembangkit?: string;
   jenis_bahan_bakar?: string;
   daya_terpasang?: number;
   daya_mampu?: number;
-  tahun_operasi?: number;
   kondisi?: string;
   latitude?: number;
   longitude?: number;
+  radius?: number;
+  color?: string;
+  provinsi?: string;
+  kota_kabupaten?: string;
+  kecamatan?: string;
+  kelurahan?: string;
+  alamat?: string;
+  pengelola?: string;
+  status_milik?: string;
+  manager?: string;
+  manager_phone?: string;
+  tahun_operasi?: number;
   approve_status?: string;
 }
 
+/** Master Menu DTOs */
+export interface MenuItem {
+  id: string;
+  nama: string;
+  description?: string;
+  url?: string;
+  icon?: string;
+  order: number;
+  parent_id?: string;
+  parent_nama?: string;
+  status: number;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateMenuRequest {
+  nama: string;
+  description?: string;
+  url?: string;
+  icon?: string;
+  order: number;
+  parent_id?: string;
+  status: number;
+}
+
+export interface UpdateMenuRequest {
+  nama?: string;
+  description?: string;
+  url?: string;
+  icon?: string;
+  order?: number;
+  parent_id?: string;
+  status?: number;
+}

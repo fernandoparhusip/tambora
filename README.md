@@ -14,7 +14,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-112_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-122_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 
 </div>
 
@@ -60,14 +60,15 @@ graph LR
 | **🗺️ GIS Sentral Map**                     | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan marker status visual (_Operasi_, _Gangguan_, _Pemeliharaan/Standby_), popup detail unit, dan filter wilayah.                                               |
 | **📈 Analisis Beban & Grafik**             | Visualisasi kurva beban harian/mingguan dan tren neraca energi bertenaga **Apache ECharts**.                                                                                                                                      |
 | **📶 Remote Resilience (Sumbawa Edition)** | **Auto-Save Form Drafts** (pencegah kehilangan ketikan saat sinyal mati), **SWR API Client Cache** (buka tabel instan 0ms), dan **Smart Network Retry** (otomatis coba ulang request saat koneksi drop).                          |
-| **🎨 Modern GSAP & GPU Animations**        | Transisi halaman mulus (_Page Route Transitions_), efek baris tabel meluncur berjenjang (**GSAP Row Stagger**), **5-row Shimmer Skeleton Loader**, dan efek klik tombol membal (**Tactile Micro-Interactions**).                  |
+| **🎨 Emil Kowalski Motion System**        | Transisi halaman mulus (_Page Route Transitions_), efek baris tabel meluncur berjenjang (**GSAP Row Stagger** dengan tween cancel safety), akordeon sidebar 60 FPS (**Runtime scrollHeight**), dan perlindungan aksesibilitas (**`prefers-reduced-motion`**). |
 | **🍞 Floating Toast & Form Guard**         | Sistem notifikasi mengambang pojok kanan atas dengan **Timer Countdown Progress Bar** (`useAppToast`), serta perlindungan data form (_Unsaved Changes Guard_ di `BaseFormModal.vue`).                                             |
 | **📝 Dynamic Form Engine**                 | Formulir berbasis skema deklaratif di `schemas/master/`, `schemas/transaksi/`, dan `schemas/konfigurasi-aplikasi/` dengan dukungan _conditional field visibility_ (`hidden`), _functional disabled_, dan validasi otomatis.    |
-| **📊 Smart Data Table**                    | Komponen tabel terpadu (`BaseTable.vue`) dengan sticky header border fix, **Show/Hide Kolom** (_Column Visibility Toggle_), filter pencarian instan, sorting dinamis, dan _local persistence_.                                  |
-| **⚙️ Modul Konfigurasi Aplikasi**          | Pengaturan hak akses granular: **Master Akses Level** (Scopes) dan **Master Akses Grup** (Roles & Permissions dengan rich HTML tooltip breakdown).                                                                                 |
-| **🏛️ 6 Modul Master Data**                 | Tata kelola CRUD lengkap: _User (20-field payload)_, _Akses Permission (Auto Key Gen)_, _Driver_, _Organisasi (Hierarki Parent-Child)_, _Sistem Pembangkit_, _Aset Mesin_, dan _Kondisi Mesin_.                                 |
+| **📊 Smart Data Table & Pagination**       | Komponen tabel terpadu (`BaseTable.vue`) dengan sticky header border fix, **Show/Hide Kolom** (_Column Visibility Toggle_), **Redesigned BasePagination** dengan floating popover glassmorphism & Lucide icons.                   |
+| **🎯 Zero-Config Action Controls**         | Komponen kontrol terstandarisasi global: `<BaseCreateButton @click="openCreateModal" />` (otomatis `"TAMBAH DATA"`) dan `<BaseSearchInput v-model="searchQuery" />` (otomatis `"Cari Data"`).                                     |
+| **⚙️ Modul Konfigurasi Aplikasi**          | Pengaturan hak akses granular: **Master Akses Level**, **Master Akses Grup** (Roles & Responsive Tablet Permission Matrix with rich HTML tooltip), dan **Master Menu** (Dynamic Navigation Management). |
+| **🏛️ 16 Modul Master Data**               | Tata kelola CRUD lengkap dengan standarisasi form drawer satu halaman tanpa tab: _Regional, UIW/UID, UIK, UP2D, UPK, Unit Layanan, Sentral Pembangkit, User (20-field & Hak Akses Khusus), Permission, Driver, Organisasi, Sistem, Aset Mesin, Kondisi Mesin, Scope, dan Role_. |
 | **⚡ Modul Transaksi Terpadu**             | Pencatatan operasional & keuangan: _Operasi Harian_, _Pemakaian Bahan Bakar_, _Pembebanan Generator_, _Pagu Anggaran (Tab Dinamis Unit & Bidang)_, _Prognosa Kinerja (PLTU & Non-PLTU)_, dan _Perhitungan NKO (KPI)_.         |
-| **📥 Real Excel/CSV Export**               | Generator file spreadsheet asli (`utils/exportExcel.ts`) dengan standar **UTF-8 BOM** terintegrasi di seluruh tombol export tabel serta endpoint backend native export `.xls`.                                                    |
+| **📥 Dedicated Backend Export**            | Dukungan ekspor laporan spreadsheet resmi dari endpoint backend (`/api/v1/pagu/export`, `/api/v1/prognosa/export`, `/api/v1/nko/export`).                                                                                          |
 | **🛡️ Unified Modal Dialogs**               | Modal konfirmasi hapus modern (`BaseConfirmDialog`) dan modal sukses (`BaseSuccessModal`) menggantikan dialog native browser.                                                                                                     |
 | **🔒 Enterprise Session Security**         | Deteksi inaktivitas (**28 menit idle + popup countdown 2 menit**), _Silent Token Refresh_ dengan _Single-Flight Mutex_ pada error 401, sinkronisasi multi-tab (_BroadcastChannel_), dan navigasi _Return-To_.                     |
 
@@ -79,25 +80,25 @@ graph LR
 tambora-frontend/
 ├── 📁 assets/             # Asset statis, logo branding PLN, dan style overrides
 ├── 📁 components/         # Arsitektur Komponen Atomic
-│   ├── 📁 base/           # Core Base Components (BaseTable, BaseFormModal, BaseDateFilter, BaseMap, BaseChart, dll)
+│   ├── 📁 base/           # Core Base Components (BaseTable, BaseFormModal, BaseCreateButton, BaseDateFilter, BaseMap, dll)
 │   └── 📁 login/          # Komponen login, form credentials, dan typewriter animation
 ├── 📁 composables/        # State Management & Business Logic (Composables Pattern)
-│   ├── 📁 konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup
-│   ├── 📁 master/         # CRUD Logic per entitas master (useUser, usePermission, useAsset, useDriver, dll)
+│   ├── 📁 konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup, useMenu
+│   ├── 📁 master/         # CRUD Logic per entitas master (useRegional, useUiwUid, useUik, useUp2d, useUpk, useUnitLayanan, useSentral, useUser, usePermission, useAsset, dll)
 │   └── 📁 transaksi/      # CRUD Logic transaksi (useOperasiHarian, usePagu, usePrognosa, dll)
 ├── 📁 docs/               # Dokumentasi Teknis Standar Proyek (PRD, Architecture, Schema, Rules, DeveloperGuide)
 ├── 📁 pages/              # Nuxt 4 File-Based Routing (home/dashboard, home/konfigurasi-aplikasi, home/master, home/transaksi, login)
 ├── 📁 schemas/            # Definisi Skema Formulir Deklaratif
-│   ├── 📁 konfigurasi-aplikasi/ # Skema Form Akses Level & Akses Grup
-│   ├── 📁 master/         # Berkas Skema Form Master (user, permission, driver, asset, system, dll)
+│   ├── 📁 konfigurasi-aplikasi/ # Skema Form Akses Level, Akses Grup, Menu
+│   ├── 📁 master/         # Berkas Skema Form Master (regional, uiw-uid, uik, up2d, upk, unit-layanan, sentral, user, asset, system, dll)
 │   └── 📁 transaksi/      # Berkas Skema Form Transaksi (operasi, pagu, pagu-bidang, prognosa, nko, dll)
 ├── 📁 stores/             # Pinia Global Store (auth: session, security, token)
-├── 📁 test/               # Vitest Unit Test Suites & Testing Mocks
+├── 📁 test/               # Vitest Unit Test Suites & Testing Mocks (122 Tests Passed 100%)
 ├── 📁 types/              # Modular TypeScript DTOs & Contracts
 │   ├── form.types.ts      # Tipe field & section form
 │   ├── table.types.ts     # Tipe kolom tabel & pagination
 │   ├── auth.types.ts      # Tipe autentikasi & user session
-│   ├── master.types.ts    # DTOs CRUD entitas master
+│   ├── master.types.ts    # DTOs CRUD entitas master & unit PLN
 │   ├── operasi.types.ts   # Tipe KPI operasi pembangkit
 │   ├── transaksi.types.ts # DTOs CRUD entitas transaksi
 │   └── index.ts           # Centralized Barrel Export
@@ -179,23 +180,29 @@ npm run preview
 Proyek ini menerapkan standar **SonarQube Grade A** dan **Clean Architecture Policy**:
 
 ```text
- ✓ test/utils/authCrypto.test.ts (5 tests)
- ✓ test/utils/exportExcel.test.ts (1 test)
+ ✓ test/utils/deviceMeta.test.ts (13 tests)
+ ✓ test/utils/exportExcel.test.ts (5 tests)
  ✓ test/utils/apiError.test.ts (9 tests)
- ✓ test/utils/operasiPembangkitUtils.test.ts (3 tests)
+ ✓ test/schemas/userSchema.test.ts (6 tests)
+ ✓ test/utils/authCrypto.test.ts (5 tests)
+ ✓ test/composables/master_phase3.test.ts (9 tests)
  ✓ test/utils/formatNumber.test.ts (8 tests)
+ ✓ test/composables/tableState.test.ts (5 tests)
+ ✓ test/composables/konfigurasiAplikasi.test.ts (6 tests)
+ ✓ test/composables/master.test.ts (14 tests)
+ ✓ test/composables/transaksi.test.ts (8 tests)
+ ✓ test/composables/masterUnitPLN.test.ts (8 tests)
  ✓ test/composables/apiCache.test.ts (4 tests)
- ✓ test/composables/formDraft.test.ts (4 tests)
- ✓ test/composables/toast.test.ts (3 tests)
- ✓ test/composables/network.test.ts (1 test)
  ✓ test/stores/auth.test.ts (6 tests)
  ✓ test/composables/idleTimer.test.ts (3 tests)
- ✓ test/composables/master_phase3.test.ts (9 tests)
- ✓ test/composables/master.test.ts (8 tests)
- ✓ test/composables/transaksi.test.ts (8 tests)
+ ✓ test/utils/operasiPembangkitUtils.test.ts (3 tests)
+ ✓ test/composables/toast.test.ts (3 tests)
+ ✓ test/composables/formDraft.test.ts (4 tests)
+ ✓ test/composables/menu.test.ts (2 tests)
+ ✓ test/composables/network.test.ts (1 test)
 
- Test Files  14 passed (14)
-      Tests  72 passed (72)
+ Test Files  20 passed (20)
+      Tests  122 passed (122)
    Coverage  > 85% Code Coverage
    ESLint    0 Errors, 0 Warnings
 ```

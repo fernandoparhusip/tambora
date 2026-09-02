@@ -29,17 +29,22 @@ const runEntranceAnimation = () => {
     // 1. Logo entrance animation (Smooth scale & fade in)
     if (logoRef.value) {
       gsap.killTweensOf(logoRef.value);
-      gsap.fromTo(
-        logoRef.value,
-        { opacity: 0, scale: 0.92, y: 8 },
-        {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          duration: 0.85,
-          ease: "power3.out",
-        }
-      );
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        gsap.set(logoRef.value, { opacity: 1, scale: 1, y: 0 });
+      } else {
+        gsap.fromTo(
+          logoRef.value,
+          { opacity: 0, scale: 0.95, y: 6 },
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.45,
+            ease: "power2.out",
+          }
+        );
+      }
     }
 
     // 2. Start Typewriter

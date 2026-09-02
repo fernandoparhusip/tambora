@@ -209,11 +209,11 @@ const detailItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari jenis atau status..." />
+            <BaseSearchInput v-model="searchQuery" />
             <BaseExportButton @click="exportExcel" />
           </div>
 
-          <BaseCreateButton label="TAMBAH PROGNOSA" @click="openCreateModal" />
+          <BaseCreateButton resource="PROGNOSA" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -265,8 +265,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="PROGNOSA" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="PROGNOSA" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, FormSectionConfig, OperasiHarianDTO } from "~/types";
 import type { DetailDataItem } from '~/types/master.types';
 import { getOperasiHarianFormSections } from "~/schemas/transaksi/operasi-harian.schema";
-import { exportToExcel } from "~/utils/exportExcel";
 
 const { list, loading, fetchList, createItem, updateItem, deleteItem } = useOperasiHarian();
 const { organizations, fetchOrganizations } = useOrganization();
@@ -173,12 +172,6 @@ const handleConfirmDelete = async () => {
   }
 };
 
-const handleExport = () => {
-  exportToExcel(columns, filteredList.value, {
-    fileName: "Data_Operasi_Harian_Tambora"
-  });
-};
-
 const detailItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const r = detailRecord.value;
@@ -188,6 +181,7 @@ const detailItems = computed<DetailDataItem[]>(() => {
     { label: "Nama Sentral", value: r.nama_sentral || "-" },
     { label: "Daya Terpasang", value: `${r.daya_terpasang} MW` },
     { label: "Daya Mampu Netto (DMN)", value: `${r.daya_mampu_netto} MW` },
+    { label: "Daya Mampu Pasok (DMP)", value: `${r.daya_mampu_pasok} MW` },
     { label: "Daya Mampu Pasok (DMP)", value: `${r.daya_mampu_pasok} MW` },
     { label: "Daya Mampu Aktual", value: `${r.daya_mampu_aktual} MW` },
     { label: "Produksi Energi", value: `${r.produksi} MWh` },
@@ -212,11 +206,10 @@ const detailItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari sentral atau bahan bakar..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton label="TAMBAH OPERASI" @click="openCreateModal" />
+          <BaseCreateButton resource="OPERASI_HARIAN" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -273,8 +266,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="OPERASI_HARIAN" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="OPERASI_HARIAN" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

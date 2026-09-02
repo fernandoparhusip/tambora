@@ -356,10 +356,7 @@ const handleReload = () => {
         >
           <!-- Left filters: Search, Date Filter, Export -->
           <div class="flex flex-wrap items-center gap-3.5">
-            <BaseSearchInput
-              v-model="searchQuery"
-              :placeholder="activeTab === 'unit' ? 'Cari Scope / Jenis Pagu...' : 'Cari Pagu Unit / Bidang...'"
-            />
+            <BaseSearchInput v-model="searchQuery" />
             <BaseDateInput
               v-model="selectedDate"
               placeholder="Pilih Tanggal Input"
@@ -377,7 +374,7 @@ const handleReload = () => {
 
             <!-- Create Button -->
             <BaseCreateButton
-              label="TAMBAH DATA"
+              resource="PAGU"
               @click="openCreateModal"
             />
           </div>
@@ -445,7 +442,7 @@ const handleReload = () => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
+              <BaseActionButton type="edit" resource="PAGU" @click="handleEdit(row)" />
               <button
                 v-if="activeTab === 'unit'"
                 type="button"
@@ -455,7 +452,7 @@ const handleReload = () => {
               >
                 Revisi
               </button>
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="delete" resource="PAGU" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

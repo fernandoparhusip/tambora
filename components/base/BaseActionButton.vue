@@ -1,21 +1,60 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useRbac } from "~/composables/useRbac";
 
 const props = withDefaults(
   defineProps<{
     type: "view" | "edit" | "delete" | "download" | "custom";
     title?: string;
+    resource?: string;
+    permission?: string | string[];
     disabled?: boolean;
+    disabledTooltip?: string;
   }>(),
   {
     title: "",
-    disabled: false
-  }
+    resource: "",
+    permission: "",
+    disabled: false,
+    disabledTooltip: "",
+  },
 );
 
-defineEmits<{
+const emit = defineEmits<{
   click: [event: MouseEvent];
 }>();
+
+const { can } = useRbac();
+
+const effectivePermission = computed(() => {
+  if (props.permission) return props.permission;
+  if (props.resource) {
+    const res = props.resource.toUpperCase().trim();
+    if (props.type === "edit") return `${res}.UPDATE`;
+    if (props.type === "delete") return `${res}.DELETE`;
+    if (props.type === "view" || props.type === "download") return `${res}.VIEW`;
+  }
+  return "";
+});
+
+const isPermissionDenied = computed(() => {
+  if (effectivePermission.value) {
+    return !can(effectivePermission.value);
+  }
+  return false;
+});
+
+const isDisabled = computed(() => {
+  return props.disabled || isPermissionDenied.value;
+});
+
+const defaultDisabledTooltip = computed(() => {
+  if (props.disabledTooltip) return props.disabledTooltip;
+  if (props.type === "edit") return "Anda tidak memiliki hak akses untuk mengubah data ini.";
+  if (props.type === "delete") return "Anda tidak memiliki hak akses untuk menghapus data ini.";
+  if (props.type === "download") return "Anda tidak memiliki hak akses untuk mengunduh data ini.";
+  return "Anda tidak memiliki hak akses untuk aksi ini.";
+});
 
 const buttonConfig = computed(() => {
   switch (props.type) {
@@ -23,45 +62,66 @@ const buttonConfig = computed(() => {
       return {
         defaultTitle: "Detail",
         class: "bg-sky-50 text-sky-600 hover:bg-sky-100 border-sky-100",
-        ariaLabel: "Lihat Detail"
+        ariaLabel: "Lihat Detail",
       };
     case "edit":
       return {
         defaultTitle: "Edit",
         class: "bg-amber-50 text-amber-600 hover:bg-amber-100 border-amber-100",
-        ariaLabel: "Ubah Data"
+        ariaLabel: "Ubah Data",
       };
     case "delete":
       return {
         defaultTitle: "Hapus",
         class: "bg-red-50 text-red-500 hover:bg-red-100 border-red-100",
-        ariaLabel: "Hapus Data"
+        ariaLabel: "Hapus Data",
       };
     case "download":
       return {
         defaultTitle: "Unduh",
         class: "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-100",
-        ariaLabel: "Unduh File"
+        ariaLabel: "Unduh File",
       };
     default:
       return {
         defaultTitle: "Aksi",
         class: "bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200",
-        ariaLabel: "Aksi"
+        ariaLabel: "Aksi",
       };
   }
 });
+
+const effectiveTooltip = computed(() => {
+  if (isDisabled.value) {
+    return defaultDisabledTooltip.value;
+  }
+  return props.title || buttonConfig.value.defaultTitle;
+});
+
+const handleClick = (e: MouseEvent) => {
+  if (isDisabled.value) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return;
+  }
+  emit("click", e);
+};
 </script>
 
 <template>
   <button
+    v-tooltip.top="{ value: effectiveTooltip, showDelay: 100 }"
     type="button"
-    :disabled="disabled"
-    :title="title || buttonConfig.defaultTitle"
-    :aria-label="title || buttonConfig.ariaLabel"
-    class="w-7 h-7 flex items-center justify-center rounded-lg border transition-all duration-150 transform cursor-pointer select-none active:scale-[0.90] hover:scale-[1.06] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-    :class="buttonConfig.class"
-    @click="$emit('click', $event)"
+    :disabled="isDisabled"
+    :aria-disabled="isDisabled"
+    :aria-label="effectiveTooltip || buttonConfig.ariaLabel"
+    class="w-7 h-7 flex items-center justify-center rounded-lg border transition-all duration-150 transform select-none shrink-0"
+    :class="[
+      isDisabled
+        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60 shadow-none'
+        : `${buttonConfig.class} cursor-pointer active:scale-[0.90] hover:scale-[1.06]`,
+    ]"
+    @click="handleClick"
   >
     <!-- View / Eye Icon -->
     <svg

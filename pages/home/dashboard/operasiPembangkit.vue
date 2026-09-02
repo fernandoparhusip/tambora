@@ -249,7 +249,7 @@ const getMarkerColor = (item: SentralItem) => {
               <div
                 class="absolute inset-0 flex flex-col items-center justify-center gap-2"
               >
-                <LoadingIndicatorPLN />
+                <BaseLoadingIndicatorPLN />
                 <span class="text-xs font-semibold text-slate-500"
                   >Memuat Peta Tambora...</span
                 >

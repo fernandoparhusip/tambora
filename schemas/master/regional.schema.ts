@@ -20,7 +20,7 @@ export const getRegionalFormSections = (
           key: "nama_regional",
           label: "Nama Regional",
           type: "text",
-          placeholder: "Contoh: Regional Sulawesi Utara",
+          placeholder: "Contoh: Sulawesi, Maluku, Papua & Nusra",
           required: true,
           colSpan: 6,
         },
@@ -53,3 +53,6 @@ export const getRegionalFormSections = (
     },
   ];
 };
+
+export const regionalFormSections: FormSectionConfig[] = getRegionalFormSections();
+

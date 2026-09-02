@@ -31,17 +31,25 @@ const tbodyRef = ref<HTMLTableSectionElement | null>(null);
 
 const animateRows = () => {
   if (!import.meta.client || !tbodyRef.value) return;
+
+  // Accessibility: Skip animation if user prefers reduced motion
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
   nextTick(() => {
     const rowEls = tbodyRef.value?.querySelectorAll("tr.table-data-row");
     if (rowEls && rowEls.length > 0) {
+      // Kill previous tweens on rows to avoid stacking during fast filter changes
+      gsap.killTweensOf(rowEls);
       gsap.fromTo(
         rowEls,
-        { opacity: 0, y: 8 },
+        { opacity: 0, y: 6 },
         {
           opacity: 1,
           y: 0,
-          duration: 0.24,
-          stagger: 0.02,
+          duration: 0.22,
+          stagger: 0.015,
           ease: "power2.out",
           clearProps: "transform,opacity",
         }
@@ -49,6 +57,13 @@ const animateRows = () => {
     }
   });
 };
+
+onBeforeUnmount(() => {
+  if (tbodyRef.value) {
+    const rowEls = tbodyRef.value.querySelectorAll("tr.table-data-row");
+    if (rowEls.length > 0) gsap.killTweensOf(rowEls);
+  }
+});
 
 watch(
   () => props.rows,

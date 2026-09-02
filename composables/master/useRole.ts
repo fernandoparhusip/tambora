@@ -18,9 +18,18 @@ export const useRole = () => {
     loading.value = true
     error.value = null
     try {
-      const res = await api<ApiResponse<RoleItem[]>>('/roles')
-      if (res?.data) {
-        roles.value = res.data
+      const res: any = await api<ApiResponse<RoleItem[]>>('/roles')
+      const rawList = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : Array.isArray(res?.data?.roles)
+              ? res.data.roles
+              : []
+      if (rawList.length > 0 || Array.isArray(res?.data)) {
+        roles.value = rawList
       }
       return roles.value
     } catch (err: any) {

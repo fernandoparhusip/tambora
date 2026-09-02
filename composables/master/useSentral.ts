@@ -1,5 +1,5 @@
+import { ref } from "vue";
 import { useApi } from "~/composables/useApi";
-import { ref, computed } from "vue";
 import type {
   SentralItem,
   CreateSentralRequest,
@@ -12,6 +12,7 @@ export const useSentral = () => {
   const sentralList = ref<SentralItem[]>([]);
   const currentSentral = ref<SentralItem | null>(null);
   const loading = ref(false);
+  const detailLoading = ref(false);
   const total = ref(0);
   const error = ref<string | null>(null);
 
@@ -29,14 +30,10 @@ export const useSentral = () => {
       if (params.kode_wilayah) query.kode_wilayah = params.kode_wilayah;
       if (params.kode_ranting) query.kode_ranting = params.kode_ranting;
 
-      const res = await api<ApiResponse<SentralItem[]>>("/sentral", { query });
-      if (res?.data && Array.isArray(res.data)) {
-        sentralList.value = res.data;
-        total.value = res.meta?.total || res.data.length;
-      } else {
-        sentralList.value = [];
-        total.value = 0;
-      }
+      const res = await api<any>("/sentral", { query });
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      sentralList.value = Array.isArray(list) ? list : [];
+      total.value = res?.meta?.total || sentralList.value.length;
       return sentralList.value;
     } catch (err: any) {
       error.value = err?.message || "Gagal memuat daftar sentral.";
@@ -46,19 +43,37 @@ export const useSentral = () => {
     }
   };
 
-  const getSentralById = async (id: string) => {
+  const fetchSentrals = async () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`);
-      if (res?.data) {
-        currentSentral.value = res.data;
-      }
-      return res?.data;
+      const res = await api<any>("/sentral");
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      sentralList.value = Array.isArray(list) ? list : [];
+      total.value = res?.meta?.total || sentralList.value.length;
+      return sentralList.value;
     } catch (err: any) {
-      error.value = err?.message || "Gagal mengambil detail sentral.";
+      error.value = err?.message || "Gagal memuat daftar sentral pembangkit.";
       throw err;
     } finally {
+      loading.value = false;
+    }
+  };
+
+  const getSentralById = async (id: string) => {
+    detailLoading.value = true;
+    loading.value = true;
+    error.value = null;
+    try {
+      const res = await api<any>(`/sentral/${id}`);
+      const data = res?.data || res;
+      currentSentral.value = data;
+      return data;
+    } catch (err: any) {
+      error.value = err?.message || "Gagal mengambil detail sentral pembangkit.";
+      throw err;
+    } finally {
+      detailLoading.value = false;
       loading.value = false;
     }
   };
@@ -72,9 +87,9 @@ export const useSentral = () => {
         body: payload,
       });
       await fetchSentral();
-      return res?.data;
+      return res?.data || res;
     } catch (err: any) {
-      error.value = err?.message || "Gagal membuat sentral.";
+      error.value = err?.message || "Gagal membuat sentral pembangkit baru.";
       throw err;
     } finally {
       loading.value = false;
@@ -98,7 +113,7 @@ export const useSentral = () => {
         });
       }
       await fetchSentral();
-      return res?.data;
+      return res?.data || res;
     } catch (err: any) {
       error.value = err?.message || "Gagal mengubah data sentral.";
       throw err;
@@ -124,7 +139,7 @@ export const useSentral = () => {
       await fetchSentral();
       return res;
     } catch (err: any) {
-      error.value = err?.message || "Gagal menghapus sentral.";
+      error.value = err?.message || "Gagal menghapus sentral pembangkit.";
       throw err;
     } finally {
       loading.value = false;
@@ -139,7 +154,7 @@ export const useSentral = () => {
         method: "POST",
       });
       await fetchSentral();
-      return res?.data;
+      return res?.data || res;
     } catch (err: any) {
       error.value = err?.message || "Gagal menyetujui (approve) sentral.";
       throw err;
@@ -149,12 +164,15 @@ export const useSentral = () => {
   };
 
   return {
-    sentralList: computed(() => sentralList.value),
-    currentSentral: computed(() => currentSentral.value),
-    loading: computed(() => loading.value),
-    total: computed(() => total.value),
-    error: computed(() => error.value),
+    sentralList,
+    sentrals: sentralList,
+    currentSentral,
+    loading,
+    detailLoading,
+    total,
+    error,
     fetchSentral,
+    fetchSentrals,
     getSentralById,
     createSentral,
     updateSentral,

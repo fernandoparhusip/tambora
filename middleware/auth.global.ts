@@ -17,4 +17,11 @@ export default defineNuxtRouteMiddleware((to) => {
     const redirectUrl = (to.query.redirect as string) || '/home'
     return navigateTo(redirectUrl)
   }
+
+  // Route Menu RBAC Guard: Protect unauthorized manual URL navigation
+  if (authStore.isLoggedIn && to.path.startsWith('/home') && to.path !== '/home') {
+    if (!authStore.hasMenuAccess(to.path)) {
+      return navigateTo('/home')
+    }
+  }
 })

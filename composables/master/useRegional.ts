@@ -1,17 +1,20 @@
+import { ref } from "vue";
 import { useApi } from "~/composables/useApi";
-import { ref, computed } from "vue";
 import type {
   RegionalItem,
   CreateRegionalRequest,
   UpdateRegionalRequest,
   ApiResponse,
+  SelectOption,
 } from "~/types";
 
 export const useRegional = () => {
   const api = useApi();
   const regionalList = ref<RegionalItem[]>([]);
   const currentRegional = ref<RegionalItem | null>(null);
+  const regionalCombo = ref<SelectOption[]>([]);
   const loading = ref(false);
+  const detailLoading = ref(false);
   const total = ref(0);
   const error = ref<string | null>(null);
 
@@ -27,14 +30,10 @@ export const useRegional = () => {
       };
       if (params.search) query.search = params.search;
 
-      const res = await api<ApiResponse<RegionalItem[]>>("/regional", { query });
-      if (res?.data && Array.isArray(res.data)) {
-        regionalList.value = res.data;
-        total.value = res.meta?.total || res.data.length;
-      } else {
-        regionalList.value = [];
-        total.value = 0;
-      }
+      const res = await api<any>("/regional", { query });
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      regionalList.value = Array.isArray(list) ? list : [];
+      total.value = res?.meta?.total || regionalList.value.length;
       return regionalList.value;
     } catch (err: any) {
       error.value = err?.message || "Gagal memuat daftar regional.";
@@ -44,19 +43,52 @@ export const useRegional = () => {
     }
   };
 
-  const getRegionalById = async (id: string) => {
+  const fetchRegionals = async () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<RegionalItem>>(`/regional/${id}`);
-      if (res?.data) {
-        currentRegional.value = res.data;
+      const res = await api<any>("/regional");
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      regionalList.value = Array.isArray(list) ? list : [];
+      total.value = res?.meta?.total || regionalList.value.length;
+      return regionalList.value;
+    } catch (err: any) {
+      error.value = err?.message || "Gagal memuat daftar regional.";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchRegionalCombo = async () => {
+    try {
+      const res = await api<ApiResponse<Array<{ id: string; name?: string; nama_regional?: string; code?: string; kode_regional?: string }>>>("/regional/combo");
+      if (res?.data && Array.isArray(res.data)) {
+        regionalCombo.value = res.data.map((item) => ({
+          label: item.nama_regional || item.name || item.kode_regional || item.code || item.id,
+          value: item.id,
+        }));
       }
-      return res?.data;
+      return regionalCombo.value;
+    } catch {
+      return [];
+    }
+  };
+
+  const getRegionalById = async (id: string) => {
+    detailLoading.value = true;
+    loading.value = true;
+    error.value = null;
+    try {
+      const res = await api<any>(`/regional/${id}`);
+      const data = res?.data || res;
+      currentRegional.value = data;
+      return data;
     } catch (err: any) {
       error.value = err?.message || "Gagal mengambil detail regional.";
       throw err;
     } finally {
+      detailLoading.value = false;
       loading.value = false;
     }
   };
@@ -70,7 +102,7 @@ export const useRegional = () => {
         body: payload,
       });
       await fetchRegional();
-      return res?.data;
+      return res?.data || res;
     } catch (err: any) {
       error.value = err?.message || "Gagal membuat regional.";
       throw err;
@@ -96,7 +128,7 @@ export const useRegional = () => {
         });
       }
       await fetchRegional();
-      return res?.data;
+      return res?.data || res;
     } catch (err: any) {
       error.value = err?.message || "Gagal mengubah data regional.";
       throw err;
@@ -130,12 +162,17 @@ export const useRegional = () => {
   };
 
   return {
-    regionalList: computed(() => regionalList.value),
-    currentRegional: computed(() => currentRegional.value),
-    loading: computed(() => loading.value),
-    total: computed(() => total.value),
-    error: computed(() => error.value),
+    regionalList,
+    regionals: regionalList,
+    currentRegional,
+    regionalCombo,
+    loading,
+    detailLoading,
+    total,
+    error,
     fetchRegional,
+    fetchRegionals,
+    fetchRegionalCombo,
     getRegionalById,
     createRegional,
     updateRegional,

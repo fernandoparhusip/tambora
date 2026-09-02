@@ -86,12 +86,6 @@ const dropdownPos = ref({ top: 0, left: 0, width: 200 });
 const uniqueDropdownId = `${props.field.key}-${Math.random().toString(36).substring(2, 9)}`;
 
 const teleportTarget = computed(() => {
-  if (
-    import.meta.client &&
-    document.getElementById("base-form-modal-container")
-  ) {
-    return "#base-form-modal-container";
-  }
   return "body";
 });
 

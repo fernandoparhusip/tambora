@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, FormSectionConfig, PemakaianBahanBakarDTO } from "~/types";
 import type { DetailDataItem } from '~/types/master.types';
 import { getPemakaianBahanBakarFormSections } from "~/schemas/transaksi/pemakaian-bahan-bakar.schema";
-import { exportToExcel } from "~/utils/exportExcel";
 
 const { list, loading, fetchList, createItem, updateItem, deleteItem } = usePemakaianBahanBakar();
 const { organizations, fetchOrganizations } = useOrganization();
@@ -162,12 +161,6 @@ const handleConfirmDelete = async () => {
   }
 };
 
-const handleExport = () => {
-  exportToExcel(columns, filteredList.value, {
-    fileName: "Data_Pemakaian_Bahan_Bakar_Tambora"
-  });
-};
-
 const detailItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const r = detailRecord.value;
@@ -198,11 +191,10 @@ const detailItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari jenis BBM atau tanggal..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton label="TAMBAH CATATAN BBM" @click="openCreateModal" />
+          <BaseCreateButton resource="BAHAN_BAKAR" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -252,8 +244,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="BAHAN_BAKAR" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="BAHAN_BAKAR" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

@@ -20,13 +20,21 @@ export const useRbac = () => {
   }
 
   const isSuperAdmin = computed(() => {
-    const roleCode = (authStore.user?.role || authStore.user?.akses_grup || '').toUpperCase()
-    const userRoles = (authStore.user?.roles || []).map((r) => r.toUpperCase())
+    const roleCode = String(authStore.user?.role || authStore.user?.akses_grup || '').toUpperCase()
+    const userRoles = (authStore.user?.roles || []).map((r: any) =>
+      typeof r === 'string' ? r.toUpperCase() : String(r?.role_code || r?.name || '').toUpperCase()
+    )
     return (
       roleCode === 'SUPER_ADMIN' ||
-      userRoles.includes('SUPER_ADMIN') ||
       roleCode === 'SUPERADMIN' ||
-      authStore.permissions.includes('*')
+      roleCode.replace(/[\s_-]/g, '') === 'SUPERADMIN' ||
+      userRoles.includes('SUPER_ADMIN') ||
+      userRoles.includes('SUPERADMIN') ||
+      userRoles.some((r) => r.replace(/[\s_-]/g, '') === 'SUPERADMIN') ||
+      authStore.permissions.some((p: any) => {
+        const key = typeof p === 'string' ? p : p?.permission_key || p?.code || p?.name || ''
+        return key === '*'
+      })
     )
   })
 

@@ -2,9 +2,18 @@
 import { onMounted, onBeforeUnmount } from 'vue'
 
 const { registerListeners, removeListeners } = useIdleTimer()
+const authStore = useAuthStore()
 
-onMounted(() => {
+onMounted(async () => {
   registerListeners()
+  // Auto-sync active permissions, scopes, and user session from backend
+  if (authStore.isLoggedIn) {
+    try {
+      await authStore.fetchUserMe()
+    } catch {
+      // Graceful fallback if network is slow/offline
+    }
+  }
 })
 
 onBeforeUnmount(() => {

@@ -402,7 +402,7 @@ defineExpose({
         v-if="isMapLoading"
         class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-100/90 backdrop-blur-xs pointer-events-none rounded-lg"
       >
-        <LoadingIndicatorPLN />
+        <BaseLoadingIndicatorPLN />
         <span class="mt-2 text-xs font-semibold text-slate-500">Memuat Peta...</span>
       </div>
     </Transition>

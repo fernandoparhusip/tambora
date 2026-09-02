@@ -1,201 +1,202 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import type { TableColumn, SentralItem } from '~/types'
-import { getSentralFormSections } from '~/schemas/master/sentral.schema'
-import type { DetailDataItem } from '~/types/master.types'
-import { exportToExcel } from '~/utils/exportExcel'
+import { ref, computed, watch, onMounted } from "vue";
+import type { TableColumn, SentralItem } from "~/types";
+import { getSentralFormSections } from "~/schemas/master/sentral.schema";
+import type { DetailDataItem } from "~/types/master.types";
+import { useSentral } from "~/composables/master/useSentral";
+import { useRegional } from "~/composables/master/useRegional";
+import { useRanting } from "~/composables/master/useRanting";
+import { useRbac } from "~/composables/useRbac";
 
 const {
   sentralList,
   loading,
+  detailLoading,
   fetchSentral,
+  getSentralById,
   createSentral,
   updateSentral,
   deleteSentral,
   approveSentral,
-} = useSentral()
-const { regionalList, fetchRegional } = useRegional()
-const { rantingList, fetchRantingCombo } = useRanting()
-const { can, isSuperAdmin } = useRbac()
-const toast = useAppToast()
+} = useSentral();
+const { regionalList, fetchRegional } = useRegional();
+const { rantingList, fetchRanting } = useRanting();
+const { can, isSuperAdmin } = useRbac();
+const toast = useAppToast();
 
-const searchQuery = ref('')
-const currentPage = ref(1)
-const pageSize = ref(10)
+const searchQuery = ref("");
+const currentPage = ref(1);
+const pageSize = ref(10);
 
-const modalOpen = ref(false)
-const isSuccessModalOpen = ref(false)
-const modalMode = ref<'create' | 'edit'>('create')
-const formData = ref<Record<string, any>>({})
-const submitting = ref(false)
+const modalOpen = ref(false);
+const isSuccessModalOpen = ref(false);
+const modalMode = ref<"create" | "edit">("create");
+const formData = ref<Record<string, any>>({});
+const submitting = ref(false);
 
-const isConfirmDialogOpen = ref(false)
-const deleteTarget = ref<SentralItem | null>(null)
-const isDeleting = ref(false)
+const isDetailModalOpen = ref(false);
+const detailRecord = ref<SentralItem | null>(null);
 
-const isApproveDialogOpen = ref(false)
-const approveTarget = ref<SentralItem | null>(null)
-const isApproving = ref(false)
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<SentralItem | null>(null);
+const isDeleting = ref(false);
 
-// Detail Modal States
-const isDetailModalOpen = ref(false)
-const detailRecord = ref<SentralItem | null>(null)
+const isApproveDialogOpen = ref(false);
+const approveTarget = ref<SentralItem | null>(null);
+const isApproving = ref(false);
 
 const sentralColumns: TableColumn[] = [
-  { key: 'no', label: 'No' },
-  { key: 'kode_sentral', label: 'Kode Sentral' },
-  { key: 'nama_sentral', label: 'Nama Sentral' },
-  { key: 'kode_wilayah', label: 'Regional' },
-  { key: 'kode_ranting', label: 'Ranting' },
-  { key: 'spesifikasi', label: 'Pembangkit / BBM' },
-  { key: 'daya_mampu', label: 'Daya Mampu (kW)' },
-  { key: 'kondisi', label: 'Kondisi' },
-  { key: 'approve_status', label: 'Status Approval' },
-  { key: 'actions', label: 'Aksi' },
-]
+  { key: "no", label: "No" },
+  { key: "kode_sentral", label: "Kode Sentral" },
+  { key: "nama_sentral", label: "Nama Sentral" },
+  { key: "kode_wilayah", label: "Regional" },
+  { key: "kode_jenis_pembangkit", label: "Jenis" },
+  { key: "daya_terpasang", label: "Daya Terpasang" },
+  { key: "kondisi", label: "Kondisi" },
+  { key: "approve_status", label: "Status" },
+  { key: "actions", label: "Aksi" },
+];
 
 const regionalOptions = computed(() =>
-  regionalList.value.map(r => ({
-    label: `${r.nama_regional} (${r.kode_regional})`,
+  regionalList.value.map((r) => ({
+    label: `${r.kode_regional} - ${r.nama_regional}`,
     value: r.kode_regional,
-  }))
-)
+  })),
+);
 
 const rantingOptions = computed(() =>
-  rantingList.value.map(r => ({
-    label: `${r.nama_ranting} (${r.kode_ranting})`,
-    value: r.kode_ranting,
-  }))
-)
+  rantingList.value.map((rt) => ({
+    label: `${rt.kode_ranting} - ${rt.nama_ranting}`,
+    value: rt.kode_ranting,
+  })),
+);
 
 const formSections = computed(() =>
   getSentralFormSections({
     regionalOptions: regionalOptions.value,
     rantingOptions: rantingOptions.value,
-  })
-)
+  }),
+);
 
 onMounted(async () => {
-  await Promise.allSettled([
-    fetchSentral(),
-    fetchRegional(),
-    fetchRantingCombo(),
-  ])
-})
+  await Promise.allSettled([fetchSentral(), fetchRegional(), fetchRanting()]);
+});
 
 watch(searchQuery, () => {
-  currentPage.value = 1
-})
+  currentPage.value = 1;
+});
 
 const filteredData = computed(() => {
-  if (!searchQuery.value) return sentralList.value
-  const q = searchQuery.value.toLowerCase()
+  if (!searchQuery.value) return sentralList.value;
+  const q = searchQuery.value.toLowerCase();
   return sentralList.value.filter(
-    item =>
-      (item.kode_sentral && item.kode_sentral.toLowerCase().includes(q))
-      || (item.nama_sentral && item.nama_sentral.toLowerCase().includes(q))
-      || (item.kode_wilayah && item.kode_wilayah.toLowerCase().includes(q))
-      || (item.kode_ranting && item.kode_ranting.toLowerCase().includes(q))
-      || (item.kode_jenis_pembangkit && item.kode_jenis_pembangkit.toLowerCase().includes(q))
-      || (item.jenis_bahan_bakar && item.jenis_bahan_bakar.toLowerCase().includes(q))
-      || (item.kondisi && item.kondisi.toLowerCase().includes(q))
-      || (item.approve_status && item.approve_status.toLowerCase().includes(q))
-  )
-})
+    (item) =>
+      (item.kode_sentral && item.kode_sentral.toLowerCase().includes(q)) ||
+      (item.nama_sentral && item.nama_sentral.toLowerCase().includes(q)) ||
+      (item.kode_jenis_pembangkit && item.kode_jenis_pembangkit.toLowerCase().includes(q)) ||
+      (item.kondisi && item.kondisi.toLowerCase().includes(q)),
+  );
+});
 
 const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredData.value.slice(start, start + pageSize.value)
-})
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredData.value.slice(start, start + pageSize.value);
+});
 
 const modalTitle = computed(() =>
-  modalMode.value === 'create' ? 'Tambah Data Sentral' : 'Ubah Data Sentral',
-)
+  modalMode.value === "create" ? "Tambah Data Sentral" : "Ubah Data Sentral",
+);
 const modalSubtitle = computed(() =>
-  modalMode.value === 'create'
-    ? 'Form Tambah Master Unit / Sentral Pembangkit'
-    : 'Form Ubah Master Unit / Sentral Pembangkit',
-)
+  modalMode.value === "create"
+    ? "Form Tambah Master Data Sentral Pembangkit PLN"
+    : "Form Ubah Master Data Sentral Pembangkit PLN",
+);
 
 const openCreateModal = () => {
-  modalMode.value = 'create'
+  modalMode.value = "create";
   formData.value = {
-    kode_wilayah: regionalList.value[0]?.kode_regional || '',
-    kode_ranting: rantingList.value[0]?.kode_ranting || '',
-    kode_sentral: '',
-    nama_sentral: '',
-    kode_jenis_pembangkit: 'PLTD',
-    jenis_bahan_bakar: 'HSD',
-    daya_terpasang: 15000,
-    daya_mampu: 14000,
-    tahun_operasi: new Date().getFullYear(),
-    kondisi: 'SIAP_OPERASI',
-    latitude: 1.4400,
-    longitude: 125.1800,
-    approve_status: 'DRAFT',
-  }
-  modalOpen.value = true
-}
+    kode_wilayah: "",
+    kode_ranting: "",
+    kode_sentral: "",
+    nama_sentral: "",
+    kode_jenis_pembangkit: "PLTD",
+    jenis_bahan_bakar: "HSD",
+    daya_terpasang: null,
+    daya_mampu: null,
+    tahun_operasi: null,
+    kondisi: "SIAP_OPERASI",
+    latitude: 1.44,
+    longitude: 125.18,
+    approve_status: "DRAFT",
+  };
+  modalOpen.value = true;
+};
 
-const handleView = (row: SentralItem) => {
-  detailRecord.value = row
-  isDetailModalOpen.value = true
-}
+const handleView = async (row: SentralItem) => {
+  detailRecord.value = row;
+  isDetailModalOpen.value = true;
+  try {
+    const fresh = await getSentralById(row.id);
+    if (fresh) detailRecord.value = fresh;
+  } catch {
+    // Fallback
+  }
+};
 
 const handleEdit = (row: SentralItem) => {
-  modalMode.value = 'edit'
-  formData.value = { ...row }
-  modalOpen.value = true
-}
+  modalMode.value = "edit";
+  formData.value = { ...row };
+  modalOpen.value = true;
+};
 
 const openEditFromDetail = () => {
   if (detailRecord.value) {
-    handleEdit(detailRecord.value)
+    handleEdit(detailRecord.value);
   }
-}
+};
 
 const handleDelete = (row: SentralItem) => {
-  deleteTarget.value = row
-  isConfirmDialogOpen.value = true
-}
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
 
 const confirmDelete = async () => {
-  if (!deleteTarget.value) return
-  isDeleting.value = true
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
   try {
-    await deleteSentral(deleteTarget.value.id || deleteTarget.value.kode_sentral)
-    toast.success(`Sentral '${deleteTarget.value.nama_sentral}' berhasil dihapus.`, 'Sukses')
-    isConfirmDialogOpen.value = false
-    deleteTarget.value = null
+    await deleteSentral(deleteTarget.value.id || deleteTarget.value.kode_sentral);
+    toast.success(`Sentral '${deleteTarget.value.nama_sentral}' berhasil dihapus.`, "Sukses");
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
   } catch (err: any) {
-    toast.error(err?.detail || err?.message || 'Gagal menghapus sentral.', 'Gagal Hapus')
+    toast.error(err?.detail || err?.message || "Gagal menghapus sentral.", "Gagal Hapus");
   } finally {
-    isDeleting.value = false
+    isDeleting.value = false;
   }
-}
+};
 
 const handleApprove = (row: SentralItem) => {
-  approveTarget.value = row
-  isApproveDialogOpen.value = true
-}
+  approveTarget.value = row;
+  isApproveDialogOpen.value = true;
+};
 
 const confirmApprove = async () => {
-  if (!approveTarget.value) return
-  isApproving.value = true
+  if (!approveTarget.value) return;
+  isApproving.value = true;
   try {
-    await approveSentral(approveTarget.value.id || approveTarget.value.kode_sentral)
-    toast.success(`Sentral '${approveTarget.value.nama_sentral}' berhasil disetujui (APPROVED).`, 'Sukses')
-    isApproveDialogOpen.value = false
-    approveTarget.value = null
+    await approveSentral(approveTarget.value.id || approveTarget.value.kode_sentral);
+    toast.success(`Sentral '${approveTarget.value.nama_sentral}' berhasil disetujui (APPROVED).`, "Sukses");
+    isApproveDialogOpen.value = false;
+    approveTarget.value = null;
   } catch (err: any) {
-    toast.error(err?.detail || err?.message || 'Gagal menyetujui sentral.', 'Gagal Approval')
+    toast.error(err?.detail || err?.message || "Gagal menyetujui sentral.", "Gagal Approval");
   } finally {
-    isApproving.value = false
+    isApproving.value = false;
   }
-}
+};
 
 const handleSave = async (data: Record<string, any>) => {
-  submitting.value = true
+  submitting.value = true;
   try {
     const payload = {
       kode_wilayah: data.kode_wilayah,
@@ -210,110 +211,101 @@ const handleSave = async (data: Record<string, any>) => {
       kondisi: data.kondisi,
       latitude: data.latitude ? Number(data.latitude) : undefined,
       longitude: data.longitude ? Number(data.longitude) : undefined,
-      approve_status: data.approve_status || 'DRAFT',
-    }
+      approve_status: data.approve_status || "DRAFT",
+    };
 
-    if (modalMode.value === 'create') {
-      await createSentral(payload)
-      modalOpen.value = false
-      isSuccessModalOpen.value = true
+    if (modalMode.value === "create") {
+      await createSentral(payload);
+      modalOpen.value = false;
+      isSuccessModalOpen.value = true;
     } else {
-      const id = formData.value.id || formData.value.kode_sentral
-      await updateSentral(id, payload)
-      modalOpen.value = false
-      toast.success('Data sentral berhasil diperbarui.', 'Sukses')
+      const id = formData.value.id || formData.value.kode_sentral;
+      await updateSentral(id, payload);
+      modalOpen.value = false;
+      toast.success("Data sentral berhasil diperbarui.", "Sukses");
     }
   } catch (err: any) {
-    toast.error(err?.detail || err?.message || 'Gagal menyimpan data sentral.', 'Terjadi Kesalahan')
+    toast.error(err?.detail || err?.message || "Gagal menyimpan data sentral.", "Terjadi Kesalahan");
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
-}
-
-const handleExport = () => {
-  exportToExcel(sentralColumns, filteredData.value, {
-    fileName: 'Master_Sentral_Pembangkit_PLN',
-  })
-}
+};
 
 const getStatusBadgeVariant = (status?: string): any => {
-  const s = (status || '').toUpperCase()
-  if (s === 'APPROVED') return 'success'
-  if (s === 'REJECTED') return 'danger'
-  if (s === 'DRAFT') return 'warning'
-  return 'default'
-}
+  const s = (status || "").toUpperCase();
+  if (s === "APPROVED") return "success";
+  if (s === "REJECTED") return "danger";
+  if (s === "DRAFT") return "warning";
+  return "default";
+};
 
 const getKondisiBadgeVariant = (kondisi?: string): any => {
-  const k = (kondisi || '').toUpperCase()
-  if (k.includes('SIAP') || k.includes('OPERASI')) return 'success'
-  if (k.includes('GANGGUAN') || k.includes('RUSAK')) return 'danger'
-  if (k.includes('PEMELIHARAAN') || k.includes('HAR')) return 'warning'
-  return 'info'
-}
+  const k = (kondisi || "").toUpperCase();
+  if (k.includes("SIAP") || k.includes("OPERASI")) return "success";
+  if (k.includes("GANGGUAN") || k.includes("RUSAK")) return "danger";
+  if (k.includes("PEMELIHARAAN") || k.includes("HAR")) return "warning";
+  return "info";
+};
 
-// Check permission to approve: either explicit permission SENTRAL.APPROVE, or Admin role
 const canApprove = computed(() => {
-  return can('SENTRAL.APPROVE') || can('SENTRAL.CREATE') && (isSuperAdmin.value || can('REGIONAL.CREATE'))
-})
+  return can("SENTRAL.APPROVE") || (can("SENTRAL.CREATE") && (isSuperAdmin.value || can("REGIONAL.CREATE")));
+});
 
 // Detail Data Items
 const detailDataItems = computed<DetailDataItem[]>(() => {
-  if (!detailRecord.value) return []
+  if (!detailRecord.value) return [];
   return [
-    { label: 'Kode Sentral', value: detailRecord.value.kode_sentral },
-    { label: 'Nama Sentral', value: detailRecord.value.nama_sentral },
-    { label: 'Kode Regional', value: detailRecord.value.kode_wilayah || '-' },
-    { label: 'Kode Ranting', value: detailRecord.value.kode_ranting || '-' },
-    { label: 'Jenis Pembangkit', value: detailRecord.value.kode_jenis_pembangkit || '-' },
-    { label: 'Jenis Bahan Bakar', value: detailRecord.value.jenis_bahan_bakar || '-' },
-    { label: 'Daya Terpasang', value: detailRecord.value.daya_terpasang ? `${detailRecord.value.daya_terpasang.toLocaleString('id-ID')} kW` : '-' },
-    { label: 'Daya Mampu', value: detailRecord.value.daya_mampu ? `${detailRecord.value.daya_mampu.toLocaleString('id-ID')} kW` : '-' },
-    { label: 'Tahun Operasi', value: detailRecord.value.tahun_operasi || '-' },
+    { label: "Kode Sentral", value: detailRecord.value.kode_sentral },
+    { label: "Nama Sentral", value: detailRecord.value.nama_sentral },
+    { label: "Kode Regional", value: detailRecord.value.kode_wilayah || "-" },
+    { label: "Kode Ranting", value: detailRecord.value.kode_ranting || "-" },
+    { label: "Jenis Pembangkit", value: detailRecord.value.kode_jenis_pembangkit || "-" },
+    { label: "Jenis Bahan Bakar", value: detailRecord.value.jenis_bahan_bakar || "-" },
+    { label: "Daya Terpasang", value: detailRecord.value.daya_terpasang ? `${detailRecord.value.daya_terpasang.toLocaleString("id-ID")} kW` : "-" },
+    { label: "Daya Mampu", value: detailRecord.value.daya_mampu ? `${detailRecord.value.daya_mampu.toLocaleString("id-ID")} kW` : "-" },
+    { label: "Tahun Operasi", value: detailRecord.value.tahun_operasi || "-" },
     {
-      label: 'Kondisi Operasi',
-      value: detailRecord.value.kondisi || 'SIAP_OPERASI',
+      label: "Kondisi Operasi",
+      value: detailRecord.value.kondisi || "SIAP_OPERASI",
       isStatus: true,
     },
-    { label: 'Latitude', value: detailRecord.value.latitude ?? '-' },
-    { label: 'Longitude', value: detailRecord.value.longitude ?? '-' },
+    { label: "Latitude", value: detailRecord.value.latitude ?? "-" },
+    { label: "Longitude", value: detailRecord.value.longitude ?? "-" },
     {
-      label: 'Status Approval',
-      value: detailRecord.value.approve_status || 'DRAFT',
+      label: "Status Approval",
+      value: detailRecord.value.approve_status || "DRAFT",
       isStatus: true,
     },
-    { label: 'ID Record', value: detailRecord.value.id || detailRecord.value.kode_sentral },
-  ]
-})
+    { label: "ID Record", value: detailRecord.value.id || detailRecord.value.kode_sentral },
+  ];
+});
 </script>
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-gray-50/50">
-    <!-- ── Page Title Header ───────────────────────────────── -->
+    <!-- Page Title Header -->
     <BasePageHeader />
 
-    <!-- ── Main Card Container ───────────────────────────────── -->
+    <!-- Main Card Container -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
       <div
         class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
       >
-        <!-- ── Action Controls Bar ───────────────────────────────── -->
+        <!-- Action Controls Bar -->
         <div
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Sentral..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
           <BaseCreateButton
-            v-if="can('SENTRAL.CREATE')"
-            label="TAMBAH SENTRAL"
+            resource="SENTRAL"
             @click="openCreateModal"
           />
         </div>
 
-        <!-- ── Table Container ───────────────────────────────────── -->
+        <!-- Table Container -->
         <BaseTable
           :columns="sentralColumns"
           :rows="paginatedData"
@@ -328,30 +320,24 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #kode_sentral-data="{ row }">
-            <span class="text-xs font-semibold text-primary-700">{{ row.kode_sentral }}</span>
+            <span class="text-xs font-mono font-bold text-primary-700">{{ row.kode_sentral }}</span>
           </template>
 
           <template #nama_sentral-data="{ row }">
-            <span class="text-xs font-medium text-gray-800">{{ row.nama_sentral }}</span>
+            <span class="text-xs font-semibold text-gray-800">{{ row.nama_sentral }}</span>
           </template>
 
           <template #kode_wilayah-data="{ row }">
             <span class="text-xs text-gray-600">{{ row.kode_wilayah || '-' }}</span>
           </template>
 
-          <template #kode_ranting-data="{ row }">
-            <span class="text-xs text-gray-600">{{ row.kode_ranting || '-' }}</span>
+          <template #kode_jenis_pembangkit-data="{ row }">
+            <span class="text-xs font-medium text-gray-700">{{ row.kode_jenis_pembangkit || '-' }}</span>
           </template>
 
-          <template #spesifikasi-data="{ row }">
-            <span class="text-xs text-gray-700 font-medium">
-              {{ row.kode_jenis_pembangkit || '-' }} / {{ row.jenis_bahan_bakar || '-' }}
-            </span>
-          </template>
-
-          <template #daya_mampu-data="{ row }">
-            <span class="text-xs font-semibold text-gray-800">
-              {{ row.daya_mampu ? Number(row.daya_mampu).toLocaleString('id-ID') : '-' }}
+          <template #daya_terpasang-data="{ row }">
+            <span class="text-xs font-mono font-medium text-gray-800">
+              {{ row.daya_terpasang ? `${row.daya_terpasang.toLocaleString('id-ID')} kW` : '-' }}
             </span>
           </template>
 
@@ -367,30 +353,42 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             </BaseBadge>
           </template>
 
-          <!-- Action Buttons Cell Slot (View, Edit, Approve, Delete) -->
+          <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
               <BaseActionButton
-                v-if="can('SENTRAL.UPDATE')"
                 type="edit"
+                resource="SENTRAL"
                 title="Ubah Sentral"
                 @click="handleEdit(row)"
               />
-              <button
-                v-if="canApprove && (row.approve_status === 'DRAFT' || !row.approve_status)"
-                type="button"
-                class="inline-flex items-center justify-center p-1.5 text-xs font-medium rounded text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200 shadow-2xs"
-                title="Approve Sentral"
+              <BaseActionButton
+                v-if="canApprove && row.approve_status !== 'APPROVED'"
+                type="custom"
+                permission="SENTRAL.APPROVE"
+                title="Setujui Sentral (Approve)"
+                class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-100"
                 @click="handleApprove(row)"
               >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
-              </button>
+              </BaseActionButton>
               <BaseActionButton
-                v-if="can('SENTRAL.DELETE')"
                 type="delete"
+                resource="SENTRAL"
                 title="Hapus Sentral"
                 @click="handleDelete(row)"
               />
@@ -398,7 +396,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
         </BaseTable>
 
-        <!-- ── Pagination ────────────────────────────────────────── -->
+        <!-- Pagination -->
         <BasePagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -408,7 +406,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       </div>
     </div>
 
-    <!-- ── Form Drawer ─────────────────────────────────────────── -->
+    <!-- Form Drawer -->
     <BaseFormModal
       v-model:is-open="modalOpen"
       v-model:form-data="formData"
@@ -419,6 +417,16 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       :submitting="submitting"
       @submit="handleSave"
       @cancel="modalOpen = false"
+    />
+
+    <!-- Detail Modal -->
+    <BaseDetailModal
+      v-model:is-open="isDetailModalOpen"
+      title="Detail Sentral"
+      subtitle="Informasi Master Sentral Pembangkit Listrik PLN"
+      :data-items="detailDataItems"
+      :loading="detailLoading"
+      @edit="openEditFromDetail"
     />
 
     <!-- Confirm Delete Dialog -->
@@ -433,22 +441,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <!-- Confirm Approve Dialog -->
     <BaseConfirmDialog
       v-model:is-open="isApproveDialogOpen"
-      title="Setujui (Approve) Sentral"
-      :message="`Apakah Anda yakin ingin menyetujui Sentral '${approveTarget?.nama_sentral || ''}'? Status akan diubah menjadi APPROVED.`"
+      title="Setujui Sentral Pembangkit"
+      :message="`Apakah Anda yakin ingin menyetujui (Approve) Sentral '${approveTarget?.nama_sentral || ''}'? Status sentral akan menjadi APPROVED.`"
       :loading="isApproving"
       @confirm="confirmApprove"
     />
 
     <!-- Success Modal Popup -->
     <BaseSuccessModal v-model:is-open="isSuccessModalOpen" />
-
-    <!-- ── View Detail Modal ───────────────────────── -->
-    <BaseDetailModal
-      v-model:is-open="isDetailModalOpen"
-      title="Detail Sentral Pembangkit"
-      subtitle="Informasi Master Sentral / Unit Pembangkit Listrik"
-      :data-items="detailDataItems"
-      @edit="openEditFromDetail"
-    />
   </div>
 </template>

@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from '~/types/master.types';
 import type { TableColumn, FormSectionConfig, OrganizationItem } from "~/types";
 import { getOrganizationFormSections } from "~/schemas/master/organization.schema";
-import { exportToExcel } from "~/utils/exportExcel";
 
 const {
   organizations,
@@ -176,12 +175,6 @@ const handleSave = async () => {
   }
 };
 
-const handleExport = () => {
-  exportToExcel(orgColumns, filteredData.value, {
-    fileName: "Data_Organisasi_PLN",
-  });
-};
-
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const parent = organizations.value.find((o) => o.id === detailRecord.value?.parent_id);
@@ -212,11 +205,10 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Kode / Nama / Alamat..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseCreateButton resource="ORGANIZATION" @click="openCreateModal" />
         </div>
 
         <!-- ── Table Container ───────────────────────────────────── -->
@@ -257,8 +249,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="ORGANIZATION" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="ORGANIZATION" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from '~/types/master.types';
 import type { TableColumn, FormSectionConfig, SystemItem } from "~/types";
 import { getSystemFormSections } from "~/schemas/master/system.schema";
-import { exportToExcel } from "~/utils/exportExcel";
 
 const {
   systems,
@@ -174,12 +173,6 @@ const handleSave = async () => {
   }
 };
 
-const handleExport = () => {
-  exportToExcel(systemColumns, filteredData.value, {
-    fileName: "Data_Sistem_Pembangkit_PLN",
-  });
-};
-
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const upk = organizations.value.find((o) => o.id === detailRecord.value?.upk_id);
@@ -210,11 +203,10 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Kode / Nama Sistem..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseCreateButton resource="SYSTEM" @click="openCreateModal" />
         </div>
 
         <!-- ── Table Container ───────────────────────────────────── -->
@@ -264,8 +256,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="SYSTEM" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="SYSTEM" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

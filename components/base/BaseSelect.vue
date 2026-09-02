@@ -125,15 +125,15 @@ onBeforeUnmount(() => {
     <!-- Dropdown Menu Popover -->
     <Transition
       enter-active-class="transition duration-150 ease-out"
-      enter-from-class="transform scale-95 opacity-0"
-      enter-to-class="transform scale-100 opacity-100"
+      enter-from-class="transform scale-95 opacity-0 translate-y-1"
+      enter-to-class="transform scale-100 opacity-100 translate-y-0"
       leave-active-class="transition duration-100 ease-in"
-      leave-from-class="transform scale-100 opacity-100"
-      leave-to-class="transform scale-95 opacity-0"
+      leave-from-class="transform scale-100 opacity-100 translate-y-0"
+      leave-to-class="transform scale-95 opacity-0 translate-y-1"
     >
       <div
         v-if="isOpen"
-        class="absolute left-0 mt-1.5 w-full bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden py-1.5 max-h-72 flex flex-col"
+        class="absolute left-0 mt-1.5 w-full bg-white/95 backdrop-blur-md border border-gray-100 rounded-xl shadow-xl shadow-gray-900/10 ring-1 ring-black/5 z-50 overflow-hidden py-1.5 max-h-72 flex flex-col"
       >
         <!-- Search Input inside Dropdown (if enabled & items > 5) -->
         <div v-if="searchable && normalizedOptions.length > 5" class="px-2.5 pb-2 pt-1 border-b border-gray-100">

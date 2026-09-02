@@ -20,6 +20,7 @@ export const userValidationSchema = z.object({
 export interface UserSchemaOptions {
   orgOptions?: { label: string; value: any }[];
   roleOptions?: { label: string; value: any }[];
+  scopeOptions?: { label: string; value: any }[];
   permissionOptions?: { label: string; value: any }[];
 }
 
@@ -28,11 +29,13 @@ export const getUserFormSections = (
 ): FormSectionConfig[] => {
   const orgOptions = options.orgOptions || [];
   const roleOptions = options.roleOptions || [];
+  const scopeOptions = options.scopeOptions || [];
   const permissionOptions = options.permissionOptions || [];
 
   return [
     {
       fields: [
+        // ── 1. Identitas Akun ──
         {
           key: "tipe",
           label: "Type",
@@ -46,6 +49,43 @@ export const getUserFormSections = (
           required: true,
         },
         {
+          key: "nama",
+          label: "Nama Lengkap",
+          type: "text",
+          placeholder: "Masukkan nama lengkap...",
+          colSpan: 12,
+          required: true,
+        },
+        {
+          key: "email",
+          label: "Email",
+          type: "email",
+          placeholder: "contoh@pln.co.id",
+          colSpan: 6,
+          required: true,
+        },
+        {
+          key: "nip",
+          label: "NIP / Nomor Pegawai",
+          type: "text",
+          placeholder: "Masukkan NIP pegawai...",
+          colSpan: 6,
+          required: false,
+        },
+        {
+          key: "password",
+          label: "Password",
+          type: "password",
+          placeholder: "Masukkan password akun (Default: PLN@Tambora123)...",
+          colSpan: 12,
+          required: false,
+          hidden: (formData) => formData.tipe === "SSO PLN",
+          helpText:
+            "Kosongkan jika ingin menggunakan password default PLN@Tambora123",
+        },
+
+        // ── 2. Penugasan & Organisasi ──
+        {
           key: "akunPengelola",
           label: "Akun Pengelola?",
           type: "switch",
@@ -54,39 +94,6 @@ export const getUserFormSections = (
           colSpan: 12,
           required: false,
         },
-        // Fields when akunPengelola is FALSE (Non-Pengelola)
-        {
-          key: "organisasi",
-          label: "Organisasi",
-          type: "searchable-select",
-          placeholder: "Pilih Organisasi...",
-          options: orgOptions,
-          colSpan: 12,
-          required: true,
-          hidden: (formData) => formData.akunPengelola === true,
-        },
-        {
-          key: "aksesLevel",
-          label: "Akses Grup",
-          type: "searchable-select",
-          placeholder: "Pilih Akses Grup...",
-          options: roleOptions,
-          helpText: "Pilih Akses Grup hak akses pengguna",
-          colSpan: 12,
-          required: true,
-          hidden: (formData) => formData.akunPengelola === true,
-        },
-        {
-          key: "permissions",
-          label: "Akses Permission",
-          type: "searchable-multi-select",
-          placeholder: "Pilih Akses Permission...",
-          options: permissionOptions,
-          colSpan: 12,
-          required: false,
-          hidden: (formData) => formData.akunPengelola === true,
-        },
-        // Fields when akunPengelola is TRUE
         {
           key: "pengelola",
           label: "Pengelola",
@@ -101,22 +108,14 @@ export const getUserFormSections = (
           hidden: (formData) => formData.akunPengelola !== true,
         },
         {
-          key: "nama",
-          label: "Nama Lengkap",
-          type: "text",
-          placeholder: "Masukkan nama lengkap...",
+          key: "organisasi",
+          label: "Organisasi",
+          type: "searchable-select",
+          placeholder: "Pilih Organisasi...",
+          options: orgOptions,
           colSpan: 12,
           required: true,
-        },
-        {
-          key: "password",
-          label: "Password",
-          type: "password",
-          placeholder: "Masukkan password akun (Default: PLN@Tambora123)...",
-          colSpan: 12,
-          required: false,
-          hidden: (formData) => formData.tipe === "SSO PLN",
-          helpText: "Kosongkan jika ingin menggunakan password default PLN@Tambora123",
+          hidden: (formData) => formData.akunPengelola === true,
         },
         {
           key: "jabatan",
@@ -138,27 +137,48 @@ export const getUserFormSections = (
           colSpan: 6,
           required: true,
         },
+
+        // ── 3. Hak Akses & Kewenangan ──
         {
-          key: "email",
-          label: "Email",
-          type: "email",
-          placeholder: "contoh@pln.co.id",
+          key: "aksesLevel",
+          label: "Akses Grup",
+          type: "searchable-select",
+          placeholder: "Pilih Akses Grup...",
+          options: roleOptions,
+          helpText: "Pilih Akses Grup hak akses pengguna",
           colSpan: 6,
           required: true,
+          hidden: (formData) => formData.akunPengelola === true,
         },
+        {
+          key: "scopeLevel",
+          label: "Akses Level (Scope Wilayah)",
+          type: "searchable-select",
+          placeholder: "Pilih Scope Wilayah...",
+          options: scopeOptions,
+          colSpan: 6,
+          required: true,
+          hidden: (formData) => formData.akunPengelola === true,
+        },
+        {
+          key: "permissions",
+          label: "Akses Permission (Hak Akses Khusus)",
+          type: "searchable-multi-select",
+          placeholder: "Pilih Akses Permission khusus jika ada...",
+          options: permissionOptions,
+          helpText:
+            "Pilih permission tambahan/khusus di luar hak akses default role.",
+          colSpan: 12,
+          required: false,
+          hidden: (formData) => formData.akunPengelola === true,
+        },
+
+        // ── 4. Kontak & Domisili ──
         {
           key: "noTelp",
           label: "No. Telepon / WA",
           type: "phone",
           placeholder: "+6281234567890",
-          colSpan: 6,
-          required: false,
-        },
-        {
-          key: "nip",
-          label: "NIP",
-          type: "text",
-          placeholder: "Masukkan NIP pegawai...",
           colSpan: 6,
           required: false,
         },

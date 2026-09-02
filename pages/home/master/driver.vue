@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from '~/types/master.types';
 import type { TableColumn, DriverItem } from "~/types";
 import { driverFormSections } from "~/schemas/master/driver.schema";
-import { exportToExcel } from "~/utils/exportExcel";
 
 const { drivers, loading, fetchDrivers, createDriver, updateDriver, deleteDriver } = useDriver();
 
@@ -178,12 +177,6 @@ const handleSave = async () => {
   }
 };
 
-const handleExport = () => {
-  exportToExcel(driverColumns, filteredData.value, {
-    fileName: "Data_Pengemudi_PLN",
-  });
-};
-
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
@@ -217,11 +210,10 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Nama / No SIM / Telp..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseCreateButton resource="DRIVER" @click="openCreateModal" />
         </div>
 
         <!-- ── Table Container (Flex-1 Scrollable) ───────────────── -->
@@ -258,8 +250,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="DRIVER" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="DRIVER" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

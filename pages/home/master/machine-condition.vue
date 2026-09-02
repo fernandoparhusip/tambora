@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted } from 'vue'
 import type { TableColumn, MachineConditionItem } from '~/types'
 import { machineConditionFormSections } from '~/schemas/master/machine-condition.schema'
 import type { DetailDataItem } from '~/types/master.types';
-import { exportToExcel } from '~/utils/exportExcel'
 
 const {
   machineConditions,
@@ -153,12 +152,6 @@ const handleSave = async () => {
   }
 }
 
-const handleExport = () => {
-  exportToExcel(conditionColumns, filteredData.value, {
-    fileName: 'Master_Kondisi_Mesin_PLN',
-  })
-}
-
 const getConditionBadgeVariant = (name: string): any => {
   const n = (name || '').toUpperCase()
   if (n.includes('OPERASI') || n.includes('NORMAL')) return 'success'
@@ -199,11 +192,10 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Kondisi Mesin..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+          <BaseCreateButton resource="MACHINE_CONDITION" @click="openCreateModal" />
         </div>
 
         <!-- ── Table Container ───────────────────────────────────── -->
@@ -244,8 +236,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
-              <BaseActionButton type="edit" title="Ubah Kondisi" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" title="Hapus Kondisi" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="MACHINE_CONDITION" title="Ubah Kondisi" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="MACHINE_CONDITION" title="Hapus Kondisi" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

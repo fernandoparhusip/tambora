@@ -48,7 +48,7 @@ const handleConfirm = () => {
   >
     <!-- Warning / Danger Icon Badge -->
     <div
-      class="w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-transform animate-in zoom-in-75 duration-200"
+      class="w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors"
       :class="[
         variant === 'danger'
           ? 'bg-red-50 text-red-600 ring-8 ring-red-50/50'

@@ -32,9 +32,9 @@
   </div>
 </template>
 
-<style>
+<style scoped>
 .bg-pln {
-  background-image: url(@/assets/logo/LogoLargePLN.png);
+  background-image: url("@/assets/logo/LogoLargePLN.png");
   background-color: #ffec00;
   border: #ffec00 2px solid;
 }

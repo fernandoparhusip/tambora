@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import type { TableColumn, RantingItem } from '~/types'
-import { getRantingFormSections } from '~/schemas/master/ranting.schema'
-import type { DetailDataItem } from '~/types/master.types'
-import { exportToExcel } from '~/utils/exportExcel'
+import { ref, computed, watch, onMounted } from "vue";
+import type { TableColumn, RantingItem } from "~/types";
+import { getRantingFormSections } from "~/schemas/master/ranting.schema";
+import type { DetailDataItem } from "~/types/master.types";
+import { useRanting } from "~/composables/master/useRanting";
+import { useCabang } from "~/composables/master/useCabang";
 
 const {
   rantingList,
@@ -12,230 +13,217 @@ const {
   createRanting,
   updateRanting,
   deleteRanting,
-} = useRanting()
-const { cabangList, fetchCabang } = useCabang()
-const { can } = useRbac()
-const toast = useAppToast()
+} = useRanting();
+const { cabangList, fetchCabang } = useCabang();
+const toast = useAppToast();
 
-const searchQuery = ref('')
-const currentPage = ref(1)
-const pageSize = ref(10)
+const searchQuery = ref("");
+const currentPage = ref(1);
+const pageSize = ref(10);
 
-const modalOpen = ref(false)
-const isSuccessModalOpen = ref(false)
-const modalMode = ref<'create' | 'edit'>('create')
-const formData = ref<Record<string, any>>({})
-const submitting = ref(false)
-const isConfirmDialogOpen = ref(false)
-const deleteTarget = ref<RantingItem | null>(null)
-const isDeleting = ref(false)
+const modalOpen = ref(false);
+const isSuccessModalOpen = ref(false);
+const modalMode = ref<"create" | "edit">("create");
+const formData = ref<Record<string, any>>({});
+const submitting = ref(false);
+const isConfirmDialogOpen = ref(false);
+const deleteTarget = ref<RantingItem | null>(null);
+const isDeleting = ref(false);
 
 // Detail Modal States
-const isDetailModalOpen = ref(false)
-const detailRecord = ref<RantingItem | null>(null)
+const isDetailModalOpen = ref(false);
+const detailRecord = ref<RantingItem | null>(null);
 
 const rantingColumns: TableColumn[] = [
-  { key: 'no', label: 'No' },
-  { key: 'kode_cabang', label: 'Cabang' },
-  { key: 'kode_ranting', label: 'Kode Ranting' },
-  { key: 'nama_ranting', label: 'Nama Ranting' },
-  { key: 'status_ranting', label: 'Status Ranting' },
-  { key: 'approve_status', label: 'Status Approval' },
-  { key: 'keterangan', label: 'Keterangan' },
-  { key: 'actions', label: 'Aksi' },
-]
+  { key: "no", label: "No" },
+  { key: "kode_cabang", label: "Cabang" },
+  { key: "kode_ranting", label: "Kode Ranting" },
+  { key: "nama_ranting", label: "Nama Ranting" },
+  { key: "status_ranting", label: "Status Ranting" },
+  { key: "approve_status", label: "Status Approval" },
+  { key: "keterangan", label: "Keterangan" },
+  { key: "actions", label: "Aksi" },
+];
 
 const cabangOptions = computed(() =>
-  cabangList.value.map(c => ({
+  cabangList.value.map((c) => ({
     label: `${c.nama_cabang} (${c.kode_cabang})`,
     value: c.kode_cabang,
-  }))
-)
+  })),
+);
 
 const formSections = computed(() =>
   getRantingFormSections({
     cabangOptions: cabangOptions.value,
-  })
-)
+  }),
+);
 
 onMounted(async () => {
-  await Promise.allSettled([fetchRanting(), fetchCabang()])
-})
+  await Promise.allSettled([fetchRanting(), fetchCabang()]);
+});
 
 watch(searchQuery, () => {
-  currentPage.value = 1
-})
+  currentPage.value = 1;
+});
 
 const filteredData = computed(() => {
-  if (!searchQuery.value) return rantingList.value
-  const q = searchQuery.value.toLowerCase()
+  if (!searchQuery.value) return rantingList.value;
+  const q = searchQuery.value.toLowerCase();
   return rantingList.value.filter(
-    item =>
-      (item.kode_ranting && item.kode_ranting.toLowerCase().includes(q))
-      || (item.nama_ranting && item.nama_ranting.toLowerCase().includes(q))
-      || (item.kode_cabang && item.kode_cabang.toLowerCase().includes(q))
-      || (item.status_ranting && item.status_ranting.toLowerCase().includes(q))
-      || (item.approve_status && item.approve_status.toLowerCase().includes(q))
-  )
-})
+    (item) =>
+      (item.kode_ranting && item.kode_ranting.toLowerCase().includes(q)) ||
+      (item.nama_ranting && item.nama_ranting.toLowerCase().includes(q)) ||
+      (item.kode_cabang && item.kode_cabang.toLowerCase().includes(q)) ||
+      (item.status_ranting && item.status_ranting.toLowerCase().includes(q)) ||
+      (item.approve_status && item.approve_status.toLowerCase().includes(q)),
+  );
+});
 
 const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredData.value.slice(start, start + pageSize.value)
-})
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredData.value.slice(start, start + pageSize.value);
+});
 
 const modalTitle = computed(() =>
-  modalMode.value === 'create' ? 'Tambah Data Ranting' : 'Ubah Data Ranting',
-)
+  modalMode.value === "create" ? "Tambah Data Ranting" : "Ubah Data Ranting",
+);
 const modalSubtitle = computed(() =>
-  modalMode.value === 'create'
-    ? 'Form Tambah Master Data Ranting PLN'
-    : 'Form Ubah Master Data Ranting PLN',
-)
+  modalMode.value === "create"
+    ? "Form Tambah Master Data Ranting PLN"
+    : "Form Ubah Master Data Ranting PLN",
+);
 
 const openCreateModal = () => {
-  modalMode.value = 'create'
+  modalMode.value = "create";
   formData.value = {
-    kode_cabang: cabangList.value[0]?.kode_cabang || '',
-    kode_ranting: '',
-    nama_ranting: '',
-    status_ranting: 'AKTIF',
-    approve_status: 'APPROVED',
-    keterangan: '',
-  }
-  modalOpen.value = true
-}
+    kode_cabang: cabangList.value[0]?.kode_cabang || "",
+    kode_ranting: "",
+    nama_ranting: "",
+    status_ranting: "RANTING",
+    approve_status: "APPROVED",
+    keterangan: "",
+  };
+  modalOpen.value = true;
+};
 
 const handleView = (row: RantingItem) => {
-  detailRecord.value = row
-  isDetailModalOpen.value = true
-}
+  detailRecord.value = row;
+  isDetailModalOpen.value = true;
+};
 
 const handleEdit = (row: RantingItem) => {
-  modalMode.value = 'edit'
-  formData.value = { ...row }
-  modalOpen.value = true
-}
+  modalMode.value = "edit";
+  formData.value = { ...row };
+  modalOpen.value = true;
+};
 
 const openEditFromDetail = () => {
   if (detailRecord.value) {
-    handleEdit(detailRecord.value)
+    handleEdit(detailRecord.value);
   }
-}
+};
 
 const handleDelete = (row: RantingItem) => {
-  deleteTarget.value = row
-  isConfirmDialogOpen.value = true
-}
+  deleteTarget.value = row;
+  isConfirmDialogOpen.value = true;
+};
 
 const confirmDelete = async () => {
-  if (!deleteTarget.value) return
-  isDeleting.value = true
+  if (!deleteTarget.value) return;
+  isDeleting.value = true;
   try {
-    await deleteRanting(deleteTarget.value.id || deleteTarget.value.kode_ranting)
-    toast.success(`Ranting '${deleteTarget.value.nama_ranting}' berhasil dihapus.`, 'Sukses')
-    isConfirmDialogOpen.value = false
-    deleteTarget.value = null
+    await deleteRanting(deleteTarget.value.id || deleteTarget.value.kode_ranting);
+    toast.success(`Ranting '${deleteTarget.value.nama_ranting}' berhasil dihapus.`, "Sukses");
+    isConfirmDialogOpen.value = false;
+    deleteTarget.value = null;
   } catch (err: any) {
-    toast.error(err?.message || 'Gagal menghapus ranting.', 'Gagal Hapus')
+    toast.error(err?.message || "Gagal menghapus ranting.", "Gagal Hapus");
   } finally {
-    isDeleting.value = false
+    isDeleting.value = false;
   }
-}
+};
 
 const handleSave = async (data: Record<string, any>) => {
-  submitting.value = true
+  submitting.value = true;
   try {
     const payload = {
       kode_cabang: data.kode_cabang,
       kode_ranting: data.kode_ranting,
       nama_ranting: data.nama_ranting,
-      status_ranting: data.status_ranting || 'AKTIF',
-      approve_status: data.approve_status || 'APPROVED',
+      status_ranting: data.status_ranting || "RANTING",
+      approve_status: data.approve_status || "APPROVED",
       keterangan: data.keterangan,
-    }
+    };
 
-    if (modalMode.value === 'create') {
-      await createRanting(payload)
-      modalOpen.value = false
-      isSuccessModalOpen.value = true
+    if (modalMode.value === "create") {
+      await createRanting(payload);
+      modalOpen.value = false;
+      isSuccessModalOpen.value = true;
     } else {
-      const id = formData.value.id || formData.value.kode_ranting
-      await updateRanting(id, payload)
-      modalOpen.value = false
-      toast.success('Data ranting berhasil diperbarui.', 'Sukses')
+      const id = formData.value.id || formData.value.kode_ranting;
+      await updateRanting(id, payload);
+      modalOpen.value = false;
+      toast.success("Data ranting berhasil diperbarui.", "Sukses");
     }
   } catch (err: any) {
-    toast.error(err?.message || 'Gagal menyimpan data ranting.', 'Terjadi Kesalahan')
+    toast.error(err?.message || "Gagal menyimpan data ranting.", "Terjadi Kesalahan");
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
-}
-
-const handleExport = () => {
-  exportToExcel(rantingColumns, filteredData.value, {
-    fileName: 'Master_Ranting_PLN',
-  })
-}
+};
 
 const getStatusBadgeVariant = (status?: string): any => {
-  const s = (status || '').toUpperCase()
-  if (s === 'AKTIF' || s === 'APPROVED') return 'success'
-  if (s === 'NONAKTIF' || s === 'REJECTED') return 'danger'
-  if (s === 'DRAFT') return 'warning'
-  return 'default'
-}
+  const s = (status || "").toUpperCase();
+  if (s === "APPROVED") return "success";
+  if (s === "REJECTED") return "danger";
+  if (s === "DRAFT") return "warning";
+  return "default";
+};
 
 // Detail Data Items
 const detailDataItems = computed<DetailDataItem[]>(() => {
-  if (!detailRecord.value) return []
+  if (!detailRecord.value) return [];
   return [
-    { label: 'Kode Cabang', value: detailRecord.value.kode_cabang },
-    { label: 'Kode Ranting', value: detailRecord.value.kode_ranting },
-    { label: 'Nama Ranting', value: detailRecord.value.nama_ranting },
+    { label: "Kode Cabang", value: detailRecord.value.kode_cabang },
+    { label: "Kode Ranting", value: detailRecord.value.kode_ranting },
+    { label: "Nama Ranting", value: detailRecord.value.nama_ranting },
+    { label: "Status Ranting", value: detailRecord.value.status_ranting || "RANTING" },
     {
-      label: 'Status Ranting',
-      value: detailRecord.value.status_ranting || 'AKTIF',
+      label: "Status Approval",
+      value: detailRecord.value.approve_status || "APPROVED",
       isStatus: true,
     },
-    {
-      label: 'Status Approval',
-      value: detailRecord.value.approve_status || 'APPROVED',
-      isStatus: true,
-    },
-    { label: 'Keterangan', value: detailRecord.value.keterangan || '-' },
-    { label: 'ID Record', value: detailRecord.value.id || detailRecord.value.kode_ranting },
-  ]
-})
+    { label: "Keterangan", value: detailRecord.value.keterangan || "-" },
+    { label: "ID Record", value: detailRecord.value.id || detailRecord.value.kode_ranting },
+  ];
+});
 </script>
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-gray-50/50">
-    <!-- ── Page Title Header ───────────────────────────────── -->
+    <!-- Page Title Header -->
     <BasePageHeader />
 
-    <!-- ── Main Card Container ───────────────────────────────── -->
+    <!-- Main Card Container -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
       <div
         class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
       >
-        <!-- ── Action Controls Bar ───────────────────────────────── -->
+        <!-- Action Controls Bar -->
         <div
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Ranting..." />
-            <BaseExportButton @click="handleExport" />
+            <BaseSearchInput v-model="searchQuery" />
           </div>
 
           <BaseCreateButton
-            v-if="can('RANTING.CREATE')"
-            label="TAMBAH DATA"
+            resource="RANTING"
             @click="openCreateModal"
           />
         </div>
 
-        <!-- ── Table Container ───────────────────────────────────── -->
+        <!-- Table Container -->
         <BaseTable
           :columns="rantingColumns"
           :rows="paginatedData"
@@ -262,9 +250,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #status_ranting-data="{ row }">
-            <BaseBadge :variant="getStatusBadgeVariant(row.status_ranting)">
-              {{ row.status_ranting || 'AKTIF' }}
-            </BaseBadge>
+            <span class="text-xs text-gray-600">{{ row.status_ranting || 'RANTING' }}</span>
           </template>
 
           <template #approve_status-data="{ row }">
@@ -279,19 +265,19 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             </span>
           </template>
 
-          <!-- Action Buttons Cell Slot (View, Edit, Delete) -->
+          <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
               <BaseActionButton
-                v-if="can('RANTING.UPDATE')"
                 type="edit"
+                resource="RANTING"
                 title="Ubah Ranting"
                 @click="handleEdit(row)"
               />
               <BaseActionButton
-                v-if="can('RANTING.DELETE')"
                 type="delete"
+                resource="RANTING"
                 title="Hapus Ranting"
                 @click="handleDelete(row)"
               />
@@ -299,7 +285,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
         </BaseTable>
 
-        <!-- ── Pagination ────────────────────────────────────────── -->
+        <!-- Pagination -->
         <BasePagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -309,7 +295,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       </div>
     </div>
 
-    <!-- ── Form Drawer ─────────────────────────────────────────── -->
+    <!-- Form Drawer -->
     <BaseFormModal
       v-model:is-open="modalOpen"
       v-model:form-data="formData"
@@ -320,6 +306,15 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       :submitting="submitting"
       @submit="handleSave"
       @cancel="modalOpen = false"
+    />
+
+    <!-- Detail Modal -->
+    <BaseDetailModal
+      v-model:is-open="isDetailModalOpen"
+      title="Detail Ranting"
+      subtitle="Informasi Master Ranting PLN"
+      :data-items="detailDataItems"
+      @edit="openEditFromDetail"
     />
 
     <!-- Confirm Delete Dialog -->
@@ -333,14 +328,5 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
     <!-- Success Modal Popup -->
     <BaseSuccessModal v-model:is-open="isSuccessModalOpen" />
-
-    <!-- ── View Detail Modal ───────────────────────── -->
-    <BaseDetailModal
-      v-model:is-open="isDetailModalOpen"
-      title="Detail Ranting"
-      subtitle="Informasi Master Ranting PLN"
-      :data-items="detailDataItems"
-      @edit="openEditFromDetail"
-    />
   </div>
 </template>
