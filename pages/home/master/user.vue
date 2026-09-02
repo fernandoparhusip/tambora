@@ -3,7 +3,6 @@ import { ref, computed, onMounted } from "vue";
 import type {
   DetailDataItem,
   CreateUserRequest,
-  UpdateUserRequest,
 } from "~/types/master.types";
 import type { TableColumn } from "~/types";
 import {
@@ -18,7 +17,6 @@ import { ShieldCheck, User, KeyRound, Search, CheckCircle2, XCircle, MinusCircle
 // ── Composables ──────────────────────────────────────────────
 const {
   users,
-  userDetail,
   loading,
   fetchUsers,
   getUserById,
@@ -999,7 +997,7 @@ const handleSave = async () => {
                 type="text"
                 placeholder="Cari akses permission..."
                 class="w-full text-xs px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-colors"
-              />
+              >
             </div>
 
             <div

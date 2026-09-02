@@ -274,6 +274,7 @@ const openCreateModal = () => {
 
 const handleView = async (row: RoleItem) => {
   detailRecord.value = row;
+  permissionSearch.value = "";
   isDetailModalOpen.value = true;
   try {
     const res = await getAksesGrupById(row.id);
@@ -410,6 +411,37 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     { label: "ID Record", value: detailRecord.value.id },
   ];
 });
+
+// Detail Modal Permissions & Search Helpers
+const permissionSearch = ref("");
+
+const detailPermissions = computed<string[]>(() => {
+  if (!detailRecord.value?.permissions) return [];
+  return detailRecord.value.permissions
+    .map((p: any) =>
+      typeof p === "string" ? p : p.permission_key || p.name || p.id || ""
+    )
+    .filter(Boolean);
+});
+
+const filteredDetailPermissions = computed(() => {
+  if (!permissionSearch.value) return detailPermissions.value;
+  const q = permissionSearch.value.toLowerCase();
+  return detailPermissions.value.filter((p) => p.toLowerCase().includes(q));
+});
+
+function getPermissionTooltipContent(permKey: string): string {
+  const matched = allPermissions.value.find(
+    (p) => p.permission_key === permKey || p.id === permKey
+  );
+  if (matched) {
+    return `<div class="text-left font-sans">
+      <div class="font-bold text-xs">${matched.name || permKey}</div>
+      <div class="text-[11px] text-gray-300">${matched.description || matched.resource_name || "-"}</div>
+    </div>`;
+  }
+  return `<div class="text-xs font-mono">${permKey}</div>`;
+}
 </script>
 
 <template>
@@ -704,7 +736,101 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       :loading="detailLoading"
       @close="isDetailModalOpen = false"
       @edit="openEditFromDetail"
-    />
+    >
+      <template #extra>
+        <div class="mt-4 pt-4 border-t border-gray-100 space-y-4">
+          <!-- Permissions Section -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span
+                class="text-xs font-bold text-gray-700 flex items-center gap-1.5"
+              >
+                <Key class="w-4 h-4 text-emerald-600" />
+                Akses Permission
+              </span>
+              <span
+                v-if="detailPermissions.length"
+                class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200"
+              >
+                {{ detailPermissions.length }} total
+              </span>
+            </div>
+
+            <!-- Permission Search if permissions count > 6 -->
+            <div v-if="detailPermissions.length > 6" class="mb-2.5">
+              <input
+                v-model="permissionSearch"
+                type="text"
+                placeholder="Cari akses permission..."
+                class="w-full text-xs px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-colors"
+              >
+            </div>
+
+            <div
+              v-if="detailLoading"
+              class="flex items-center justify-center py-4 text-xs text-gray-400 gap-2"
+            >
+              <svg
+                class="animate-spin h-4 w-4 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+              <span>Memuat relasi hak akses...</span>
+            </div>
+
+            <div v-else>
+              <!-- Permission Badges List -->
+              <div
+                v-if="filteredDetailPermissions.length > 0"
+                class="max-h-56 overflow-y-auto p-1 flex flex-wrap gap-1.5"
+              >
+                <span
+                  v-for="(p, pIdx) in filteredDetailPermissions"
+                  :key="pIdx"
+                  v-tooltip.top="{
+                    value: getPermissionTooltipContent(p),
+                    escape: false,
+                    showDelay: 60,
+                    hideDelay: 50,
+                  }"
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-gray-100 border border-gray-200/80 text-gray-700 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-800 transition-colors cursor-pointer select-none"
+                >
+                  {{ p }}
+                </span>
+              </div>
+
+              <div
+                v-else-if="detailPermissions.length > 0"
+                class="py-3 text-center text-xs text-gray-400"
+              >
+                Tidak ada permission yang cocok dengan pencarian.
+              </div>
+
+              <div
+                v-else
+                class="py-3 text-center text-xs text-gray-400 italic"
+              >
+                Tidak ada hak akses permission yang terkait.
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </BaseDetailModal>
 
     <!-- Confirm Delete Modal -->
     <BaseConfirmDialog
