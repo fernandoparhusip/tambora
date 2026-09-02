@@ -191,7 +191,7 @@ const detailItems = computed<DetailDataItem[]>(() => {
             <BaseExportButton @click="exportExcel" />
           </div>
 
-          <BaseCreateButton @click="openCreateModal" />
+          <BaseCreateButton resource="NKO" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -243,8 +243,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="NKO" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="NKO" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

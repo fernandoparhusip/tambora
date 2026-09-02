@@ -201,7 +201,7 @@ const createdDateFormatted = computed(() => {
           <div class="flex items-center gap-3">
             <BaseSearchInput v-model="searchQuery" />
           </div>
-          <BaseCreateButton @click="openCreateModal" />
+          <BaseCreateButton resource="UPK" @click="openCreateModal" />
         </div>
 
         <!-- Table -->
@@ -245,8 +245,8 @@ const createdDateFormatted = computed(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="UPK" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="UPK" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

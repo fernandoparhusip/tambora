@@ -268,7 +268,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <div class="flex items-center gap-3">
             <BaseSearchInput v-model="searchQuery" />
           </div>
-          <BaseCreateButton @click="openCreateModal" />
+          <BaseCreateButton resource="SCOPE" @click="openCreateModal" />
         </div>
 
         <!-- Akses Level Table -->
@@ -321,11 +321,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
               />
               <BaseActionButton
                 type="edit"
+                resource="SCOPE"
                 title="Ubah Akses Level"
                 @click="handleEdit(row)"
               />
               <BaseActionButton
                 type="delete"
+                resource="SCOPE"
                 title="Hapus Akses Level"
                 @click="handleDelete(row)"
               />

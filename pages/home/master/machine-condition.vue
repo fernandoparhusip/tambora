@@ -195,7 +195,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton @click="openCreateModal" />
+          <BaseCreateButton resource="MACHINE_CONDITION" @click="openCreateModal" />
         </div>
 
         <!-- ── Table Container ───────────────────────────────────── -->
@@ -236,8 +236,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
-              <BaseActionButton type="edit" title="Ubah Kondisi" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" title="Hapus Kondisi" @click="handleDelete(row)" />
+              <BaseActionButton type="edit" resource="MACHINE_CONDITION" title="Ubah Kondisi" @click="handleEdit(row)" />
+              <BaseActionButton type="delete" resource="MACHINE_CONDITION" title="Hapus Kondisi" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

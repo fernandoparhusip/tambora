@@ -6,8 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0] - 2026-09-02
 
-### 🏢 8 Modul Baru Swagger OpenAPI (Hierarki Organisasi PLN & Master Menu)
+### 🏢 8 Modul Baru Swagger OpenAPI, Standarisasi Form Pengguna, Matrix Hak Akses Tablet & Dynamic RBAC
 
+- **master-user-form-standardization:** Transformed Master Pengguna ([`pages/home/master/user.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/user.vue)) to unified `BaseFormModal` single-page drawer without tabs, organized logically in 4 distinct sections:
+  1. **Identitas Akun:** `tipe` (SSO/Non-SSO radio), `nama`, `email`, `nip`, `password` (auto-hidden if SSO).
+  2. **Penugasan & Organisasi:** `akunPengelola` (switch), `pengelola` (if pengelola), `organisasi` (if non-pengelola), `jabatan`, `statusKaryawan`.
+  3. **Hak Akses & Kewenangan:** `aksesLevel` (Akses Grup / Role), `scopeLevel` (Scope Wilayah: Unit/Cabang/Regional/Sentral/Nasional), `permissions` (Multi-select Hak Akses Khusus).
+  4. **Kontak & Domisili:** `noTelp`, `perNr`, `alamat`.
+  - Cleaned initial form create state with empty values and explicit placeholder guides.
+  - Seamlessly mapped form state to 20-field backend OpenAPI schema (`CreateUserRequest` & `UpdateUserRequest`).
+- **akses-grup-tablet-responsive-matrix:** Optimized permission matrix table in [`pages/home/konfigurasi-aplikasi/akses-grup.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/akses-grup.vue) for tablet, iPad, and split-screen resolutions by locking Module column width (`w-[220px] shrink-0`) and enabling horizontal scrolling (`overflow-x-auto min-w-[820px]`), preventing character wrapping.
+- **dropdown-teleport-and-backend-resilience:** Updated `teleportTarget` in [`components/base/FormFieldRenderer.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/FormFieldRenderer.vue) to `"body"` to prevent popup clipping inside drawer modals, and made `fetchRoles()` parser in [`composables/master/useRole.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/master/useRole.ts) flexibly handle array responses from backend (`res.data || res.data.roles || res.data.items || res`).
+- **frontend-menu-auth-independence:** Refined `hasMenuAccess` in [`stores/auth.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/stores/auth.ts) to strictly validate sidebar navigation routes by comparing frontend route metadata (`permission` and `menuCode`) against backend user access grants, ignoring backend route path mismatches.
 - **pln-unit-hierarchy-modules:** Implemented 7 granular PLN organizational unit & power plant master modules under `Master Data`:
   - **Master Regional:** [`pages/home/master/regional.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/regional.vue), [`composables/master/useRegional.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/master/useRegional.ts), [`schemas/master/regional.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/regional.schema.ts) (`/api/v1/regional`).
   - **Master UIW / UID:** [`pages/home/master/uiw-uid.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/uiw-uid.vue), [`composables/master/useUiwUid.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/master/useUiwUid.ts), [`schemas/master/uiw-uid.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/uiw-uid.schema.ts) (`/api/v1/uiw-uid`).

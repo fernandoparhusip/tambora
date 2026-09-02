@@ -1,6 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { Key, ShieldCheck, CheckSquare, Square, Search } from "@lucide/vue";
+import {
+  Key,
+  ShieldCheck,
+  CheckSquare,
+  Square,
+  Layers,
+  RotateCcw,
+  MinusSquare,
+  Eye,
+  Plus,
+  Pencil,
+  Trash2,
+  CheckCircle2,
+  Check,
+} from "@lucide/vue";
 import type { DetailDataItem } from "~/types/master.types";
 import type { RoleItem, TableColumn, PermissionItem } from "~/types";
 import { useAksesGrup } from "~/composables/konfigurasi-aplikasi/useAksesGrup";
@@ -17,7 +31,11 @@ const {
   updateAksesGrup,
   deleteAksesGrup,
 } = useAksesGrup();
-const { permissions: allPermissions, fetchPermissions } = usePermission();
+const {
+  permissions: allPermissions,
+  fetchPermissions,
+  loading: permissionsLoading,
+} = usePermission();
 const toast = useAppToast();
 
 const searchQuery = ref("");
@@ -41,20 +59,19 @@ const deleteTarget = ref<RoleItem | null>(null);
 const isDeleting = ref(false);
 
 const modalTitle = computed(() =>
-  isEditMode.value ? "Ubah Akses Grup & Hak Akses" : "Tambah Akses Grup & Hak Akses",
+  isEditMode.value ? "Ubah Akses Grup" : "Tambah Akses Grup",
 );
 const modalSubtitle = computed(() =>
   isEditMode.value
-    ? "Form Perubahan Master Peran (Role) dan Checklist Matrix Izin"
-    : "Form Penambahan Master Peran (Role) dan Checklist Matrix Izin",
+    ? "Form Perubahan Master Akses Grup"
+    : "Form Penambahan Master Akses Grup",
 );
 
 const aksesGrupColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "code", label: "Kode Role" },
-  { key: "name", label: "Nama Role" },
+  { key: "code", label: "Kode" },
+  { key: "name", label: "Nama" },
   { key: "description", label: "Deskripsi" },
-  { key: "permission_count", label: "Jumlah Izin" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -69,13 +86,38 @@ const selectedPermissionIds = ref<Set<string>>(new Set());
 const selectedPermissionKeys = ref<Set<string>>(new Set());
 const matrixSearch = ref("");
 
-// Standard Action Column definitions
-const standardActions = [
-  { key: "VIEW", label: "View", aliases: ["VIEW", "READ", "LIST", "GET"] },
-  { key: "CREATE", label: "Create", aliases: ["CREATE", "INSERT", "ADD", "POST"] },
-  { key: "UPDATE", label: "Update", aliases: ["UPDATE", "EDIT", "PUT"] },
-  { key: "DELETE", label: "Delete", aliases: ["DELETE", "REMOVE", "DESTROY"] },
-  { key: "APPROVE", label: "Approve", aliases: ["APPROVE", "VERIFY", "REJECT"] },
+// Action button definitions with clean unified theme
+const actionPills = [
+  {
+    key: "VIEW",
+    label: "Lihat",
+    icon: Eye,
+    aliases: ["VIEW", "READ", "LIST", "GET"],
+  },
+  {
+    key: "CREATE",
+    label: "Tambah",
+    icon: Plus,
+    aliases: ["CREATE", "INSERT", "ADD", "POST"],
+  },
+  {
+    key: "UPDATE",
+    label: "Ubah",
+    icon: Pencil,
+    aliases: ["UPDATE", "EDIT", "PUT"],
+  },
+  {
+    key: "DELETE",
+    label: "Hapus",
+    icon: Trash2,
+    aliases: ["DELETE", "REMOVE", "DESTROY"],
+  },
+  {
+    key: "APPROVE",
+    label: "Setujui",
+    icon: CheckCircle2,
+    aliases: ["APPROVE", "VERIFY", "REJECT"],
+  },
 ];
 
 interface MatrixRow {
@@ -90,7 +132,9 @@ const matrixRows = computed<MatrixRow[]>(() => {
   const map: Record<string, MatrixRow> = {};
 
   allPermissions.value.forEach((p) => {
-    let resCode = (p.resource_code || p.resource_name || "").toUpperCase().trim();
+    let resCode = (p.resource_code || p.resource_name || "")
+      .toUpperCase()
+      .trim();
     let actCode = (p.action_code || p.action_name || "").toUpperCase().trim();
 
     if (!resCode && p.permission_key && p.permission_key.includes(".")) {
@@ -115,7 +159,7 @@ const matrixRows = computed<MatrixRow[]>(() => {
     }
 
     let matchedActionKey = actCode;
-    for (const actionDef of standardActions) {
+    for (const actionDef of actionPills) {
       if (
         actionDef.aliases.some(
           (alias) =>
@@ -139,7 +183,7 @@ const matrixRows = computed<MatrixRow[]>(() => {
 
 const filteredMatrixRows = computed(() => {
   if (!matrixSearch.value) return matrixRows.value;
-  const q = matrixSearch.value.toLowerCase();
+  const q = matrixSearch.value.toLowerCase().trim();
   return matrixRows.value.filter(
     (row) =>
       row.resourceName.toLowerCase().includes(q) ||
@@ -149,18 +193,18 @@ const filteredMatrixRows = computed(() => {
 
 function formatResourceName(code: string): string {
   const mapping: Record<string, string> = {
-    SENTRAL: "Master Sentral Pembangkit",
+    SENTRAL: "Sentral Pembangkit",
     CABANG: "Master Cabang",
     RANTING: "Master Ranting",
-    REGIONAL: "Master Regional (Wilayah)",
-    USER: "Manajemen Pengguna (User)",
-    ROLE: "Manajemen Peran (Role)",
-    PERMISSION: "Akses Permission",
+    REGIONAL: "Master Regional",
+    USER: "Pengguna (User)",
+    ROLE: "Akses Grup (Role)",
+    PERMISSION: "Hak Akses (Permission)",
     SCOPE: "Akses Level (Scope)",
     ORGANIZATION: "Master Organisasi",
     SYSTEM: "Master Sistem",
-    ASSET: "Master Aset Mesin",
-    MACHINE_CONDITION: "Master Kondisi Mesin",
+    ASSET: "Asset Mesin Pembangkit",
+    MACHINE_CONDITION: "Kondisi Mesin",
     DRIVER: "Master Pengemudi",
     OPERASI_HARIAN: "Operasi Harian",
     OPERASI: "Operasi Pembangkit",
@@ -170,7 +214,10 @@ function formatResourceName(code: string): string {
     PROGNOSA: "Prognosa Kinerja",
     NKO: "Perhitungan NKO",
   };
-  return mapping[code] || code.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  return (
+    mapping[code] ||
+    code.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+  );
 }
 
 onMounted(async () => {
@@ -201,7 +248,10 @@ const togglePermission = (p: PermissionItem) => {
   const id = p.id || p.permission_key;
   const key = p.permission_key || p.id;
 
-  if (selectedPermissionIds.value.has(id) || selectedPermissionKeys.value.has(key)) {
+  if (
+    selectedPermissionIds.value.has(id) ||
+    selectedPermissionKeys.value.has(key)
+  ) {
     selectedPermissionIds.value.delete(id);
     selectedPermissionKeys.value.delete(key);
   } else {
@@ -218,17 +268,21 @@ const isPermissionSelected = (p?: PermissionItem): boolean => {
   );
 };
 
+const getRowSelectedCount = (row: MatrixRow): number => {
+  return row.allPermissions.filter((p) => isPermissionSelected(p)).length;
+};
+
 const isRowFullySelected = (row: MatrixRow): boolean => {
   if (row.allPermissions.length === 0) return false;
   return row.allPermissions.every((p) => isPermissionSelected(p));
 };
 
-const toggleRowPermissions = (row: MatrixRow) => {
-  const allSelected = isRowFullySelected(row);
+const toggleRowAll = (row: MatrixRow) => {
+  const isFull = isRowFullySelected(row);
   row.allPermissions.forEach((p) => {
     const id = p.id || p.permission_key;
     const key = p.permission_key || p.id;
-    if (allSelected) {
+    if (isFull) {
       selectedPermissionIds.value.delete(id);
       selectedPermissionKeys.value.delete(key);
     } else {
@@ -243,20 +297,28 @@ const isAllPermissionsSelected = computed(() => {
   return allPermissions.value.every((p) => isPermissionSelected(p));
 });
 
-const toggleAllPermissionsGlobal = () => {
-  const allSelected = isAllPermissionsSelected.value;
-  if (allSelected) {
-    selectedPermissionIds.value.clear();
-    selectedPermissionKeys.value.clear();
-  } else {
-    allPermissions.value.forEach((p) => {
-      selectedPermissionIds.value.add(p.id || p.permission_key);
-      selectedPermissionKeys.value.add(p.permission_key || p.id);
-    });
-  }
+const isSomePermissionsSelected = computed(() => {
+  return (
+    selectedPermissionKeys.value.size > 0 && !isAllPermissionsSelected.value
+  );
+});
+
+const selectAllGlobal = () => {
+  allPermissions.value.forEach((p) => {
+    selectedPermissionIds.value.add(p.id || p.permission_key);
+    selectedPermissionKeys.value.add(p.permission_key || p.id);
+  });
+};
+
+const clearAllGlobal = () => {
+  selectedPermissionIds.value.clear();
+  selectedPermissionKeys.value.clear();
 };
 
 const openCreateModal = () => {
+  if (allPermissions.value.length === 0) {
+    fetchPermissions().catch(() => {});
+  }
   isEditMode.value = false;
   editingId.value = null;
   formData.value = {
@@ -285,6 +347,9 @@ const handleView = async (row: RoleItem) => {
 };
 
 const handleEdit = async (row: RoleItem) => {
+  if (allPermissions.value.length === 0) {
+    await fetchPermissions().catch(() => {});
+  }
   isEditMode.value = true;
   editingId.value = row.id;
   formData.value = {
@@ -308,7 +373,8 @@ const handleEdit = async (row: RoleItem) => {
         if (matched) selectedPermissionIds.value.add(matched.id);
       } else if (p && typeof p === "object") {
         if (p.id) selectedPermissionIds.value.add(p.id);
-        if (p.permission_key) selectedPermissionKeys.value.add(p.permission_key);
+        if (p.permission_key)
+          selectedPermissionKeys.value.add(p.permission_key);
       }
     });
   } catch {
@@ -324,8 +390,9 @@ const openEditFromDetail = () => {
   }
 };
 
-const handleSave = async (data: Record<string, any>) => {
-  if (!data.code || !data.name) {
+const handleSave = async (data?: Record<string, any>) => {
+  const currentData = data || formData.value;
+  if (!currentData.code || !currentData.name) {
     toast.error("Mohon lengkapi Kode Role dan Nama Role.", "Validasi Form");
     return;
   }
@@ -336,19 +403,25 @@ const handleSave = async (data: Record<string, any>) => {
     const permissionKeysArray = Array.from(selectedPermissionKeys.value);
 
     const payload = {
-      code: data.code.toUpperCase().replace(/\s+/g, "_"),
-      name: data.name,
-      description: data.description || data.name,
+      code: currentData.code.toUpperCase().replace(/\s+/g, "_"),
+      name: currentData.name,
+      description: currentData.description || currentData.name,
       permission_ids: permissionIdsArray,
       permissions: permissionKeysArray,
     };
 
     if (isEditMode.value && editingId.value) {
       await updateAksesGrup(editingId.value, payload);
-      toast.success(`Role '${data.name}' berhasil diperbarui.`, "Sukses");
+      toast.success(
+        `Role '${currentData.name}' berhasil diperbarui.`,
+        "Sukses",
+      );
     } else {
       await createAksesGrup(payload);
-      toast.success(`Role baru '${data.name}' berhasil dibuat.`, "Sukses");
+      toast.success(
+        `Role baru '${currentData.name}' berhasil dibuat.`,
+        "Sukses",
+      );
     }
 
     isModalOpen.value = false;
@@ -356,7 +429,10 @@ const handleSave = async (data: Record<string, any>) => {
       isSuccessModalOpen.value = true;
     }, 150);
   } catch (err: any) {
-    toast.error(err?.message || "Gagal menyimpan data role.", "Terjadi Kesalahan");
+    toast.error(
+      err?.message || "Gagal menyimpan data role.",
+      "Terjadi Kesalahan",
+    );
   } finally {
     isSubmitting.value = false;
   }
@@ -372,7 +448,10 @@ const confirmDelete = async () => {
   isDeleting.value = true;
   try {
     await deleteAksesGrup(deleteTarget.value.id);
-    toast.success(`Role '${deleteTarget.value.name}' berhasil dihapus.`, "Sukses");
+    toast.success(
+      `Role '${deleteTarget.value.name}' berhasil dihapus.`,
+      "Sukses",
+    );
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (err: any) {
@@ -394,8 +473,8 @@ const formattedCreatedDate = computed(() => {
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
-    { label: "Kode Role", value: detailRecord.value.code },
-    { label: "Nama Role", value: detailRecord.value.name },
+    { label: "Kode", value: detailRecord.value.code },
+    { label: "Nama", value: detailRecord.value.name },
     { label: "Deskripsi", value: detailRecord.value.description || "-" },
     {
       label: "Jumlah Hak Akses",
@@ -428,18 +507,11 @@ function getPermissionTooltipContent(permKey: string): string {
   const matched = allPermissions.value.find(
     (p) => p.permission_key === permKey || p.id === permKey,
   );
-  if (matched) {
-    const title =
-      matched.permission_key ||
-      (matched.resource_name
-        ? `${matched.resource_name} - ${matched.action_name}`
-        : permKey);
-    return `<div class="text-left font-sans">
-      <div class="font-bold text-xs">${title}</div>
-      <div class="text-[11px] text-gray-300">${matched.description || matched.resource_name || "-"}</div>
-    </div>`;
+  if (matched?.description) return matched.description;
+  if (matched?.resource_name && matched?.action_name) {
+    return `${matched.resource_name} • ${matched.action_name}`;
   }
-  return `<div class="text-xs font-mono">${permKey}</div>`;
+  return permKey;
 }
 </script>
 
@@ -461,7 +533,7 @@ function getPermissionTooltipContent(permKey: string): string {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton @click="openCreateModal" />
+          <BaseCreateButton resource="ROLE" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -479,34 +551,49 @@ function getPermissionTooltipContent(permKey: string): string {
           </template>
 
           <template #code-data="{ row }">
-            <span class="text-xs font-mono font-bold text-primary-700">{{ row.code }}</span>
+            <span class="text-xs font-mono font-bold text-primary-700">{{
+              row.code
+            }}</span>
           </template>
 
           <template #name-data="{ row }">
             <div class="flex items-center gap-2">
               <ShieldCheck class="w-4 h-4 text-emerald-600 shrink-0" />
-              <span class="text-xs font-semibold text-gray-800">{{ row.name }}</span>
+              <span class="text-xs font-semibold text-gray-800">{{
+                row.name
+              }}</span>
             </div>
           </template>
 
           <template #description-data="{ row }">
-            <span class="text-xs text-gray-500 truncate max-w-xs block" :title="row.description">
-              {{ row.description || '-' }}
-            </span>
-          </template>
-
-          <template #permission_count-data="{ row }">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-              {{ (row.permissions || []).length }} Izin
+            <span
+              v-tooltip.top="row.description ? { value: row.description, showDelay: 200 } : undefined"
+              class="text-xs text-gray-500 truncate max-w-xs block cursor-default"
+            >
+              {{ row.description || "-" }}
             </span>
           </template>
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
-              <BaseActionButton type="edit" title="Ubah Role & Izin" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" title="Hapus Role" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="view"
+                title="Lihat Detail"
+                @click="handleView(row)"
+              />
+              <BaseActionButton
+                type="edit"
+                resource="ROLE"
+                title="Ubah Role & Izin"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="ROLE"
+                title="Hapus Role"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>
@@ -534,104 +621,305 @@ function getPermissionTooltipContent(permKey: string): string {
       @cancel="isModalOpen = false"
     >
       <template #extra>
-        <!-- Permission Matrix Table Checklist -->
-        <div class="border border-gray-200/90 rounded-xl overflow-hidden shadow-xs bg-white mt-4">
-          <!-- Header Bar with Search and Bulk Toggle -->
-          <div class="px-4 py-3 bg-gray-50 border-b border-gray-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div>
-              <span class="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                <Key class="w-4 h-4 text-emerald-600" />
-                CHECKLIST MATRIKS HAK AKSES (PERMISSION MATRIX)
-              </span>
-              <span class="text-[11px] text-gray-500">
-                Terpilih: <strong class="text-emerald-700 font-bold">{{ selectedPermissionKeys.size }}</strong> izin
-              </span>
+        <!-- ── Emil Kowalski / High Taste Interactive Permission Matrix ── -->
+        <div class="space-y-3">
+          <!-- Section Header with Live Counter -->
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-[#2671D9] rounded-full" />
+              <p
+                class="text-xs font-bold text-gray-800 tracking-wide uppercase"
+              >
+                Daftar Hak Akses
+              </p>
             </div>
 
-            <div class="flex items-center gap-2">
-              <div class="relative">
-                <Search class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-gray-400" />
-                <input
-                  v-model="matrixSearch"
-                  type="text"
-                  placeholder="Filter Modul..."
-                  class="text-xs pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 w-40"
-                >
-              </div>
-
-              <button
-                type="button"
-                class="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 flex items-center gap-1.5 transition-colors cursor-pointer"
-                @click="toggleAllPermissionsGlobal"
+            <!-- Live Counter Chip Badge -->
+            <div class="flex items-center gap-1.5">
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold transition-all duration-200"
+                :class="[
+                  selectedPermissionKeys.size > 0
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs'
+                    : 'bg-gray-100 text-gray-500 border border-gray-200',
+                ]"
               >
-                <component :is="isAllPermissionsSelected ? CheckSquare : Square" class="w-3.5 h-3.5 text-primary-600" />
-                {{ isAllPermissionsSelected ? 'Batal Semua' : 'Pilih Semua' }}
-              </button>
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="
+                    selectedPermissionKeys.size > 0
+                      ? 'bg-emerald-500 animate-pulse'
+                      : 'bg-gray-400'
+                  "
+                />
+                {{ selectedPermissionKeys.size }} /
+                {{ allPermissions.length }} Terpilih
+              </span>
             </div>
           </div>
 
-          <!-- Matrix Table -->
-          <div class="overflow-x-auto max-h-96">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead class="bg-gray-100/80 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b border-gray-200 sticky top-0 z-10">
-                <tr>
-                  <th class="py-2.5 px-4">Modul / Resource</th>
-                  <th v-for="act in standardActions" :key="act.key" class="py-2.5 px-3 text-center">
-                    {{ act.label }}
-                  </th>
-                  <th class="py-2.5 px-3 text-center">Aksi Cepat</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 bg-white">
-                <tr
-                  v-for="row in filteredMatrixRows"
-                  :key="row.resourceCode"
-                  class="hover:bg-gray-50/80 transition-colors"
+          <!-- Main Permission Container Box -->
+          <div
+            class="border border-gray-200/90 rounded-xl overflow-hidden bg-white shadow-2xs"
+          >
+            <!-- Top Toolbar: Search & Global Presets -->
+            <div
+              class="p-3 bg-gray-50/70 border-b border-gray-200/70 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5"
+            >
+              <!-- Integrated BaseSearchInput -->
+              <div class="w-full sm:w-64">
+                <BaseSearchInput v-model="matrixSearch" />
+              </div>
+
+              <!-- Quick Global Preset Buttons (Tactile UX) -->
+              <div
+                class="flex items-center gap-1.5 flex-wrap self-end sm:self-auto"
+              >
+                <button
+                  type="button"
+                  class="px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all duration-100 active:scale-95 flex items-center gap-1 cursor-pointer select-none"
+                  :class="[
+                    isAllPermissionsSelected
+                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100',
+                  ]"
+                  @click="
+                    isAllPermissionsSelected
+                      ? clearAllGlobal()
+                      : selectAllGlobal()
+                  "
                 >
-                  <td class="py-2.5 px-4">
-                    <div class="font-semibold text-gray-900">{{ row.resourceName }}</div>
-                    <div class="text-[10px] font-mono text-gray-400">{{ row.resourceCode }}</div>
-                  </td>
+                  <component
+                    :is="
+                      isAllPermissionsSelected
+                        ? CheckSquare
+                        : isSomePermissionsSelected
+                          ? MinusSquare
+                          : Square
+                    "
+                    class="w-3.5 h-3.5"
+                  />
+                  <span>{{
+                    isAllPermissionsSelected ? "Batal Semua" : "Pilih Semua"
+                  }}</span>
+                </button>
+              </div>
+            </div>
 
-                  <!-- Action Checkboxes Columns -->
-                  <td
-                    v-for="act in standardActions"
-                    :key="act.key"
-                    class="py-2.5 px-3 text-center"
+            <!-- Horizontal Scroll Wrapper for Responsive Tablet & Mobile Screens -->
+            <div class="overflow-x-auto custom-scrollbar">
+              <div class="min-w-[820px]">
+                <!-- Column Headers (Clean Guide) -->
+                <div
+                  class="px-5 py-2.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between text-[11px] font-semibold text-gray-500 uppercase tracking-wider select-none"
+                >
+                  <span class="w-[220px] shrink-0">Nama Modul</span>
+                  <div class="flex items-center gap-4">
+                    <div class="grid grid-cols-5 gap-2 w-[440px] text-center">
+                      <span>Lihat</span>
+                      <span>Tambah</span>
+                      <span>Ubah</span>
+                      <span>Hapus</span>
+                      <span>Setujui</span>
+                    </div>
+                    <span class="w-24 text-center">Aksi Cepat</span>
+                  </div>
+                </div>
+
+                <!-- Interactive Module Rows List -->
+                <div class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                  <!-- Module Item Row -->
+                  <div
+                    v-for="row in filteredMatrixRows"
+                    :key="row.resourceCode"
+                    class="px-5 py-3 hover:bg-slate-50/70 transition-colors flex items-center justify-between gap-4 group"
                   >
-                    <template v-if="row.permissionsByAction[act.key]">
-                      <input
-                        type="checkbox"
-                        :checked="isPermissionSelected(row.permissionsByAction[act.key])"
-                        class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300 cursor-pointer"
-                        :title="row.permissionsByAction[act.key]?.permission_key"
-                        @change="togglePermission(row.permissionsByAction[act.key]!)"
+                    <!-- Left: Module Meta & Badge (Guaranteed Width) -->
+                    <div class="flex items-center gap-3 w-[220px] shrink-0">
+                      <div
+                        class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors border"
+                        :class="[
+                          getRowSelectedCount(row) > 0
+                            ? 'bg-blue-50/70 border-blue-200 text-[#2671D9]'
+                            : 'bg-gray-50 border-gray-200/80 text-gray-400 group-hover:text-gray-600',
+                        ]"
                       >
-                    </template>
-                    <template v-else>
-                      <span class="text-gray-300 font-bold">-</span>
-                    </template>
-                  </td>
+                        <Layers class="w-4 h-4" />
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            class="text-xs font-semibold text-gray-900 leading-tight"
+                          >
+                            {{ row.resourceName }}
+                          </span>
+                          <span
+                            v-if="getRowSelectedCount(row) > 0"
+                            class="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0"
+                          >
+                            {{ getRowSelectedCount(row) }}/{{
+                              row.allPermissions.length
+                            }}
+                          </span>
+                        </div>
+                        <span
+                          class="text-[10px] font-mono text-gray-400 block"
+                        >
+                          {{ row.resourceCode }}
+                        </span>
+                      </div>
+                    </div>
 
-                  <!-- Select All per Row -->
-                  <td class="py-2.5 px-3 text-center">
-                    <button
-                      type="button"
-                      class="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline cursor-pointer"
-                      @click="toggleRowPermissions(row)"
+                    <!-- Right: Aligned Fixed 5-Column Grid & Quick Toggle -->
+                    <div class="flex items-center gap-4 shrink-0">
+                      <!-- 5 Fixed Action Columns -->
+                      <div class="grid grid-cols-5 gap-2 w-[440px]">
+                        <template v-for="act in actionPills" :key="act.key">
+                          <button
+                            v-if="row.permissionsByAction[act.key]"
+                            v-tooltip.top="{
+                              value: getPermissionTooltipContent(
+                                row.permissionsByAction[act.key]?.permission_key ||
+                                  '',
+                              ),
+                              showDelay: 120,
+                              hideDelay: 50,
+                            }"
+                            type="button"
+                            class="h-8 px-2 text-xs rounded-lg border transition-all duration-100 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer select-none"
+                            :class="[
+                              isPermissionSelected(
+                                row.permissionsByAction[act.key],
+                              )
+                                ? 'bg-[#2671D9] text-white border-[#2671D9] font-semibold shadow-2xs'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50',
+                            ]"
+                            @click="
+                              togglePermission(row.permissionsByAction[act.key]!)
+                            "
+                          >
+                            <component
+                              :is="
+                                isPermissionSelected(
+                                  row.permissionsByAction[act.key],
+                                )
+                                  ? Check
+                                  : act.icon
+                              "
+                              class="w-3.5 h-3.5 shrink-0"
+                            />
+                            <span class="text-xs">{{ act.label }}</span>
+                          </button>
+                          <div
+                            v-else
+                            class="h-8 flex items-center justify-center text-gray-300 text-xs font-bold select-none"
+                          >
+                            -
+                          </div>
+                        </template>
+                      </div>
+
+                      <!-- Quick Action Button per Row -->
+                      <div class="w-24 flex justify-center">
+                        <button
+                          type="button"
+                          class="w-full h-8 text-xs font-semibold rounded-lg border transition-all duration-100 active:scale-95 cursor-pointer select-none"
+                          :class="[
+                            isRowFullySelected(row)
+                              ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
+                              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+                          ]"
+                          @click="toggleRowAll(row)"
+                        >
+                          {{
+                            isRowFullySelected(row) ? "Batal" : "Pilih Semua"
+                          }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Empty State / Loading State -->
+                  <div
+                    v-if="filteredMatrixRows.length === 0"
+                    class="py-12 px-4 text-center bg-gray-50/40"
+                  >
+                    <div
+                      v-if="permissionsLoading"
+                      class="flex flex-col items-center justify-center gap-2"
                     >
-                      {{ isRowFullySelected(row) ? 'Uncheck' : 'Pilih Baris' }}
-                    </button>
-                  </td>
-                </tr>
-
-                <tr v-if="filteredMatrixRows.length === 0">
-                  <td colspan="7" class="py-8 text-center text-gray-400">
-                    Tidak ada modul yang cocok dengan pencarian.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                      <svg
+                        class="animate-spin h-5 w-5 text-primary-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          class="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="4"
+                        />
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <p class="text-xs text-gray-400">
+                        Memuat daftar hak akses...
+                      </p>
+                    </div>
+                    <div
+                      v-else-if="matrixSearch.trim()"
+                      class="flex flex-col items-center justify-center gap-2"
+                    >
+                      <div
+                        class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"
+                      >
+                        <Layers class="w-5 h-5" />
+                      </div>
+                      <p class="text-xs text-gray-500 font-medium">
+                        Tidak ada modul yang cocok dengan "<span
+                          class="font-bold text-gray-700"
+                          >{{ matrixSearch }}</span
+                        >"
+                      </p>
+                      <button
+                        type="button"
+                        class="mt-1 px-3 py-1 text-xs text-primary-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                        @click="matrixSearch = ''"
+                      >
+                        <RotateCcw class="w-3 h-3" />
+                        Reset Pencarian Modul
+                      </button>
+                    </div>
+                    <div
+                      v-else
+                      class="flex flex-col items-center justify-center gap-2"
+                    >
+                      <div
+                        class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"
+                      >
+                        <Layers class="w-5 h-5" />
+                      </div>
+                      <p class="text-xs text-gray-500 font-medium">
+                        Belum ada data modul hak akses.
+                      </p>
+                      <button
+                        type="button"
+                        class="mt-1 px-3 py-1 text-xs text-primary-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                        @click="fetchPermissions"
+                      >
+                        <RotateCcw class="w-3 h-3" />
+                        Muat Ulang Izin
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </template>
@@ -640,7 +928,7 @@ function getPermissionTooltipContent(permKey: string): string {
     <!-- Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Role & Hak Akses"
+      title="Detail Role"
       subtitle="Informasi detail Akses Grup dan permission"
       :record-id="detailRecord?.id"
       :created-date="formattedCreatedDate"
@@ -671,12 +959,7 @@ function getPermissionTooltipContent(permKey: string): string {
 
             <!-- Permission Search if permissions count > 6 -->
             <div v-if="detailPermissions.length > 6" class="mb-2.5">
-              <input
-                v-model="permissionSearch"
-                type="text"
-                placeholder="Cari akses permission..."
-                class="w-full text-xs px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-colors"
-              >
+              <BaseSearchInput v-model="permissionSearch" />
             </div>
 
             <div
@@ -733,10 +1016,7 @@ function getPermissionTooltipContent(permKey: string): string {
                 Tidak ada permission yang cocok dengan pencarian.
               </div>
 
-              <div
-                v-else
-                class="py-3 text-center text-xs text-gray-400 italic"
-              >
+              <div v-else class="py-3 text-center text-xs text-gray-400 italic">
                 Tidak ada hak akses permission yang terkait.
               </div>
             </div>

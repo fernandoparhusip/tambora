@@ -19,9 +19,16 @@ export const usePermission = () => {
     loading.value = true
     error.value = null
     try {
-      const res = await api<ApiResponse<PermissionItem[]>>('/permissions')
-      if (res?.data) {
-        permissions.value = res.data
+      const res: any = await api<ApiResponse<PermissionItem[]>>('/permissions')
+      const rawList = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : []
+      if (rawList.length > 0 || Array.isArray(res?.data)) {
+        permissions.value = rawList
       }
       return permissions.value
     } catch (err: any) {

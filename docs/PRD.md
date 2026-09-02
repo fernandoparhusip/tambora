@@ -25,7 +25,7 @@ Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terha
 ### 3.2. Tata Kelola Modul Konfigurasi Aplikasi & Master Data
 - **Konfigurasi Aplikasi**:
   1. **Master Akses Level**: Manajemen batas cakupan operasional.
-  2. **Master Akses Grup**: Pengaturan hak akses & role granular per modul.
+  2. **Master Akses Grup**: Pengaturan hak akses & role granular per modul dengan matrix permission responsif untuk layar desktop dan tablet.
   3. **Master Menu**: Tata kelola rute dan struktur navigasi aplikasi dinamis.
 - **Master Data**:
   1. **Master Regional**: Manajemen entitas wilayah regional PLN.
@@ -35,7 +35,7 @@ Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terha
   5. **Master UPK**: Tata kelola Unit Pelaksana Pembangkitan.
   6. **Master Unit Layanan**: Tata kelola Unit Layanan Pembangkitan (ULPL).
   7. **Master Sentral Pembangkit**: Profil lengkap unit pembangkit, lokasi, manajer, dan teknis.
-  8. **Master User**: Manajemen akun pegawai 20-field payload.
+  8. **Master User**: Manajemen akun pegawai 20-field payload dengan form drawer satu halaman tanpa tab, dukungan SSO/Non-SSO kondisional, dan multi-select hak akses khusus.
   9. **Master Permission**: Katalog permission dinamis berbasis resource & action.
   10. **Master Driver**: Data pengemudi kendaraan dinas operasional.
   11. **Master Organisasi**: Struktur hierarki unit (*parent-child*).

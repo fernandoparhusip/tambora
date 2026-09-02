@@ -5,7 +5,6 @@ import { getCabangFormSections } from "~/schemas/master/cabang.schema";
 import type { DetailDataItem } from "~/types/master.types";
 import { useCabang } from "~/composables/master/useCabang";
 import { useRegional } from "~/composables/master/useRegional";
-import { useRbac } from "~/composables/useRbac";
 
 const {
   cabangList,
@@ -16,7 +15,6 @@ const {
   deleteCabang,
 } = useCabang();
 const { regionalList, fetchRegional } = useRegional();
-const { can } = useRbac();
 const toast = useAppToast();
 
 const searchQuery = ref("");
@@ -215,7 +213,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </div>
 
           <BaseCreateButton
-            v-if="can('CABANG.CREATE')"
+            resource="CABANG"
             @click="openCreateModal"
           />
         </div>
@@ -263,14 +261,14 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
               <BaseActionButton
-                v-if="can('CABANG.UPDATE')"
                 type="edit"
+                resource="CABANG"
                 title="Ubah Cabang"
                 @click="handleEdit(row)"
               />
               <BaseActionButton
-                v-if="can('CABANG.DELETE')"
                 type="delete"
+                resource="CABANG"
                 title="Hapus Cabang"
                 @click="handleDelete(row)"
               />

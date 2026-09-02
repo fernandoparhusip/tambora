@@ -7,7 +7,6 @@ import { useSentral } from "~/composables/master/useSentral";
 import { useRegional } from "~/composables/master/useRegional";
 import { useRanting } from "~/composables/master/useRanting";
 import { useRbac } from "~/composables/useRbac";
-import { useAuthStore } from "~/stores/auth";
 
 const {
   sentralList,
@@ -22,14 +21,8 @@ const {
 } = useSentral();
 const { regionalList, fetchRegional } = useRegional();
 const { rantingList, fetchRanting } = useRanting();
-const { can } = useRbac();
-const authStore = useAuthStore();
+const { can, isSuperAdmin } = useRbac();
 const toast = useAppToast();
-
-const isSuperAdmin = computed(() => {
-  const roles = authStore.user?.role_assignments?.map((r) => r.role_code) || [];
-  return roles.some((role) => ["SUPERADMIN", "ADMIN", "PLN_PUSAT"].includes(role.toUpperCase()));
-});
 
 const searchQuery = ref("");
 const currentPage = ref(1);
@@ -307,7 +300,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </div>
 
           <BaseCreateButton
-            v-if="can('SENTRAL.CREATE')"
+            resource="SENTRAL"
             @click="openCreateModal"
           />
         </div>
@@ -365,20 +358,37 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
               <BaseActionButton
-                v-if="can('SENTRAL.UPDATE')"
                 type="edit"
+                resource="SENTRAL"
                 title="Ubah Sentral"
                 @click="handleEdit(row)"
               />
               <BaseActionButton
                 v-if="canApprove && row.approve_status !== 'APPROVED'"
-                type="approve"
+                type="custom"
+                permission="SENTRAL.APPROVE"
                 title="Setujui Sentral (Approve)"
+                class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-100"
                 @click="handleApprove(row)"
-              />
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </BaseActionButton>
               <BaseActionButton
-                v-if="can('SENTRAL.DELETE')"
                 type="delete"
+                resource="SENTRAL"
                 title="Hapus Sentral"
                 @click="handleDelete(row)"
               />

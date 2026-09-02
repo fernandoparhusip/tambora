@@ -4,7 +4,6 @@ import type { TableColumn, RegionalItem } from "~/types";
 import { getRegionalFormSections } from "~/schemas/master/regional.schema";
 import type { DetailDataItem } from "~/types/master.types";
 import { useRegional } from "~/composables/master/useRegional";
-import { useRbac } from "~/composables/useRbac";
 
 const {
   regionalList,
@@ -16,7 +15,6 @@ const {
   updateRegional,
   deleteRegional,
 } = useRegional();
-const { can } = useRbac();
 const toast = useAppToast();
 
 const searchQuery = ref("");
@@ -208,7 +206,7 @@ const createdDateFormatted = computed(() => {
           </div>
 
           <BaseCreateButton
-            v-if="can('REGIONAL.CREATE')"
+            resource="REGIONAL"
             @click="openCreateModal"
           />
         </div>
@@ -253,14 +251,14 @@ const createdDateFormatted = computed(() => {
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
               <BaseActionButton
-                v-if="can('REGIONAL.UPDATE')"
                 type="edit"
+                resource="REGIONAL"
                 title="Ubah Regional"
                 @click="handleEdit(row)"
               />
               <BaseActionButton
-                v-if="can('REGIONAL.DELETE')"
                 type="delete"
+                resource="REGIONAL"
                 title="Hapus Regional"
                 @click="handleDelete(row)"
               />

@@ -321,7 +321,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             />
           </div>
 
-          <BaseCreateButton @click="openCreateModal" />
+          <BaseCreateButton resource="PERMISSION" @click="openCreateModal" />
         </div>
 
         <!-- Permission Table -->
@@ -390,11 +390,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
               />
               <BaseActionButton
                 type="edit"
+                resource="PERMISSION"
                 title="Edit Permission"
                 @click="handleEdit(row)"
               />
               <BaseActionButton
                 type="delete"
+                resource="PERMISSION"
                 title="Hapus Permission"
                 @click="handleDelete(row)"
               />

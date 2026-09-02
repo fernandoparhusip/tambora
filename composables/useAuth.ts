@@ -20,6 +20,11 @@ export interface BackendUser {
   created_at?: string
   role?: string
   level_id?: string
+  roles?: string[]
+  permissions?: string[]
+  scopes?: string[]
+  permission_overrides?: any[]
+  role_assignments?: any[]
 }
 
 export interface AuthResponse {
@@ -97,8 +102,12 @@ export const useAuth = () => {
           token,
           refreshToken
         )
-        // Fetch permissions & scopes from backend access endpoint
-        authStore.fetchUserAccess().catch(() => {})
+        // Fetch latest permissions, scopes & user profile from backend
+        try {
+          await authStore.fetchUserMe()
+        } catch {
+          await authStore.fetchUserAccess().catch(() => {})
+        }
       }
 
       return response

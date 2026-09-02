@@ -5,7 +5,6 @@ import { getRantingFormSections } from "~/schemas/master/ranting.schema";
 import type { DetailDataItem } from "~/types/master.types";
 import { useRanting } from "~/composables/master/useRanting";
 import { useCabang } from "~/composables/master/useCabang";
-import { useRbac } from "~/composables/useRbac";
 
 const {
   rantingList,
@@ -16,7 +15,6 @@ const {
   deleteRanting,
 } = useRanting();
 const { cabangList, fetchCabang } = useCabang();
-const { can } = useRbac();
 const toast = useAppToast();
 
 const searchQuery = ref("");
@@ -220,7 +218,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </div>
 
           <BaseCreateButton
-            v-if="can('RANTING.CREATE')"
+            resource="RANTING"
             @click="openCreateModal"
           />
         </div>
@@ -272,14 +270,14 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
               <BaseActionButton
-                v-if="can('RANTING.UPDATE')"
                 type="edit"
+                resource="RANTING"
                 title="Ubah Ranting"
                 @click="handleEdit(row)"
               />
               <BaseActionButton
-                v-if="can('RANTING.DELETE')"
                 type="delete"
+                resource="RANTING"
                 title="Hapus Ranting"
                 @click="handleDelete(row)"
               />

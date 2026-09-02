@@ -384,7 +384,7 @@ function handleKeyDown(e) {
       v-if="isLoading"
       class="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white"
     >
-      <LoadingIndicatorPLN />
+      <BaseLoadingIndicatorPLN />
       <p class="mt-4 text-gray-700 font-medium">Memproses verifikasi...</p>
     </div>
     <!-- Simplified modern header -->

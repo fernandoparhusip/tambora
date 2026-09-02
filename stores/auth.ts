@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useCookie, navigateTo } from '#app'
+import { menuItems } from '~/config/navigation'
 
 export interface PermissionOverride {
   permission_key: string
@@ -24,6 +25,7 @@ export interface UserSession {
   permissions?: string[]
   scopes?: string[]
   permission_overrides?: PermissionOverride[]
+  menus?: any[]
 }
 
 export interface AuthSession {
@@ -33,6 +35,33 @@ export interface AuthSession {
   refreshToken?: string
   permissions?: string[]
   scopes?: string[]
+  menus?: any[]
+}
+
+export const extractPermissionKey = (p: any): string => {
+  if (!p) return ''
+  if (typeof p === 'string') return p
+  if (p.Key) return String(p.Key)
+  if (p.key) return String(p.key)
+  if (p.permission_key) return String(p.permission_key)
+  if (p.PermissionKey) return String(p.PermissionKey)
+  if (p.ResourceCode && p.ActionCode) return `${p.ResourceCode}.${p.ActionCode}`
+  if (p.resource_code && p.action_code) return `${p.resource_code}.${p.action_code}`
+  if (p.code) return String(p.code)
+  if (p.name) return String(p.name)
+  return ''
+}
+
+export const extractScopeKey = (s: any): string => {
+  if (!s) return ''
+  if (typeof s === 'string') return s
+  if (s.Key) return String(s.Key)
+  if (s.key) return String(s.key)
+  if (s.ScopeCode) return String(s.ScopeCode)
+  if (s.scope_code) return String(s.scope_code)
+  if (s.code) return String(s.code)
+  if (s.name) return String(s.name)
+  return ''
 }
 
 const AUTH_CHANNEL_NAME = 'tambora_auth_channel'
@@ -56,6 +85,7 @@ export const useAuthStore = defineStore('auth', () => {
   const permissions = ref<string[]>(authCookie.value?.permissions || authCookie.value?.user?.permissions || [])
   const scopes = ref<string[]>(authCookie.value?.scopes || authCookie.value?.user?.scopes || [])
   const permissionOverrides = ref<PermissionOverride[]>(authCookie.value?.user?.permission_overrides || [])
+  const userMenus = ref<any[]>(authCookie.value?.menus || authCookie.value?.user?.menus || [])
   const errorMessage = ref('')
   const message = ref('')
   const isError = ref(false)
@@ -89,13 +119,16 @@ export const useAuthStore = defineStore('auth', () => {
       refreshToken.value = sessionRefreshToken
     }
     if (sessionUser.permissions) {
-      permissions.value = sessionUser.permissions
+      permissions.value = (sessionUser.permissions || []).map((p: any) => extractPermissionKey(p)).filter(Boolean)
     }
     if (sessionUser.scopes) {
-      scopes.value = sessionUser.scopes
+      scopes.value = (sessionUser.scopes || []).map((s: any) => extractScopeKey(s)).filter(Boolean)
     }
     if (sessionUser.permission_overrides) {
       permissionOverrides.value = sessionUser.permission_overrides
+    }
+    if (sessionUser.menus) {
+      userMenus.value = sessionUser.menus
     }
 
     authCookie.value = {
@@ -104,7 +137,8 @@ export const useAuthStore = defineStore('auth', () => {
       token: sessionToken,
       refreshToken: sessionRefreshToken || refreshToken.value || '',
       permissions: permissions.value,
-      scopes: scopes.value
+      scopes: scopes.value,
+      menus: userMenus.value
     }
 
     accessTokenCookie.value = sessionToken
@@ -120,6 +154,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('user', JSON.stringify(sessionUser))
       localStorage.setItem('permissions', JSON.stringify(permissions.value))
       localStorage.setItem('scopes', JSON.stringify(scopes.value))
+      localStorage.setItem('menus', JSON.stringify(userMenus.value))
 
       // Broadcast session update to other tabs
       try {
@@ -157,23 +192,28 @@ export const useAuthStore = defineStore('auth', () => {
   const setUser = (updatedUser: UserSession) => {
     user.value = updatedUser
     if (updatedUser.permissions) {
-      permissions.value = updatedUser.permissions
+      permissions.value = (updatedUser.permissions || []).map((p: any) => extractPermissionKey(p)).filter(Boolean)
     }
     if (updatedUser.scopes) {
-      scopes.value = updatedUser.scopes
+      scopes.value = (updatedUser.scopes || []).map((s: any) => extractScopeKey(s)).filter(Boolean)
     }
     if (updatedUser.permission_overrides) {
       permissionOverrides.value = updatedUser.permission_overrides
+    }
+    if (updatedUser.menus) {
+      userMenus.value = updatedUser.menus
     }
     if (authCookie.value) {
       authCookie.value.user = updatedUser
       authCookie.value.permissions = permissions.value
       authCookie.value.scopes = scopes.value
+      authCookie.value.menus = userMenus.value
     }
     if (import.meta.client) {
       localStorage.setItem('user', JSON.stringify(updatedUser))
       localStorage.setItem('permissions', JSON.stringify(permissions.value))
       localStorage.setItem('scopes', JSON.stringify(scopes.value))
+      localStorage.setItem('menus', JSON.stringify(userMenus.value))
     }
   }
 
@@ -196,114 +236,191 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const fetchUserAccess = async () => {
+  let isFetchingAccess: Promise<any> | null = null
+  let lastFetchedAccess = 0
+
+  const fetchUserAccess = async (force: boolean = false) => {
     if (!token.value) return null
-    try {
-      const config = useRuntimeConfig()
-      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
-      const res = await $fetch<{ data?: any; permissions?: string[]; scopes?: string[]; menus?: any[] }>(
-        `${baseUrl}/auth/access`,
-        {
+    const now = Date.now()
+    if (!force && isFetchingAccess) return isFetchingAccess
+    if (!force && now - lastFetchedAccess < 5000 && permissions.value.length > 0) {
+      return { permissions: permissions.value, scopes: scopes.value }
+    }
+
+    isFetchingAccess = (async () => {
+      try {
+        const config = useRuntimeConfig()
+        const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+        const res = await $fetch<{ data?: any; permissions?: string[]; scopes?: string[]; menus?: any[] }>(
+          `${baseUrl}/auth/access`,
+          {
+            headers: {
+              Authorization: `Bearer ${token.value}`
+            }
+          }
+        )
+        const accessData = res?.data || res
+        if (accessData) {
+          const rawPerms = Array.isArray(accessData.permissions)
+            ? accessData.permissions
+            : Array.isArray(accessData.Permissions)
+            ? accessData.Permissions
+            : Array.isArray(accessData.data?.permissions)
+            ? accessData.data.permissions
+            : Array.isArray(accessData.data?.Permissions)
+            ? accessData.data.Permissions
+            : Array.isArray(accessData.data)
+            ? accessData.data
+            : Array.isArray(accessData)
+            ? accessData
+            : []
+          const perms: string[] = rawPerms.map((p: any) => extractPermissionKey(p)).filter(Boolean)
+
+          const rawScps = Array.isArray(accessData.scopes)
+            ? accessData.scopes
+            : Array.isArray(accessData.Scopes)
+            ? accessData.Scopes
+            : Array.isArray(accessData.data?.scopes)
+            ? accessData.data.scopes
+            : Array.isArray(accessData.data?.Scopes)
+            ? accessData.data.Scopes
+            : []
+          const scps: string[] = rawScps.map((s: any) => extractScopeKey(s)).filter(Boolean)
+
+          const overrides: PermissionOverride[] = Array.isArray(accessData.permission_overrides)
+            ? accessData.permission_overrides
+            : Array.isArray(accessData.data?.permission_overrides)
+            ? accessData.data.permission_overrides
+            : []
+
+          const rawMenus = Array.isArray(accessData.menus)
+            ? accessData.menus
+            : Array.isArray(accessData.Menus)
+            ? accessData.Menus
+            : Array.isArray(accessData.data?.menus)
+            ? accessData.data.menus
+            : Array.isArray(accessData.data?.Menus)
+            ? accessData.data.Menus
+            : []
+
+          permissions.value = perms
+          scopes.value = scps
+          permissionOverrides.value = overrides
+          userMenus.value = rawMenus
+
+          if (user.value) {
+            user.value.permissions = perms
+            user.value.scopes = scps
+            user.value.permission_overrides = overrides
+            user.value.menus = rawMenus
+          }
+
+          if (import.meta.client) {
+            localStorage.setItem('permissions', JSON.stringify(perms))
+            localStorage.setItem('scopes', JSON.stringify(scps))
+            localStorage.setItem('menus', JSON.stringify(rawMenus))
+          }
+
+          lastFetchedAccess = Date.now()
+          return accessData
+        }
+      } catch {
+        // Endpoint fallback
+      } finally {
+        isFetchingAccess = null
+      }
+      return null
+    })()
+
+    return isFetchingAccess
+  }
+
+  let isFetchingMe: Promise<any> | null = null
+  let lastFetchedMe = 0
+
+  const fetchUserMe = async (force: boolean = false) => {
+    if (!token.value) return null
+    const now = Date.now()
+    if (!force && isFetchingMe) return isFetchingMe
+    if (!force && now - lastFetchedMe < 5000 && user.value) {
+      return user.value
+    }
+
+    isFetchingMe = (async () => {
+      try {
+        const config = useRuntimeConfig()
+        const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+        const res = await $fetch<{ data: any }>(`${baseUrl}/auth/me`, {
           headers: {
             Authorization: `Bearer ${token.value}`
           }
+        })
+        if (res?.data) {
+          const u = res.data
+          const updated: UserSession = {
+            id: u.id,
+            nama: u.full_name || u.username || 'User Tambora',
+            full_name: u.full_name || u.username,
+            username: u.username,
+            email: u.email,
+            organization: u.organization,
+            nip: u.nip,
+            prnr: u.prnr,
+            status: u.status,
+            role: u.organization || u.akses_grup || (u.role_assignments?.[0]?.role_code) || 'Admin',
+            akses_grup: u.akses_grup || u.role_assignments?.[0]?.role_code,
+            roles: u.roles || (u.role_assignments?.map((r: any) => r.role_code)) || [],
+            permissions: u.permissions || permissions.value,
+            scopes: u.scopes || scopes.value,
+            permission_overrides: u.permission_overrides || permissionOverrides.value,
+            level_id: '1'
+          }
+          setUser(updated)
+          // Also sync access
+          await fetchUserAccess(force)
+          lastFetchedMe = Date.now()
+          return updated
         }
-      )
-      const accessData = res?.data || res
-      if (accessData) {
-        const perms: string[] = Array.isArray(accessData.permissions)
-          ? accessData.permissions
-          : Array.isArray(accessData)
-          ? accessData
-          : []
-        const scps: string[] = Array.isArray(accessData.scopes) ? accessData.scopes : []
-        const overrides: PermissionOverride[] = Array.isArray(accessData.permission_overrides)
-          ? accessData.permission_overrides
-          : []
-
-        permissions.value = perms
-        scopes.value = scps
-        permissionOverrides.value = overrides
-
-        if (user.value) {
-          user.value.permissions = perms
-          user.value.scopes = scps
-          user.value.permission_overrides = overrides
-        }
-
-        if (import.meta.client) {
-          localStorage.setItem('permissions', JSON.stringify(perms))
-          localStorage.setItem('scopes', JSON.stringify(scps))
-        }
-
-        return accessData
+      } catch {
+        // Ignored if me endpoint temporarily fails
+      } finally {
+        isFetchingMe = null
       }
-    } catch {
-      // Endpoint fallback
-    }
-    return null
-  }
+      return null
+    })()
 
-  const fetchUserMe = async () => {
-    if (!token.value) return null
-    try {
-      const config = useRuntimeConfig()
-      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
-      const res = await $fetch<{ data: any }>(`${baseUrl}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token.value}`
-        }
-      })
-      if (res?.data) {
-        const u = res.data
-        const updated: UserSession = {
-          id: u.id,
-          nama: u.full_name || u.username || 'User Tambora',
-          full_name: u.full_name || u.username,
-          username: u.username,
-          email: u.email,
-          organization: u.organization,
-          nip: u.nip,
-          prnr: u.prnr,
-          status: u.status,
-          role: u.organization || u.akses_grup || (u.role_assignments?.[0]?.role_code) || 'Admin',
-          akses_grup: u.akses_grup || u.role_assignments?.[0]?.role_code,
-          roles: u.roles || (u.role_assignments?.map((r: any) => r.role_code)) || [],
-          permissions: u.permissions || permissions.value,
-          scopes: u.scopes || scopes.value,
-          permission_overrides: u.permission_overrides || permissionOverrides.value,
-          level_id: '1'
-        }
-        setUser(updated)
-        // Also sync access
-        await fetchUserAccess()
-        return updated
-      }
-    } catch {
-      // Ignored if me endpoint temporarily fails
-    }
-    return null
+    return isFetchingMe
   }
 
   const can = (permissionKey: string | string[]): boolean => {
-    const roleCode = (user.value?.role || user.value?.akses_grup || '').toUpperCase()
-    const userRoles = (user.value?.roles || []).map((r) => r.toUpperCase())
+    const roleCode = String(user.value?.role || user.value?.akses_grup || '').toUpperCase()
+    const userRoles = (user.value?.roles || []).map((r: any) =>
+      typeof r === 'string' ? r.toUpperCase() : String(r?.role_code || r?.name || '').toUpperCase()
+    )
     const isSuperAdmin =
       roleCode === 'SUPER_ADMIN' ||
-      userRoles.includes('SUPER_ADMIN') ||
       roleCode === 'SUPERADMIN' ||
-      permissions.value.includes('*')
+      roleCode.replace(/[\s_-]/g, '') === 'SUPERADMIN' ||
+      userRoles.includes('SUPER_ADMIN') ||
+      userRoles.includes('SUPERADMIN') ||
+      userRoles.some((r) => r.replace(/[\s_-]/g, '') === 'SUPERADMIN') ||
+      permissions.value.some((p: any) => {
+        const key = extractPermissionKey(p)
+        return key === '*'
+      })
 
     const checkSingle = (key: string): boolean => {
+      if (!key) return false
       const normalizedKey = key.trim().toUpperCase()
 
       // 1. Check explicit permission overrides first
       if (permissionOverrides.value && permissionOverrides.value.length > 0) {
-        const override = permissionOverrides.value.find(
-          (o) => o.permission_key.toUpperCase() === normalizedKey
-        )
+        const override = permissionOverrides.value.find((o: any) => {
+          const oKey = extractPermissionKey(o)
+          return String(oKey).toUpperCase() === normalizedKey
+        })
         if (override) {
-          return override.is_granted
+          return Boolean(override.is_granted)
         }
       }
 
@@ -313,7 +430,13 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       // 3. Check direct permissions list
-      if (permissions.value.some((p) => p.toUpperCase() === normalizedKey)) {
+      if (
+        permissions.value.some((p: any) => {
+          const pKey = extractPermissionKey(p)
+          const normalizedPKey = String(pKey).trim().toUpperCase()
+          return normalizedPKey === normalizedKey || normalizedPKey === '*'
+        })
+      ) {
         return true
       }
 
@@ -343,11 +466,110 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const hasScope = (scopeCode: string): boolean => {
+    if (!scopeCode) return false
+    const roleCode = String(user.value?.role || user.value?.akses_grup || '').toUpperCase()
+    const userRoles = (user.value?.roles || []).map((r: any) =>
+      typeof r === 'string' ? r.toUpperCase() : String(r?.role_code || r?.name || '').toUpperCase()
+    )
     const isSuperAdmin =
-      (user.value?.role || '').toUpperCase() === 'SUPER_ADMIN' ||
-      permissions.value.includes('*')
+      roleCode === 'SUPER_ADMIN' ||
+      roleCode === 'SUPERADMIN' ||
+      roleCode.replace(/[\s_-]/g, '') === 'SUPERADMIN' ||
+      userRoles.includes('SUPER_ADMIN') ||
+      userRoles.includes('SUPERADMIN') ||
+      userRoles.some((r) => r.replace(/[\s_-]/g, '') === 'SUPERADMIN') ||
+      permissions.value.some((p: any) => {
+        const key = typeof p === 'string' ? p : p?.permission_key || p?.code || p?.name || ''
+        return key === '*'
+      })
+
     if (isSuperAdmin) return true
-    return scopes.value.some((s) => s.toLowerCase() === scopeCode.toLowerCase())
+    return scopes.value.some((s: any) => {
+      const sKey = typeof s === 'string' ? s : s?.scope_code || s?.code || s?.name || ''
+      return String(sKey).toLowerCase() === scopeCode.toLowerCase()
+    })
+  }
+
+  const findNavMetadata = (path: string): { permission?: string; menuCode?: string } | undefined => {
+    const normalized = path.toLowerCase().replace(/\/$/, '')
+    for (const item of menuItems) {
+      if (item.path && item.path.toLowerCase().replace(/\/$/, '') === normalized) {
+        return { permission: item.permission, menuCode: item.menuCode }
+      }
+      if (item.children) {
+        for (const sub of item.children) {
+          if (sub.path && sub.path.toLowerCase().replace(/\/$/, '') === normalized) {
+            return { permission: sub.permission, menuCode: sub.menuCode }
+          }
+          if (sub.children) {
+            for (const leaf of sub.children) {
+              if (leaf.path && leaf.path.toLowerCase().replace(/\/$/, '') === normalized) {
+                return { permission: leaf.permission, menuCode: leaf.menuCode }
+              }
+            }
+          }
+        }
+      }
+    }
+    return undefined
+  }
+
+  const hasMenuAccess = (routePath: string, requiredPermission?: string, menuCode?: string): boolean => {
+    if (!routePath) return true
+    const normalizedPath = routePath.toLowerCase().replace(/\/$/, '')
+
+    // 1. Home and Dashboard are accessible for all authenticated users
+    if (
+      normalizedPath === '/home' ||
+      normalizedPath === '/home/dashboard' ||
+      normalizedPath === '/home/dashboard/operasipembangkit'
+    ) {
+      return true
+    }
+
+    // 2. Super admin gets access to all menus
+    const roleCode = String(user.value?.role || user.value?.akses_grup || '').toUpperCase()
+    const userRoles = (user.value?.roles || []).map((r: any) =>
+      typeof r === 'string' ? r.toUpperCase() : String(r?.role_code || r?.name || '').toUpperCase()
+    )
+    const isSuperAdmin =
+      roleCode === 'SUPER_ADMIN' ||
+      roleCode === 'SUPERADMIN' ||
+      roleCode.replace(/[\s_-]/g, '') === 'SUPERADMIN' ||
+      userRoles.includes('SUPER_ADMIN') ||
+      userRoles.includes('SUPERADMIN') ||
+      userRoles.some((r) => r.replace(/[\s_-]/g, '') === 'SUPERADMIN') ||
+      permissions.value.some((p: any) => extractPermissionKey(p) === '*')
+
+    if (isSuperAdmin) return true
+
+    // Resolve navigation metadata if not explicitly provided
+    const navMeta = findNavMetadata(routePath)
+    const effectivePermission = requiredPermission || navMeta?.permission
+    const effectiveMenuCode = menuCode || navMeta?.menuCode
+
+    // 3. Check if user has permission (e.g. USER.VIEW, DRIVER.VIEW)
+    if (effectivePermission && can(effectivePermission)) {
+      return true
+    }
+
+    // 4. Check if backend userMenus has this menuCode (e.g. MENU_USERS, MENU_DRIVER)
+    if (effectiveMenuCode && userMenus.value.some((m: any) => {
+      const code = String(m.code || m.Code || '').toUpperCase()
+      return code === effectiveMenuCode.toUpperCase()
+    })) {
+      return true
+    }
+
+    // 5. Fallback if backend does not enforce dynamic menus list
+    if (userMenus.value.length === 0) {
+      if (effectivePermission) {
+        return can(effectivePermission)
+      }
+      return true
+    }
+
+    return false
   }
 
   const refreshSession = async (): Promise<boolean> => {
@@ -393,6 +615,7 @@ export const useAuthStore = defineStore('auth', () => {
     permissions.value = []
     scopes.value = []
     permissionOverrides.value = []
+    userMenus.value = []
     authCookie.value = null
     accessTokenCookie.value = null
     refreshTokenCookie.value = null
@@ -403,6 +626,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('user')
       localStorage.removeItem('permissions')
       localStorage.removeItem('scopes')
+      localStorage.removeItem('menus')
 
       if (notifyBroadcast) {
         try {
@@ -444,11 +668,13 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     scopes,
     permissionOverrides,
+    userMenus,
     errorMessage,
     message,
     isError,
     can,
     hasScope,
+    hasMenuAccess,
     setPermissions,
     fetchUserAccess,
     setSession,

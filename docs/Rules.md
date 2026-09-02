@@ -5,7 +5,7 @@
 ---
 
 ## 1. Anti-Duplication (Target SonarQube < 3%)
-- **Cek Komponen Base Terlebih Dahulu**: Sebelum membuat UI baru, gunakan komponen `components/base` (`BaseCard`, `BaseTable`, `BaseChart`, `BaseFormModal`, `BaseMap`, `SplitLayout`).
+- **Cek Komponen Base Terlebih Dahulu**: Sebelum membuat UI baru, gunakan komponen `components/base` (`BaseCard`, `BaseTable`, `BaseChart`, `BaseFormModal`, `BaseMap`, `BaseDetailModal`, `BaseConfirmDialog`).
 - **Prinsip Extract**:
   - Logika murni / kalkulasi / formatter → `/utils`
   - Logika reaktif / fetching → `/composables`
@@ -46,25 +46,19 @@ Setiap file `.vue` **WAJIB** mengikuti urutan: **`<script>` → `<template>` →
 ---
 
 ## 5. Semantic Versioning & CHANGELOG.md
-Setiap rilis versi dan penambahan fitur wajib mendokumentasikan perubahan di `CHANGELOG.md` dengan standar **Conventional Changelog / Vue Core style**:
+Setiap rilis versi dan penambahan fitur wajib mendokumentasikan perubahan di `CHANGELOG.md` dengan standar **Conventional Changelog**:
 
 ### Skema Penomoran Versi:
 - **MAJOR (`X.0.0`)**: Perubahan arsitektur besar / breaking change API lama.
-- **MINOR (`0.X.0`)**: Penambahan fitur baru non-breaking (misal: integrasi API login, proxy CORS, global toast).
-- **PATCH (`0.0.X`)**: Perbaikan bug kecil / typo.
+- **MINOR (`0.X.0`)**: Penambahan fitur baru non-breaking (misal: modul master/transaksi baru, proxy CORS, global toast).
+- **PATCH (`0.0.X`)**: Perbaikan bug kecil / styling tweak.
 
-### Format Entri CHANGELOG.md:
-```markdown
-# CHANGELOG
+---
 
-## [Versi] (YYYY-MM-DD)
-
-### Features
-* **[scope]:** deskripsi fitur baru
-
-### Performance Improvements
-* **[scope]:** deskripsi optimasi performa
-
-### Bug Fixes
-* **[scope]:** deskripsi perbaikan bug
-```
+## 6. Developer & AI Pairing Execution Policy
+1. **Approval Policy ("Gas" Requirement)**:
+   - Dilarang memulai pengubahan kode / eksekusi rencana sebelum pengguna memberikan persetujuan eksplisit (contoh: kata *"gas"*, *"eksekusi"*, atau *"proceed"*).
+   - Diskusi atau pertanyaan seputar plan tidak boleh dianggap sebagai persetujuan untuk mulai koding.
+2. **Test & Lint Execution Policy**:
+   - Dilarang menjalankan `npm test`, `vitest`, atau `npm run lint` secara otomatis di sela-sela task pengubahan kode.
+   - Test dan lint hanya dijalankan satu kali di akhir saat diminta oleh pengguna atau tepat sebelum commit.

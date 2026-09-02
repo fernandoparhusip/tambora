@@ -37,9 +37,62 @@ const getMenuIcon = (key: string): string => {
 
 // State & Router
 const route = useRoute();
+const authStore = useAuthStore();
 const isExpanded = ref(false);
 const openKeys = ref<string[]>([]);
 const openSubKeys = ref<string[]>([]);
+
+// Filtered dynamic menu items based on user RBAC permissions & menus
+const visibleMenuItems = computed<MenuItem[]>(() => {
+  return menuItems
+    .map((item) => {
+      // If item has direct path and no children
+      if (item.path && (!item.children || item.children.length === 0)) {
+        if (authStore.hasMenuAccess(item.path, item.permission, item.menuCode)) {
+          return item;
+        }
+        return null;
+      }
+
+      // If item has children (submenus)
+      if (item.children && item.children.length > 0) {
+        const filteredChildren = item.children
+          .map((sub) => {
+            // Submenu with leaf children
+            if (sub.children && sub.children.length > 0) {
+              const filteredLeaves = sub.children.filter((leaf) =>
+                authStore.hasMenuAccess(leaf.path, leaf.permission, leaf.menuCode)
+              );
+              if (filteredLeaves.length > 0) {
+                return { ...sub, children: filteredLeaves };
+              }
+              return null;
+            }
+
+            // Direct submenu item with path
+            if (sub.path) {
+              if (authStore.hasMenuAccess(sub.path, sub.permission, sub.menuCode)) {
+                return sub;
+              }
+              return null;
+            }
+
+            return null;
+          })
+          .filter(Boolean) as SubMenuItem[];
+
+        if (filteredChildren.length > 0) {
+          return {
+            ...item,
+            children: filteredChildren,
+          };
+        }
+      }
+
+      return null;
+    })
+    .filter(Boolean) as MenuItem[];
+});
 
 // Auto-scroll active menu item into view
 const scrollToActiveItem = () => {
@@ -60,7 +113,7 @@ const syncOpenKeysWithRoute = () => {
   const newOpenKeys: string[] = [];
   const newOpenSubKeys: string[] = [];
 
-  menuItems.forEach((item) => {
+  visibleMenuItems.value.forEach((item) => {
     if (item.children) {
       const hasActiveChild = item.children.some((sub) => {
         if (sub.path && currentPath === sub.path) return true;
@@ -228,7 +281,7 @@ const onSubmenuLeave = (el: Element) => {
     <nav
       class="flex-1 py-3 px-3.5 overflow-y-auto overflow-x-hidden space-y-2 custom-scrollbar"
     >
-      <div v-for="item in menuItems" :key="item.key" class="relative">
+      <div v-for="item in visibleMenuItems" :key="item.key" class="relative">
         <!-- Level 1 Parent Button -->
         <div class="relative">
           <button

@@ -374,6 +374,7 @@ const handleReload = () => {
 
             <!-- Create Button -->
             <BaseCreateButton
+              resource="PAGU"
               @click="openCreateModal"
             />
           </div>
@@ -441,7 +442,7 @@ const handleReload = () => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" @click="handleEdit(row)" />
+              <BaseActionButton type="edit" resource="PAGU" @click="handleEdit(row)" />
               <button
                 v-if="activeTab === 'unit'"
                 type="button"
@@ -451,7 +452,7 @@ const handleReload = () => {
               >
                 Revisi
               </button>
-              <BaseActionButton type="delete" @click="handleDelete(row)" />
+              <BaseActionButton type="delete" resource="PAGU" @click="handleDelete(row)" />
             </div>
           </template>
         </BaseTable>

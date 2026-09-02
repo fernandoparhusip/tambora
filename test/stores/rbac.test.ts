@@ -168,4 +168,47 @@ describe('RBAC & Permission Check Suite', () => {
     expect(can(['SENTRAL.VIEW', 'SENTRAL.CREATE'])).toBe(true)
     expect(can(['SENTRAL.VIEW', 'SENTRAL.DELETE'])).toBe(false)
   })
+
+  it('safely handles backend object format permissions and superadmin variants', () => {
+    const authStore = useAuthStore()
+    authStore.setSession({
+      nama: 'Superadmin User',
+      email: 'superadmin@example.com',
+      role: 'Super Admin',
+      roles: ['SUPERADMIN'],
+      permissions: [
+        { ID: '1', Key: 'DRIVER.CREATE' },
+        { ID: '2', Key: 'DRIVER.UPDATE' },
+      ] as any,
+    })
+
+    const { can, isSuperAdmin } = useRbac()
+    expect(isSuperAdmin.value).toBe(true)
+    expect(can('DRIVER.CREATE')).toBe(true)
+    expect(can('DRIVER.DELETE')).toBe(true)
+  })
+
+  it('validates dynamic menu RBAC filtering with hasMenuAccess', () => {
+    const authStore = useAuthStore()
+    authStore.setSession({
+      nama: 'Operator Pembangkit',
+      role: 'OPERATOR',
+      roles: ['OPERATOR'],
+      permissions: ['DRIVER.VIEW', 'DRIVER.CREATE'],
+      menus: [
+        { code: 'MENU_DRIVER', route: '/master-data/drivers' },
+        { code: 'MENU_OPERASI_HARIAN', route: '/operasi-harian' },
+      ],
+    })
+
+    // Allowed routes
+    expect(authStore.hasMenuAccess('/home/master/driver', 'DRIVER.VIEW', 'MENU_DRIVER')).toBe(true)
+    expect(authStore.hasMenuAccess('/home/transaksi/operasi-harian', 'OPERASI_HARIAN.VIEW', 'MENU_OPERASI_HARIAN')).toBe(true)
+    expect(authStore.hasMenuAccess('/home')).toBe(true)
+    expect(authStore.hasMenuAccess('/home/dashboard/operasiPembangkit')).toBe(true)
+
+    // Denied routes
+    expect(authStore.hasMenuAccess('/home/konfigurasi-aplikasi/akses-grup', 'ROLE.VIEW', 'MENU_ROLES')).toBe(false)
+    expect(authStore.hasMenuAccess('/home/master/user', 'USER.VIEW', 'MENU_USERS')).toBe(false)
+  })
 })

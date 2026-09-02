@@ -25,7 +25,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: "submit" | "cancel"): void;
+  (e: "submit", data: Record<string, any>): void;
+  (e: "cancel"): void;
 }>();
 
 // Two-way modal controls
@@ -70,7 +71,7 @@ watch(
       existingDraft.value = null;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Auto-save draft on form input changes (debounced 500ms)
@@ -89,7 +90,7 @@ watch(
       }
     }, 500);
   },
-  { deep: true }
+  { deep: true },
 );
 
 onBeforeUnmount(() => {
@@ -123,7 +124,7 @@ const isDirty = computed(() => {
   if (current === initialSnapshot.value) return false;
   const data = formData.value || {};
   return Object.values(data).some(
-    (v) => v !== "" && v !== null && v !== undefined
+    (v) => v !== "" && v !== null && v !== undefined,
   );
 });
 
@@ -191,7 +192,7 @@ const handleSubmit = () => {
   if (props.draftKey) {
     clearDraft(props.draftKey);
   }
-  emit("submit");
+  emit("submit", formData.value);
 };
 </script>
 
@@ -212,7 +213,7 @@ const handleSubmit = () => {
     :content-class="
       variant === 'centered'
         ? 'relative z-[100] bg-[#F6FAFD] w-full max-w-md rounded-xl flex flex-col shadow-2xl border border-gray-200/60 overflow-visible max-h-[90vh] my-auto'
-        : 'absolute z-[100] top-0 right-0 bg-[#F6FAFD] w-4/5 sm:w-3/4 md:w-2/3 lg:w-3/5 h-screen flex flex-col shadow-2xl border-l border-gray-200/60 overflow-hidden'
+        : 'absolute z-[100] top-0 right-0 bg-[#F6FAFD] w-full sm:w-11/12 md:w-5/6 lg:w-3/4 xl:w-2/3 max-w-4xl h-screen flex flex-col shadow-2xl border-l border-gray-200/60 overflow-hidden'
     "
     overlay-class="fixed inset-0 bg-gray-950/40 backdrop-blur-xs z-[99]"
   >
@@ -283,8 +284,9 @@ const handleSubmit = () => {
                 </p>
                 <p class="text-[11px] text-amber-700 mt-0.5">
                   Tersimpan otomatis
-                  <span v-if="existingDraft?.formattedTime">pukul {{ existingDraft.formattedTime }}</span>.
-                  Pulihkan data input sebelumnya?
+                  <span v-if="existingDraft?.formattedTime"
+                    >pukul {{ existingDraft.formattedTime }}</span
+                  >. Pulihkan data input sebelumnya?
                 </p>
               </div>
             </div>
@@ -312,7 +314,7 @@ const handleSubmit = () => {
 
         <form
           id="base-form-modal-form"
-          class="space-y-6"
+          class="space-y-3"
           @submit.prevent="handleSubmit"
         >
           <div
@@ -323,7 +325,9 @@ const handleSubmit = () => {
             <!-- Section Divider & Title (if title exists) -->
             <div v-if="section.title" class="flex items-center gap-3 pt-2">
               <span class="w-1.5 h-4 bg-[#2671D9] rounded-full" />
-              <h4 class="text-xs font-bold uppercase tracking-wider text-[#2671D9]">
+              <h4
+                class="text-xs font-bold uppercase tracking-wider text-[#2671D9]"
+              >
                 {{ section.title }}
               </h4>
               <div class="flex-1 h-px bg-gray-200/80" />
@@ -426,7 +430,8 @@ const handleSubmit = () => {
                     Perubahan Belum Disimpan
                   </h4>
                   <p class="text-xs text-gray-500 mt-1 leading-relaxed">
-                    Anda memiliki data yang belum disimpan pada formulir ini. Yakin ingin menutup dan membuang perubahan?
+                    Anda memiliki data yang belum disimpan pada formulir ini.
+                    Yakin ingin menutup dan membuang perubahan?
                   </p>
                 </div>
               </div>
