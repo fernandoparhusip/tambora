@@ -82,13 +82,6 @@ const scopeOptions = computed(() => {
   ];
 });
 
-const permissionOptions = computed(() =>
-  permissions.value.map((p: any) => ({
-    label: p.permission_key || p.description || p.id,
-    value: p.permission_key || p.id,
-  })),
-);
-
 onMounted(async () => {
   await Promise.allSettled([
     fetchUsers(),
