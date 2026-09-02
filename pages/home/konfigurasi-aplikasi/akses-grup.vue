@@ -5,6 +5,7 @@ import type { DetailDataItem } from "~/types/master.types";
 import type { RoleItem, TableColumn, PermissionItem } from "~/types";
 import { useAksesGrup } from "~/composables/konfigurasi-aplikasi/useAksesGrup";
 import { usePermission } from "~/composables/master/usePermission";
+import { aksesGrupFormSections } from "~/schemas/konfigurasi-aplikasi/akses-grup.schema";
 
 const {
   aksesGrups,
@@ -40,12 +41,12 @@ const deleteTarget = ref<RoleItem | null>(null);
 const isDeleting = ref(false);
 
 const modalTitle = computed(() =>
-  isEditMode.value ? "Ubah Peran & Hak Akses (Role)" : "Tambah Peran & Hak Akses (Role)",
+  isEditMode.value ? "Ubah Akses Grup & Hak Akses" : "Tambah Akses Grup & Hak Akses",
 );
 const modalSubtitle = computed(() =>
   isEditMode.value
-    ? "Atur detail peran dan checklist matrix hak akses izin (permission)"
-    : "Buat peran baru dan centang matrix hak akses izin (permission)",
+    ? "Form Perubahan Master Peran (Role) dan Checklist Matrix Izin"
+    : "Form Penambahan Master Peran (Role) dan Checklist Matrix Izin",
 );
 
 const aksesGrupColumns: TableColumn[] = [
@@ -92,7 +93,6 @@ const matrixRows = computed<MatrixRow[]>(() => {
     let resCode = (p.resource_code || p.resource_name || "").toUpperCase().trim();
     let actCode = (p.action_code || p.action_name || "").toUpperCase().trim();
 
-    // If resource_code is empty, parse from permission_key (e.g. SENTRAL.VIEW)
     if (!resCode && p.permission_key && p.permission_key.includes(".")) {
       const parts = p.permission_key.split(".");
       resCode = parts[0]?.toUpperCase() || "SISTEM";
@@ -114,10 +114,15 @@ const matrixRows = computed<MatrixRow[]>(() => {
       map[resCode] = row;
     }
 
-    // Match to standard action or keep as custom
     let matchedActionKey = actCode;
     for (const actionDef of standardActions) {
-      if (actionDef.aliases.some((alias) => actCode.includes(alias) || p.permission_key?.toUpperCase().endsWith(`.${alias}`))) {
+      if (
+        actionDef.aliases.some(
+          (alias) =>
+            actCode.includes(alias) ||
+            p.permission_key?.toUpperCase().endsWith(`.${alias}`),
+        )
+      ) {
         matchedActionKey = actionDef.key;
         break;
       }
@@ -127,7 +132,9 @@ const matrixRows = computed<MatrixRow[]>(() => {
     row.allPermissions.push(p);
   });
 
-  return Object.values(map).sort((a, b) => a.resourceName.localeCompare(b.resourceName));
+  return Object.values(map).sort((a, b) =>
+    a.resourceName.localeCompare(b.resourceName),
+  );
 });
 
 const filteredMatrixRows = computed(() => {
@@ -190,7 +197,6 @@ const paginatedRows = computed(() => {
   return filteredRows.value.slice(start, start + pageSize.value);
 });
 
-// Toggle individual permission
 const togglePermission = (p: PermissionItem) => {
   const id = p.id || p.permission_key;
   const key = p.permission_key || p.id;
@@ -206,10 +212,12 @@ const togglePermission = (p: PermissionItem) => {
 
 const isPermissionSelected = (p?: PermissionItem): boolean => {
   if (!p) return false;
-  return selectedPermissionIds.value.has(p.id) || selectedPermissionKeys.value.has(p.permission_key);
+  return (
+    selectedPermissionIds.value.has(p.id) ||
+    selectedPermissionKeys.value.has(p.permission_key)
+  );
 };
 
-// Toggle all permissions for a specific row/resource
 const isRowFullySelected = (row: MatrixRow): boolean => {
   if (row.allPermissions.length === 0) return false;
   return row.allPermissions.every((p) => isPermissionSelected(p));
@@ -230,7 +238,6 @@ const toggleRowPermissions = (row: MatrixRow) => {
   });
 };
 
-// Global toggle all permissions
 const isAllPermissionsSelected = computed(() => {
   if (allPermissions.value.length === 0) return false;
   return allPermissions.value.every((p) => isPermissionSelected(p));
@@ -249,7 +256,6 @@ const toggleAllPermissionsGlobal = () => {
   }
 };
 
-// Modal Handlers
 const openCreateModal = () => {
   isEditMode.value = false;
   editingId.value = null;
@@ -296,7 +302,9 @@ const handleEdit = async (row: RoleItem) => {
     perms.forEach((p: any) => {
       if (typeof p === "string") {
         selectedPermissionKeys.value.add(p);
-        const matched = allPermissions.value.find((item) => item.permission_key === p || item.id === p);
+        const matched = allPermissions.value.find(
+          (item) => item.permission_key === p || item.id === p,
+        );
         if (matched) selectedPermissionIds.value.add(matched.id);
       } else if (p && typeof p === "object") {
         if (p.id) selectedPermissionIds.value.add(p.id);
@@ -316,12 +324,8 @@ const openEditFromDetail = () => {
   }
 };
 
-const closeModal = () => {
-  isModalOpen.value = false;
-};
-
-const handleSave = async () => {
-  if (!formData.value.code || !formData.value.name) {
+const handleSave = async (data: Record<string, any>) => {
+  if (!data.code || !data.name) {
     toast.error("Mohon lengkapi Kode Role dan Nama Role.", "Validasi Form");
     return;
   }
@@ -332,19 +336,19 @@ const handleSave = async () => {
     const permissionKeysArray = Array.from(selectedPermissionKeys.value);
 
     const payload = {
-      code: formData.value.code.toUpperCase().replace(/\s+/g, "_"),
-      name: formData.value.name,
-      description: formData.value.description || formData.value.name,
+      code: data.code.toUpperCase().replace(/\s+/g, "_"),
+      name: data.name,
+      description: data.description || data.name,
       permission_ids: permissionIdsArray,
       permissions: permissionKeysArray,
     };
 
     if (isEditMode.value && editingId.value) {
       await updateAksesGrup(editingId.value, payload);
-      toast.success(`Role '${formData.value.name}' berhasil diperbarui.`, "Sukses");
+      toast.success(`Role '${data.name}' berhasil diperbarui.`, "Sukses");
     } else {
       await createAksesGrup(payload);
-      toast.success(`Role baru '${formData.value.name}' berhasil dibuat.`, "Sukses");
+      toast.success(`Role baru '${data.name}' berhasil dibuat.`, "Sukses");
     }
 
     isModalOpen.value = false;
@@ -425,7 +429,11 @@ function getPermissionTooltipContent(permKey: string): string {
     (p) => p.permission_key === permKey || p.id === permKey,
   );
   if (matched) {
-    const title = matched.permission_key || (matched.resource_name ? `${matched.resource_name} - ${matched.action_name}` : permKey);
+    const title =
+      matched.permission_key ||
+      (matched.resource_name
+        ? `${matched.resource_name} - ${matched.action_name}`
+        : permKey);
     return `<div class="text-left font-sans">
       <div class="font-bold text-xs">${title}</div>
       <div class="text-[11px] text-gray-300">${matched.description || matched.resource_name || "-"}</div>
@@ -513,84 +521,27 @@ function getPermissionTooltipContent(permKey: string): string {
       </div>
     </div>
 
-    <!-- MODAL FORM ROLE & PERMISSION MATRIX (Standardized VueFinalModal / Base Modal) -->
-    <VueFinalModal
-      v-model="isModalOpen"
-      class="flex justify-center items-center p-4"
-      content-class="bg-white rounded-xl shadow-2xl border border-gray-100 w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden"
-      overlay-class="bg-black/40 backdrop-blur-xs"
-      :esc-to-close="true"
-      :click-to-close="false"
+    <!-- STANDARD FORM DRAWER (BaseFormModal) -->
+    <BaseFormModal
+      v-model:is-open="isModalOpen"
+      v-model:form-data="formData"
+      :title="modalTitle"
+      :subtitle="modalSubtitle"
+      :sections="aksesGrupFormSections"
+      variant="drawer"
+      :submitting="isSubmitting"
+      @submit="handleSave"
+      @cancel="isModalOpen = false"
     >
-      <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-primary-50 border border-primary-200 flex items-center justify-center text-primary-700">
-            <ShieldCheck class="w-5 h-5" />
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-gray-900">{{ modalTitle }}</h3>
-            <p class="text-xs text-gray-500">{{ modalSubtitle }}</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100 text-sm font-bold"
-          @click="closeModal"
-        >
-          ✕
-        </button>
-      </div>
-
-      <!-- Modal Body (Scrollable) -->
-      <div class="p-6 overflow-y-auto flex-1 space-y-6">
-        <!-- Role Metadata Inputs -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1.5">
-              Nama Role <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="formData.name"
-              type="text"
-              placeholder="Contoh: Operator Pembangkit Sentral"
-              class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all font-medium text-gray-800"
-              required
-            >
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1.5">
-              Kode Role <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="formData.code"
-              type="text"
-              placeholder="Contoh: ROLE_OPERATOR_SENTRAL"
-              class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all font-mono font-semibold text-gray-800"
-              required
-            >
-          </div>
-
-          <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-gray-700 mb-1.5">Deskripsi Role</label>
-            <textarea
-              v-model="formData.description"
-              rows="2"
-              placeholder="Contoh: Khusus staf operasional di unit sentral pembangkit"
-              class="w-full text-xs px-3.5 py-2 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all text-gray-800"
-            />
-          </div>
-        </div>
-
+      <template #extra>
         <!-- Permission Matrix Table Checklist -->
-        <div class="border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
+        <div class="border border-gray-200/90 rounded-xl overflow-hidden shadow-xs bg-white mt-4">
           <!-- Header Bar with Search and Bulk Toggle -->
-          <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="px-4 py-3 bg-gray-50 border-b border-gray-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div>
               <span class="text-xs font-bold text-gray-800 flex items-center gap-1.5">
                 <Key class="w-4 h-4 text-emerald-600" />
-                DAFTAR HAK AKSES (PERMISSION MATRIX)
+                CHECKLIST MATRIKS HAK AKSES (PERMISSION MATRIX)
               </span>
               <span class="text-[11px] text-gray-500">
                 Terpilih: <strong class="text-emerald-700 font-bold">{{ selectedPermissionKeys.size }}</strong> izin
@@ -604,13 +555,13 @@ function getPermissionTooltipContent(permKey: string): string {
                   v-model="matrixSearch"
                   type="text"
                   placeholder="Filter Modul..."
-                  class="text-xs pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 w-44"
+                  class="text-xs pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 w-40"
                 >
               </div>
 
               <button
                 type="button"
-                class="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 flex items-center gap-1.5 transition-colors"
+                class="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 flex items-center gap-1.5 transition-colors cursor-pointer"
                 @click="toggleAllPermissionsGlobal"
               >
                 <component :is="isAllPermissionsSelected ? CheckSquare : Square" class="w-3.5 h-3.5 text-primary-600" />
@@ -620,9 +571,9 @@ function getPermissionTooltipContent(permKey: string): string {
           </div>
 
           <!-- Matrix Table -->
-          <div class="overflow-x-auto max-h-80">
+          <div class="overflow-x-auto max-h-96">
             <table class="w-full text-left text-xs border-collapse">
-              <thead class="bg-gray-100/75 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b border-gray-200 sticky top-0 z-10">
+              <thead class="bg-gray-100/80 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b border-gray-200 sticky top-0 z-10">
                 <tr>
                   <th class="py-2.5 px-4">Modul / Resource</th>
                   <th v-for="act in standardActions" :key="act.key" class="py-2.5 px-3 text-center">
@@ -637,7 +588,7 @@ function getPermissionTooltipContent(permKey: string): string {
                   :key="row.resourceCode"
                   class="hover:bg-gray-50/80 transition-colors"
                 >
-                  <td class="py-2 px-4">
+                  <td class="py-2.5 px-4">
                     <div class="font-semibold text-gray-900">{{ row.resourceName }}</div>
                     <div class="text-[10px] font-mono text-gray-400">{{ row.resourceCode }}</div>
                   </td>
@@ -646,7 +597,7 @@ function getPermissionTooltipContent(permKey: string): string {
                   <td
                     v-for="act in standardActions"
                     :key="act.key"
-                    class="py-2 px-3 text-center"
+                    class="py-2.5 px-3 text-center"
                   >
                     <template v-if="row.permissionsByAction[act.key]">
                       <input
@@ -663,10 +614,10 @@ function getPermissionTooltipContent(permKey: string): string {
                   </td>
 
                   <!-- Select All per Row -->
-                  <td class="py-2 px-3 text-center">
+                  <td class="py-2.5 px-3 text-center">
                     <button
                       type="button"
-                      class="text-[11px] font-medium text-primary-600 hover:text-primary-800 hover:underline"
+                      class="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline cursor-pointer"
                       @click="toggleRowPermissions(row)"
                     >
                       {{ isRowFullySelected(row) ? 'Uncheck' : 'Pilih Baris' }}
@@ -683,36 +634,8 @@ function getPermissionTooltipContent(permKey: string): string {
             </table>
           </div>
         </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50/50 shrink-0">
-        <button
-          type="button"
-          class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-          @click="closeModal"
-        >
-          Batal
-        </button>
-        <button
-          type="button"
-          :disabled="isSubmitting"
-          class="px-5 py-2 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2 shadow-xs disabled:opacity-60"
-          @click="handleSave"
-        >
-          <svg
-            v-if="isSubmitting"
-            class="animate-spin h-3.5 w-3.5 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-          <span>{{ isEditMode ? 'Simpan Perubahan Role' : 'Simpan Peran & Hak Akses' }}</span>
-        </button>
-      </div>
-    </VueFinalModal>
+      </template>
+    </BaseFormModal>
 
     <!-- Detail Modal -->
     <BaseDetailModal

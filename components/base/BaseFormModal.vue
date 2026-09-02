@@ -359,6 +359,7 @@ const handleSubmit = () => {
               </div>
             </div>
           </div>
+          <slot name="extra" />
         </form>
       </div>
 
