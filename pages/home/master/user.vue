@@ -12,6 +12,8 @@ import {
 } from "~/schemas/master/user.schema";
 import { exportToExcel } from "~/utils/exportExcel";
 import { useTableState } from "~/composables/useTableState";
+import { useScope } from "~/composables/master/useScope";
+import { ShieldCheck, User, KeyRound, Search, CheckCircle2, XCircle, MinusCircle } from "@lucide/vue";
 
 // ── Composables ──────────────────────────────────────────────
 const {
@@ -25,6 +27,7 @@ const {
   deleteUser,
 } = useUser();
 const { roles, fetchRoles } = useRole();
+const { scopes, fetchScopes } = useScope();
 const { organizations, fetchOrganizations } = useOrganization();
 const { permissions, fetchPermissions, fetchPermissionsCombo } =
   usePermission();
@@ -67,6 +70,22 @@ const roleOptions = computed(() =>
   })),
 );
 
+const scopeOptions = computed(() => {
+  if (scopes.value.length > 0) {
+    return scopes.value.map((s: any) => ({
+      label: `${s.name || s.code} (${s.code})`,
+      value: s.code,
+    }));
+  }
+  return [
+    { label: "GLOBAL (Pusat)", value: "GLOBAL" },
+    { label: "REGIONAL (Wilayah)", value: "REGIONAL" },
+    { label: "CABANG (Unit Pelaksana)", value: "CABANG" },
+    { label: "RANTING (Unit Layanan)", value: "RANTING" },
+    { label: "SENTRAL (Unit Pembangkit)", value: "SENTRAL" },
+  ];
+});
+
 const permissionOptions = computed(() =>
   permissions.value.map((p: any) => ({
     label: p.permission_key || p.description || p.id,
@@ -78,12 +97,13 @@ onMounted(async () => {
   await Promise.allSettled([
     fetchUsers(),
     fetchRoles(),
+    fetchScopes(),
     fetchOrganizations(),
     fetchPermissions(),
   ]);
 });
 
-// Dynamic Form Sections — schema driven with reactive conditional visibility
+// Dynamic Form Sections
 const activeFormSections = computed(() => {
   return getUserFormSections({
     orgOptions: orgOptions.value,
@@ -94,42 +114,75 @@ const activeFormSections = computed(() => {
 
 // Modal states
 const modalOpen = ref(false);
+const activeModalTab = ref<"info" | "overrides">("info");
 const isSuccessModalOpen = ref(false);
 const modalMode = ref<"create" | "edit" | "view">("create");
 const formData = ref<Record<string, any>>({});
 const formErrors = ref<Record<string, string>>({});
 const submitting = ref(false);
 
+// Permission Overrides State (Map of permission_key -> 'DEFAULT' | 'GRANTED' | 'DENIED')
+const userOverrides = ref<Record<string, "DEFAULT" | "GRANTED" | "DENIED">>({});
+const overrideSearchQuery = ref("");
+
+const filteredPermissionsForOverrides = computed(() => {
+  if (!overrideSearchQuery.value) return permissions.value;
+  const q = overrideSearchQuery.value.toLowerCase();
+  return permissions.value.filter(
+    (p) =>
+      (p.permission_key && p.permission_key.toLowerCase().includes(q)) ||
+      (p.description && p.description.toLowerCase().includes(q)) ||
+      (p.resource_name && p.resource_name.toLowerCase().includes(q)) ||
+      (p.resource_code && p.resource_code.toLowerCase().includes(q)),
+  );
+});
+
+const activeOverridesCount = computed(() => {
+  let granted = 0;
+  let denied = 0;
+  Object.values(userOverrides.value).forEach((state) => {
+    if (state === "GRANTED") granted++;
+    if (state === "DENIED") denied++;
+  });
+  return { total: granted + denied, granted, denied };
+});
+
 const modalTitle = computed(() => {
   if (modalMode.value === "view") return "Detail Data Pengguna";
-  if (modalMode.value === "edit") return "Edit Data Pengguna";
-  return "Tambah Data Pengguna";
+  if (modalMode.value === "edit") return "Edit Data Pengguna & Hak Akses";
+  return "Tambah Data Pengguna & Hak Akses";
 });
 
 const modalSubtitle = computed(() => {
   if (modalMode.value === "view") return "Detail Informasi Pengguna";
-  if (modalMode.value === "edit") return "Form Edit Data Pengguna";
-  return "Form Tambah Data Pengguna";
+  if (modalMode.value === "edit") return "Form Edit Data Pengguna dan Pengaturan Permission Overrides";
+  return "Form Tambah Data Pengguna dan Pengaturan Permission Overrides";
 });
 
 const openCreateModal = () => {
   modalMode.value = "create";
+  activeModalTab.value = "info";
   formData.value = {
     tipe: "SSO PLN",
     akunPengelola: false,
     organisasi: organizations.value[0]?.nama || "",
-    aksesLevel: roles.value[0]?.code || "SUPER_ADMIN",
+    aksesLevel: roleOptions.value[0]?.value || "ORG_ADMIN",
+    scopeLevel: "CABANG",
     permissions: [],
     pengelola: "Sewa",
     nama: "",
+    username: "",
     jabatan: "Staff",
     statusKaryawan: "Aktif",
     email: "",
+    password: "Password123!",
     noTelp: "",
     perNr: "",
     nip: "",
     alamat: "",
   };
+  userOverrides.value = {};
+  overrideSearchQuery.value = "";
   clearErrors();
   modalOpen.value = true;
 };
@@ -159,13 +212,19 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     { label: "Username", value: detailRecord.value.username || "-" },
     { label: "NIP", value: detailRecord.value.nip || "-" },
     {
-      label: "PerNr",
-      value: detailRecord.value.prnr || detailRecord.value.perNr || "-",
+      label: "No. Pekerja (PERNR)",
+      value: detailRecord.value.pernr || detailRecord.value.prnr || "-",
     },
     {
       label: "Organisasi",
       value:
-        detailRecord.value.organisasi || detailRecord.value.organization || "-",
+        detailRecord.value.organisasi ||
+        detailRecord.value.organization ||
+        "-",
+    },
+    {
+      label: "Jabatan",
+      value: detailRecord.value.jabatan || "Manager Operasi",
     },
     {
       label: "Role Akses",
@@ -250,115 +309,51 @@ const handleView = async (row: any) => {
   isDetailLoading.value = true;
 
   try {
-    const res: any = await getUserById(row.id);
-    if (res) {
-      if (res.user) {
-        detailRecord.value = {
-          ...row,
-          ...res.user,
-          nama: res.user.full_name || res.user.username,
-          organisasi: res.user.organization || row.organisasi,
-          statusKaryawan:
-            res.user.status === 1 || res.user.status === "1"
-              ? "Aktif"
-              : "Nonaktif",
-        };
+    const userDetailRes: any = await getUserById(row.id);
+    if (userDetailRes) {
+      if (userDetailRes.roles && Array.isArray(userDetailRes.roles)) {
+        detailRoles.value = userDetailRes.roles;
       }
-      if (Array.isArray(res.roles)) {
-        detailRoles.value = res.roles;
-      }
-      if (Array.isArray(res.access?.permissions)) {
-        detailPermissions.value = res.access.permissions;
+      if (
+        userDetailRes.access?.permissions &&
+        Array.isArray(userDetailRes.access.permissions)
+      ) {
+        detailPermissions.value = userDetailRes.access.permissions;
       }
     }
   } catch {
-    // Fallback to table row data on fetch error
+    // fallback
   } finally {
     isDetailLoading.value = false;
   }
 };
 
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    handleEdit(detailRecord.value);
-  }
-};
-
 const handleEdit = async (row: any) => {
   modalMode.value = "edit";
-  const matchedRole =
-    row.roles?.[0]?.role_code ||
-    row.role_assignments?.[0]?.role_code ||
-    row.aksesLevel ||
-    roles.value[0]?.code ||
-    "SUPER_ADMIN";
-
-  let userPermissions: string[] = [];
-
-  // 1. Fetch user detail & permissions via getUserById (GET /api/v1/users/:id)
-  try {
-    const userDetailRes: any = await getUserById(row.id);
-    if (
-      userDetailRes?.access?.permissions &&
-      Array.isArray(userDetailRes.access.permissions)
-    ) {
-      userPermissions = userDetailRes.access.permissions.map(
-        (p: any) =>
-          p.Key ||
-          p.permission_key ||
-          p.ID ||
-          `${p.ResourceCode}.${p.ActionCode}`,
-      );
-    }
-  } catch {
-    // fallback if getUserById fails
+  activeModalTab.value = "info";
+  let matchedRole = "ORG_ADMIN";
+  if (row.role_assignments && row.role_assignments.length > 0) {
+    matchedRole = row.role_assignments[0].role_code;
+  } else if (row.aksesLevel) {
+    matchedRole = row.aksesLevel;
+  } else if (row.role) {
+    matchedRole = row.role;
   }
 
-  // 2. If permissions not in detail, attempt combo endpoint as fallback
-  if (userPermissions.length === 0) {
-    try {
-      const comboRes: any = await fetchPermissionsCombo(row.id);
-      if (Array.isArray(comboRes)) {
-        userPermissions = comboRes
-          .filter(
-            (item: any) =>
-              item.is_selected ||
-              item.selected ||
-              item.checked ||
-              typeof item === "string",
-          )
-          .map((item: any) =>
-            typeof item === "string"
-              ? item
-              : item.permission_key || item.key || item.id || item.code,
-          );
-        if (!userPermissions.length && comboRes.length) {
-          userPermissions = comboRes.map((item: any) =>
-            typeof item === "string"
-              ? item
-              : item.permission_key || item.key || item.id || item.code,
-          );
-        }
-      } else if (comboRes && Array.isArray(comboRes.permissions)) {
-        userPermissions = comboRes.permissions.map((p: any) =>
-          typeof p === "string" ? p : p.permission_key || p.key || p.id,
-        );
-      }
-    } catch {
-      if (Array.isArray(row.permissions)) {
-        userPermissions = row.permissions;
-      } else if (Array.isArray(row.permission_overrides)) {
-        userPermissions = row.permission_overrides
-          .filter((o: any) => o.is_granted)
-          .map((o: any) => o.permission_key);
-      }
-    }
+  // Prepopulate Overrides
+  userOverrides.value = {};
+  overrideSearchQuery.value = "";
+  if (Array.isArray(row.permission_overrides)) {
+    row.permission_overrides.forEach((o: any) => {
+      userOverrides.value[o.permission_key] = o.is_granted ? "GRANTED" : "DENIED";
+    });
   }
 
   formData.value = {
     ...row,
     id: row.id,
     nama: row.nama || row.full_name,
+    username: row.username || "",
     email: row.email || "",
     organisasi: row.organisasi || row.organization || "",
     nip: row.nip || "",
@@ -370,7 +365,7 @@ const handleEdit = async (row: any) => {
         ? "Nonaktif"
         : "Aktif",
     aksesLevel: matchedRole,
-    permissions: userPermissions,
+    scopeLevel: row.access_level || "CABANG",
     tipe: row.tipe || "SSO PLN",
     akunPengelola: row.akunPengelola || false,
     pengelola: row.pengelola || "Sewa",
@@ -380,6 +375,13 @@ const handleEdit = async (row: any) => {
   };
   clearErrors();
   modalOpen.value = true;
+};
+
+const openEditFromDetail = () => {
+  if (detailRecord.value) {
+    isDetailModalOpen.value = false;
+    handleEdit(detailRecord.value);
+  }
 };
 
 const handleDelete = (row: any) => {
@@ -394,8 +396,8 @@ const confirmDelete = async () => {
     await deleteUser(deleteTarget.value.id);
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
-  } catch (err: any) {
-    // Error is handled by useApi global toast
+  } catch {
+    // handled by toast
   } finally {
     isDeleting.value = false;
   }
@@ -411,6 +413,14 @@ const clearErrors = () => {
   formErrors.value = {};
 };
 
+const setOverrideState = (permKey: string, state: "DEFAULT" | "GRANTED" | "DENIED") => {
+  if (state === "DEFAULT") {
+    delete userOverrides.value[permKey];
+  } else {
+    userOverrides.value[permKey] = state;
+  }
+};
+
 const handleSave = async () => {
   if (modalMode.value === "view") {
     modalOpen.value = false;
@@ -424,16 +434,18 @@ const handleSave = async () => {
       const fieldKey = issue.path[0] as string;
       formErrors.value[fieldKey] = issue.message;
     });
+    activeModalTab.value = "info";
     return;
   }
 
   submitting.value = true;
   try {
     const roleCode =
-      formData.value.aksesGrup ||
       formData.value.aksesLevel ||
+      formData.value.aksesGrup ||
       formData.value.role ||
-      "SUPER_ADMIN";
+      "ORG_ADMIN";
+
     const matchedOrg = organizations.value.find(
       (o: any) =>
         o.nama === formData.value.organisasi ||
@@ -455,9 +467,10 @@ const handleSave = async () => {
     );
     const statusKaryawan = formData.value.statusKaryawan || "Tetap";
     const accessLevel =
+      formData.value.scopeLevel ||
       formData.value.access_level ||
       formData.value.aksesLevel ||
-      (isPengelola ? "Pusat" : "Unit");
+      (isPengelola ? "GLOBAL" : "CABANG");
     const jabatan = formData.value.jabatan || "Manager Operasi";
     const nip = formData.value.nip || "";
     const pernr =
@@ -467,16 +480,20 @@ const handleSave = async () => {
       "";
     const phoneNumber =
       formData.value.noTelp || formData.value.phone_number || "";
-    const approvalCode = formData.value.approval_code || "APP-001";
-    const description =
-      formData.value.description ||
-      (jabatan ? `User ${jabatan} wilayah` : "User manager operasi wilayah");
-    const password = formData.value.password || "PLN@Tambora123";
-    const permissionOverrides = formData.value.permission_overrides || [];
+    const password = formData.value.password || "Password123!";
+
+    // Build permission overrides array from tab 2
+    const permissionOverrides = Object.entries(userOverrides.value)
+      .filter(([_, state]) => state === "GRANTED" || state === "DENIED")
+      .map(([key, state]) => ({
+        permission_key: key,
+        is_granted: state === "GRANTED",
+      }));
+
     const roleAssignments = [
       {
         role_code: roleCode,
-        scope_codes: formData.value.scope_codes || [],
+        scope_codes: formData.value.scope_codes || [accessLevel],
       },
     ];
 
@@ -484,9 +501,10 @@ const handleSave = async () => {
       access_level: accessLevel,
       address: formData.value.alamat || formData.value.address || "",
       akses_grup: roleCode,
-      approval_code: approvalCode,
-      description: description,
+      approval_code: formData.value.approval_code || "APP-001",
+      description: `User ${roleCode} unit ${orgName}`,
       email: formData.value.email,
+      username: formData.value.username || formData.value.email.split("@")[0],
       full_name:
         formData.value.nama || formData.value.full_name || "Pegawai PLN",
       is_pengelola: isPengelola,
@@ -519,7 +537,7 @@ const handleSave = async () => {
       isSuccessModalOpen.value = true;
     }, 150);
   } catch (err: any) {
-    alert("Gagal menyimpan: " + (err?.message || err));
+    // Handled by global toast
   } finally {
     submitting.value = false;
   }
@@ -531,7 +549,7 @@ const handleSave = async () => {
     <!-- ── Page Title Header ───────────────────────────────── -->
     <BasePageHeader />
 
-    <!-- ── Main Card Container (Flex-1, No Page Scroll) ────────── -->
+    <!-- ── Main Card Container ─────────────────────────────── -->
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
       <div
         class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
@@ -540,19 +558,17 @@ const handleSave = async () => {
         <div
           class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
         >
-          <!-- Left: Search input + Export button -->
           <div class="flex items-center gap-3">
-            <BaseSearchInput v-model="searchQuery" placeholder="Cari Data" />
+            <BaseSearchInput v-model="searchQuery" placeholder="Cari Data Pengguna..." />
             <BaseExportButton @click="handleExport" />
           </div>
 
-          <!-- Right: Create Data Button -->
           <div class="flex items-center gap-3">
-            <BaseCreateButton label="TAMBAH DATA" @click="openCreateModal" />
+            <BaseCreateButton label="TAMBAH PENGGUNA" @click="openCreateModal" />
           </div>
         </div>
 
-        <!-- ── Table Container (Flex-1 Scrollable) ───────────────── -->
+        <!-- ── Table Container ───────────────────────────────────── -->
         <BaseTable
           :columns="userTableColumns"
           :rows="paginatedData"
@@ -560,7 +576,6 @@ const handleSave = async () => {
           class="flex-1 min-h-0"
           @reload="fetchUsers"
         >
-          <!-- Status Karyawan Cell Slot -->
           <template #statusKaryawan-data="{ row }">
             <BaseBadge
               class="w-20 min-w-[76px]"
@@ -570,7 +585,6 @@ const handleSave = async () => {
             </BaseBadge>
           </template>
 
-          <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
@@ -590,18 +604,349 @@ const handleSave = async () => {
       </div>
     </div>
 
-    <!-- ── Form Modal (Create / Edit / View) ─────────────────── -->
-    <BaseFormModal
-      v-model:is-open="modalOpen"
-      v-model:form-data="formData"
-      :title="modalTitle"
-      :subtitle="modalSubtitle"
-      :sections="activeFormSections"
-      :submitting="submitting"
-      :errors="formErrors"
-      @submit="handleSave"
-      @cancel="clearErrors"
-    />
+    <!-- ── MODAL FORM 2-TAB: USER & PERMISSION OVERRIDES ───────── -->
+    <div
+      v-if="modalOpen"
+      class="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl border border-gray-100 w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+      >
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-primary-50 border border-primary-200 flex items-center justify-center text-primary-700">
+              <User class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-gray-900">{{ modalTitle }}</h3>
+              <p class="text-xs text-gray-500">{{ modalSubtitle }}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+            @click="modalOpen = false"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Tab Selector Bar -->
+        <div class="flex border-b border-gray-200 bg-gray-50/60 px-6 shrink-0">
+          <button
+            type="button"
+            class="py-3 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all"
+            :class="
+              activeModalTab === 'info'
+                ? 'border-primary-600 text-primary-700 bg-white'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            "
+            @click="activeModalTab = 'info'"
+          >
+            <User class="w-4 h-4" />
+            Tab 1: Informasi Pengguna & Role
+          </button>
+
+          <button
+            type="button"
+            class="py-3 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all relative"
+            :class="
+              activeModalTab === 'overrides'
+                ? 'border-primary-600 text-primary-700 bg-white'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            "
+            @click="activeModalTab = 'overrides'"
+          >
+            <KeyRound class="w-4 h-4 text-amber-600" />
+            Tab 2: Hak Akses Khusus (Overrides)
+            <span
+              v-if="activeOverridesCount.total > 0"
+              class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold border border-amber-300"
+            >
+              {{ activeOverridesCount.total }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Modal Body Container -->
+        <div class="p-6 overflow-y-auto flex-1">
+          <!-- ── TAB 1: USER INFO & ROLE FORM ──────────────────── -->
+          <div v-show="activeModalTab === 'info'" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">
+                  Email Pengguna <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="formData.email"
+                  type="email"
+                  placeholder="operator.manado@pln.co.id"
+                  class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white"
+                  :class="{ 'border-red-400': formErrors.email }"
+                />
+                <span v-if="formErrors.email" class="text-[11px] text-red-500 mt-1 block">
+                  {{ formErrors.email }}
+                </span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">
+                  Username <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="formData.username"
+                  type="text"
+                  placeholder="operator_manado"
+                  class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white font-mono"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">
+                  Nama Lengkap <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="formData.nama"
+                  type="text"
+                  placeholder="Operator Cabang Manado"
+                  class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white"
+                  :class="{ 'border-red-400': formErrors.nama }"
+                />
+                <span v-if="formErrors.nama" class="text-[11px] text-red-500 mt-1 block">
+                  {{ formErrors.nama }}
+                </span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">
+                  Password {{ modalMode === 'create' ? '*' : '(Biarkan kosong jika tidak diubah)' }}
+                </label>
+                <input
+                  v-model="formData.password"
+                  type="password"
+                  placeholder="Password123!"
+                  class="w-full text-xs px-3.5 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white font-mono"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">
+                  Akses Grup / Role Utama <span class="text-red-500">*</span>
+                </label>
+                <select
+                  v-model="formData.aksesLevel"
+                  class="w-full text-xs px-3 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white font-semibold text-gray-800"
+                >
+                  <option v-for="r in roleOptions" :key="r.value" :value="r.value">
+                    {{ r.label }}
+                  </option>
+                </select>
+                <span class="text-[10px] text-gray-500 mt-0.5 block">
+                  Role default menentukan himpunan izin awal pengguna.
+                </span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">
+                  Akses Level (Scope Wilayah) <span class="text-red-500">*</span>
+                </label>
+                <select
+                  v-model="formData.scopeLevel"
+                  class="w-full text-xs px-3 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white font-semibold text-gray-800"
+                >
+                  <option v-for="s in scopeOptions" :key="s.value" :value="s.value">
+                    {{ s.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold text-gray-700 mb-1">
+                  Unit Organisasi <span class="text-red-500">*</span>
+                </label>
+                <select
+                  v-model="formData.organisasi"
+                  class="w-full text-xs px-3 py-2.5 bg-gray-50/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white"
+                >
+                  <option v-for="org in orgOptions" :key="org.value" :value="org.value">
+                    {{ org.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Status Karyawan</label>
+                <select
+                  v-model="formData.statusKaryawan"
+                  class="w-full text-xs px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                >
+                  <option value="Aktif">Aktif</option>
+                  <option value="Nonaktif">Nonaktif</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">NIP / Nomor Pegawai</label>
+                <input
+                  v-model="formData.nip"
+                  type="text"
+                  placeholder="Contoh: 8912345Z"
+                  class="w-full text-xs px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── TAB 2: PERMISSION OVERRIDES (HAK AKSES KHUSUS) ── -->
+          <div v-show="activeModalTab === 'overrides'" class="space-y-4">
+            <!-- Instruction Banner -->
+            <div class="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-3">
+              <KeyRound class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <div class="font-bold text-amber-900">Hak Akses Khusus (Permission Overrides)</div>
+                <div class="text-[11px] text-amber-800 leading-relaxed mt-0.5">
+                  Gunakan bagian ini untuk membedakan hak akses 2 user dengan Role yang sama.
+                  Misalnya melarang <strong>SENTRAL.DELETE</strong> atau <strong>CABANG.DELETE</strong> khusus untuk akun ini.
+                </div>
+              </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="flex items-center justify-between gap-3">
+              <div class="relative flex-1">
+                <Search class="w-3.5 h-3.5 absolute left-3 top-3 text-gray-400" />
+                <input
+                  v-model="overrideSearchQuery"
+                  type="text"
+                  placeholder="Cari izin fitur (e.g. SENTRAL.DELETE, CABANG.CREATE)..."
+                  class="w-full text-xs pl-9 pr-3.5 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white"
+                />
+              </div>
+
+              <div class="text-xs text-gray-500 shrink-0">
+                Total: <strong>{{ permissions.length }}</strong> izin
+              </div>
+            </div>
+
+            <!-- Overrides Table List -->
+            <div class="border border-gray-200 rounded-xl overflow-hidden shadow-2xs max-h-80 overflow-y-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-gray-100/80 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b border-gray-200 sticky top-0 z-10">
+                  <tr>
+                    <th class="py-2.5 px-4">Fitur / Permission Key</th>
+                    <th class="py-2.5 px-4">Status Override</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                  <tr
+                    v-for="p in filteredPermissionsForOverrides"
+                    :key="p.permission_key"
+                    class="hover:bg-gray-50/70 transition-colors"
+                  >
+                    <td class="py-2 px-4">
+                      <div class="font-mono font-bold text-gray-800 text-xs">{{ p.permission_key }}</div>
+                      <div class="text-[11px] text-gray-500">{{ p.description || p.resource_name || '-' }}</div>
+                    </td>
+
+                    <td class="py-2 px-4">
+                      <div class="flex items-center gap-2">
+                        <!-- Option 1: Default (Ikut Role) -->
+                        <button
+                          type="button"
+                          class="px-2.5 py-1 text-[11px] font-semibold rounded-md border transition-all flex items-center gap-1"
+                          :class="
+                            !userOverrides[p.permission_key] || userOverrides[p.permission_key] === 'DEFAULT'
+                              ? 'bg-gray-100 text-gray-700 border-gray-300 font-bold shadow-2xs'
+                              : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'
+                          "
+                          @click="setOverrideState(p.permission_key, 'DEFAULT')"
+                        >
+                          <MinusCircle class="w-3 h-3 text-gray-400" />
+                          Ikut Role
+                        </button>
+
+                        <!-- Option 2: Izinkan (Grant: true) -->
+                        <button
+                          type="button"
+                          class="px-2.5 py-1 text-[11px] font-semibold rounded-md border transition-all flex items-center gap-1"
+                          :class="
+                            userOverrides[p.permission_key] === 'GRANTED'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold shadow-2xs'
+                              : 'bg-white text-gray-400 border-gray-200 hover:bg-emerald-50/50 hover:text-emerald-700'
+                          "
+                          @click="setOverrideState(p.permission_key, 'GRANTED')"
+                        >
+                          <CheckCircle2 class="w-3 h-3 text-emerald-600" />
+                          Izinkan (ON)
+                        </button>
+
+                        <!-- Option 3: Blokir (Deny: false) -->
+                        <button
+                          type="button"
+                          class="px-2.5 py-1 text-[11px] font-semibold rounded-md border transition-all flex items-center gap-1"
+                          :class="
+                            userOverrides[p.permission_key] === 'DENIED'
+                              ? 'bg-red-50 text-red-800 border-red-300 font-bold shadow-2xs'
+                              : 'bg-white text-gray-400 border-gray-200 hover:bg-red-50/50 hover:text-red-700'
+                          "
+                          @click="setOverrideState(p.permission_key, 'DENIED')"
+                        >
+                          <XCircle class="w-3 h-3 text-red-600" />
+                          Blokir (OFF)
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr v-if="filteredPermissionsForOverrides.length === 0">
+                    <td colspan="2" class="py-8 text-center text-gray-400">
+                      Tidak ada permission yang cocok dengan kata kunci pencarian.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
+          <div class="text-xs text-gray-500">
+            <span v-if="activeOverridesCount.total > 0">
+              Overrides: <strong class="text-emerald-700">{{ activeOverridesCount.granted }} Izinkan</strong>, <strong class="text-red-700">{{ activeOverridesCount.denied }} Blokir</strong>
+            </span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+              @click="modalOpen = false"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              :disabled="submitting"
+              class="px-5 py-2 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center gap-2 shadow-xs disabled:opacity-60"
+              @click="handleSave"
+            >
+              <svg
+                v-if="submitting"
+                class="animate-spin h-3.5 w-3.5 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <span>{{ modalMode === 'create' ? 'Simpan Pengguna & Izin' : 'Simpan Perubahan' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Confirm Delete Dialog -->
     <BaseConfirmDialog
@@ -634,26 +979,10 @@ const handleSave = async () => {
     >
       <template #extra>
         <div class="mt-4 pt-4 border-t border-gray-100 space-y-4">
-          <!-- Permissions Section -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span
-                class="text-xs font-bold text-gray-700 flex items-center gap-1.5"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="w-4 h-4 text-emerald-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
+              <span class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                <KeyRound class="w-4 h-4 text-emerald-600" />
                 Akses Permission
               </span>
               <span
@@ -664,7 +993,6 @@ const handleSave = async () => {
               </span>
             </div>
 
-            <!-- Permission Search if permissions count > 6 -->
             <div v-if="detailPermissions.length > 6" class="mb-2.5">
               <input
                 v-model="permissionSearch"
@@ -678,30 +1006,14 @@ const handleSave = async () => {
               v-if="isDetailLoading"
               class="flex items-center justify-center py-4 text-xs text-gray-400 gap-2"
             >
-              <svg
-                class="animate-spin h-4 w-4 text-blue-600"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                />
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8H4z"
-                />
+              <svg class="animate-spin h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
               <span>Memuat relasi hak akses user...</span>
             </div>
 
             <div v-else>
-              <!-- Permission Badges List with PrimeVue Tooltip -->
               <div
                 v-if="filteredDetailPermissions.length > 0"
                 class="max-h-56 overflow-y-auto p-1 flex flex-wrap gap-1.5"

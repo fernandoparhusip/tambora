@@ -68,6 +68,30 @@ export const menuItems: MenuItem[] = [
         path: "/home/master/permission",
       },
       {
+        key: "regional",
+        label: "Regional (Wilayah)",
+        pageTitle: "Master Regional / Wilayah",
+        path: "/home/master/regional",
+      },
+      {
+        key: "cabang",
+        label: "Cabang",
+        pageTitle: "Master Cabang",
+        path: "/home/master/cabang",
+      },
+      {
+        key: "ranting",
+        label: "Ranting",
+        pageTitle: "Master Ranting",
+        path: "/home/master/ranting",
+      },
+      {
+        key: "sentral",
+        label: "Sentral Pembangkit",
+        pageTitle: "Master Sentral Pembangkit",
+        path: "/home/master/sentral",
+      },
+      {
         key: "pengemudi",
         label: "Pengemudi",
         pageTitle: "Master Pengemudi",

@@ -7,3 +7,8 @@ export * from "./scope.schema";
 export * from "./machine-condition.schema";
 export * from "./asset.schema";
 export * from "./permission.schema";
+export * from "./regional.schema";
+export * from "./cabang.schema";
+export * from "./ranting.schema";
+export * from "./sentral.schema";
+

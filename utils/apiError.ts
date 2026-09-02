@@ -65,7 +65,7 @@ export function parseApiError(error: any): ApiErrorResult {
         statusCode: 403,
         severity: 'error',
         summary: 'Akses Ditolak',
-        detail: backendMessage || 'Anda tidak memiliki hak akses untuk tindakan ini.'
+        detail: backendMessage || 'Akses Ditolak: Anda tidak memiliki izin untuk melakukan aksi ini.'
       }
     case 404:
       return {

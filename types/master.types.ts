@@ -149,7 +149,8 @@ export interface CreateRoleRequest {
   code: string;
   name: string;
   description: string;
-  permissions: string[];
+  permissions?: string[];
+  permission_ids?: string[];
 }
 
 export interface UpdateRoleRequest {
@@ -157,7 +158,9 @@ export interface UpdateRoleRequest {
   name: string;
   description: string;
   permissions?: string[];
+  permission_ids?: string[];
 }
+
 
 /** Master Permission DTOs */
 export interface PermissionItem {
@@ -410,3 +413,155 @@ export interface UpdateAssetRequest {
   daya_mampu_pasok?: number;
   kondisi_mesin?: string;
 }
+
+/** Master Regional DTOs */
+export interface RegionalItem {
+  id: string;
+  kode_regional: string;
+  nama_regional: string;
+  latitude?: number;
+  longitude?: number;
+  keterangan?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateRegionalRequest {
+  kode_regional: string;
+  nama_regional: string;
+  latitude?: number;
+  longitude?: number;
+  keterangan?: string;
+}
+
+export interface UpdateRegionalRequest {
+  kode_regional?: string;
+  nama_regional?: string;
+  latitude?: number;
+  longitude?: number;
+  keterangan?: string;
+}
+
+/** Master Cabang DTOs */
+export interface CabangItem {
+  id: string;
+  kode_wilayah: string;
+  kode_regional?: string;
+  nama_wilayah?: string;
+  kode_cabang: string;
+  nama_cabang: string;
+  approve_status?: string;
+  keterangan?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateCabangRequest {
+  kode_wilayah: string;
+  kode_cabang: string;
+  nama_cabang: string;
+  approve_status?: string;
+  keterangan?: string;
+}
+
+export interface UpdateCabangRequest {
+  kode_wilayah?: string;
+  kode_cabang?: string;
+  nama_cabang?: string;
+  approve_status?: string;
+  keterangan?: string;
+}
+
+/** Master Ranting DTOs */
+export interface RantingItem {
+  id: string;
+  kode_cabang: string;
+  nama_cabang?: string;
+  kode_ranting: string;
+  nama_ranting: string;
+  status_ranting?: string;
+  approve_status?: string;
+  keterangan?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateRantingRequest {
+  kode_cabang: string;
+  kode_ranting: string;
+  nama_ranting: string;
+  status_ranting?: string;
+  approve_status?: string;
+  keterangan?: string;
+}
+
+export interface UpdateRantingRequest {
+  kode_cabang?: string;
+  kode_ranting?: string;
+  nama_ranting?: string;
+  status_ranting?: string;
+  approve_status?: string;
+  keterangan?: string;
+}
+
+/** Master Sentral DTOs */
+export interface SentralItem {
+  id: string;
+  kode_wilayah?: string;
+  kode_ranting?: string;
+  nama_ranting?: string;
+  kode_sentral: string;
+  nama_sentral: string;
+  kode_jenis_pembangkit?: string;
+  jenis_bahan_bakar?: string;
+  daya_terpasang?: number;
+  daya_mampu?: number;
+  tahun_operasi?: number;
+  kondisi?: string;
+  latitude?: number;
+  longitude?: number;
+  approve_status?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface CreateSentralRequest {
+  kode_wilayah?: string;
+  kode_ranting?: string;
+  kode_sentral: string;
+  nama_sentral: string;
+  kode_jenis_pembangkit?: string;
+  jenis_bahan_bakar?: string;
+  daya_terpasang?: number;
+  daya_mampu?: number;
+  tahun_operasi?: number;
+  kondisi?: string;
+  latitude?: number;
+  longitude?: number;
+  approve_status?: string;
+}
+
+export interface UpdateSentralRequest {
+  kode_wilayah?: string;
+  kode_ranting?: string;
+  kode_sentral?: string;
+  nama_sentral?: string;
+  kode_jenis_pembangkit?: string;
+  jenis_bahan_bakar?: string;
+  daya_terpasang?: number;
+  daya_mampu?: number;
+  tahun_operasi?: number;
+  kondisi?: string;
+  latitude?: number;
+  longitude?: number;
+  approve_status?: string;
+}
+
