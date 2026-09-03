@@ -59,7 +59,11 @@ export const useAuth = () => {
     errorMessage.value = ''
     
     try {
-      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+      const configured = config.public?.apiBaseUrl
+      const baseUrl =
+        import.meta.client && typeof configured === 'string' && configured.startsWith('http')
+          ? '/api/v1'
+          : configured?.replace(/\/$/, '') || '/api/v1'
 
       const response = await $fetch<AuthResponse>(
         `${baseUrl}/auth/login`,
@@ -130,7 +134,11 @@ export const useAuth = () => {
     if (!rfToken) return null
 
     try {
-      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+      const configured = config.public?.apiBaseUrl
+      const baseUrl =
+        import.meta.client && typeof configured === 'string' && configured.startsWith('http')
+          ? '/api/v1'
+          : configured?.replace(/\/$/, '') || '/api/v1'
       const response = await $fetch<{
         data?: {
           access_token: string

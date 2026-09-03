@@ -9,8 +9,14 @@ export const useApi = () => {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
 
+  // In the browser, ALWAYS enforce relative /api/v1 to route through Nuxt's internal proxy (prevents CORS on production VPS)
+  const resolvedBaseUrl =
+    import.meta.client && typeof config.public.apiBaseUrl === 'string' && config.public.apiBaseUrl.startsWith('http')
+      ? '/api/v1'
+      : config.public.apiBaseUrl || '/api/v1';
+
   const api = $fetch.create({
-    baseURL: config.public.apiBaseUrl,
+    baseURL: resolvedBaseUrl,
     retry: 2,
     retryStatusCodes: [408, 429, 500, 502, 503, 504],
     retryDelay: 1000,
@@ -40,6 +46,7 @@ export const useApi = () => {
 
       // Handle 401 Unauthorized with Single-Flight Refresh Mutex
       if (context.response?.status === 401 && !isAuthEndpoint) {
+        const redirectPath = typeof window !== 'undefined' ? window.location.pathname : '/home'
         if (authStore.refreshToken) {
           try {
             if (!refreshPromise) {
@@ -52,13 +59,13 @@ export const useApi = () => {
             if (isRefreshed) {
               return
             } else {
-              await authStore.logout()
+              await authStore.logout(redirectPath)
             }
           } catch {
-            await authStore.logout()
+            await authStore.logout(redirectPath)
           }
         } else {
-          await authStore.logout()
+          await authStore.logout(redirectPath)
         }
       }
 
