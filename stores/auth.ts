@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useCookie, navigateTo } from '#app'
+import { useToast } from 'primevue/usetoast'
 import { menuItems } from '~/config/navigation'
 
 export interface PermissionOverride {
@@ -89,6 +90,16 @@ export const useAuthStore = defineStore('auth', () => {
   const errorMessage = ref('')
   const message = ref('')
   const isError = ref(false)
+
+  // In the browser, ALWAYS enforce relative /api/v1 to route through Nuxt's internal proxy (prevents CORS on VPS)
+  const getResolvedApiBaseUrl = (): string => {
+    const config = useRuntimeConfig()
+    const configured = config.public?.apiBaseUrl
+    if (import.meta.client && typeof configured === 'string' && configured.startsWith('http')) {
+      return '/api/v1'
+    }
+    return configured?.replace(/\/$/, '') || '/api/v1'
+  }
 
 
   // Cross-Tab BroadcastChannel setup
@@ -249,8 +260,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     isFetchingAccess = (async () => {
       try {
-        const config = useRuntimeConfig()
-        const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+        const baseUrl = getResolvedApiBaseUrl()
         const res = await $fetch<{ data?: any; permissions?: string[]; scopes?: string[]; menus?: any[] }>(
           `${baseUrl}/auth/access`,
           {
@@ -324,8 +334,15 @@ export const useAuthStore = defineStore('auth', () => {
           lastFetchedAccess = Date.now()
           return accessData
         }
-      } catch {
-        // Endpoint fallback
+      } catch (err: any) {
+        const is401 =
+          err?.status === 401 ||
+          err?.statusCode === 401 ||
+          err?.response?.status === 401
+        if (is401) {
+          const redirectPath = typeof window !== 'undefined' ? window.location.pathname : '/home'
+          await logout(redirectPath)
+        }
       } finally {
         isFetchingAccess = null
       }
@@ -348,8 +365,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     isFetchingMe = (async () => {
       try {
-        const config = useRuntimeConfig()
-        const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+        const baseUrl = getResolvedApiBaseUrl()
         const res = await $fetch<{ data: any }>(`${baseUrl}/auth/me`, {
           headers: {
             Authorization: `Bearer ${token.value}`
@@ -381,8 +397,61 @@ export const useAuthStore = defineStore('auth', () => {
           lastFetchedMe = Date.now()
           return updated
         }
-      } catch {
-        // Ignored if me endpoint temporarily fails
+      } catch (err: any) {
+        const is401 =
+          err?.status === 401 ||
+          err?.statusCode === 401 ||
+          err?.response?.status === 401 ||
+          String(err?.message || '').toLowerCase().includes('401') ||
+          String(err?.data?.message || '').toLowerCase().includes('token')
+
+        if (is401) {
+          const redirectPath = typeof window !== 'undefined' ? window.location.pathname : '/home'
+          if (refreshToken.value) {
+            const isRefreshed = await refreshSession()
+            if (isRefreshed && token.value) {
+              try {
+                const baseUrl = getResolvedApiBaseUrl()
+                const retryRes = await $fetch<{ data: any }>(`${baseUrl}/auth/me`, {
+                  headers: {
+                    Authorization: `Bearer ${token.value}`
+                  }
+                })
+                if (retryRes?.data) {
+                  const u = retryRes.data
+                  const updated: UserSession = {
+                    id: u.id,
+                    nama: u.full_name || u.username || 'User Tambora',
+                    full_name: u.full_name || u.username,
+                    username: u.username,
+                    email: u.email,
+                    organization: u.organization,
+                    nip: u.nip,
+                    prnr: u.prnr,
+                    status: u.status,
+                    role: u.organization || u.akses_grup || (u.role_assignments?.[0]?.role_code) || 'Admin',
+                    akses_grup: u.akses_grup || u.role_assignments?.[0]?.role_code,
+                    roles: u.roles || (u.role_assignments?.map((r: any) => r.role_code)) || [],
+                    permissions: u.permissions || permissions.value,
+                    scopes: u.scopes || scopes.value,
+                    permission_overrides: u.permission_overrides || permissionOverrides.value,
+                    level_id: '1'
+                  }
+                  setUser(updated)
+                  await fetchUserAccess(true)
+                  lastFetchedMe = Date.now()
+                  return updated
+                }
+              } catch {
+                await logout(redirectPath)
+              }
+            } else {
+              await logout(redirectPath)
+            }
+          } else {
+            await logout(redirectPath)
+          }
+        }
       } finally {
         isFetchingMe = null
       }
@@ -575,20 +644,29 @@ export const useAuthStore = defineStore('auth', () => {
   const refreshSession = async (): Promise<boolean> => {
     if (!refreshToken.value) return false
     try {
-      const config = useRuntimeConfig()
-      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+      const baseUrl = getResolvedApiBaseUrl()
       const res = await $fetch<{
         data?: {
-          access_token: string
+          access_token?: string
           refresh_token?: string
+          token?: string
         }
+        access_token?: string
+        refresh_token?: string
+        token?: string
       }>(`${baseUrl}/auth/refresh`, {
         method: 'POST',
         body: { refresh_token: refreshToken.value }
       })
 
-      const newAccess = res?.data?.access_token
-      const newRefresh = res?.data?.refresh_token
+      const newAccess =
+        res?.data?.access_token ||
+        res?.data?.token ||
+        res?.access_token ||
+        res?.token
+      const newRefresh =
+        res?.data?.refresh_token ||
+        res?.refresh_token
       if (newAccess) {
         setTokens(newAccess, newRefresh)
         return true
@@ -640,8 +718,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = async (redirectPath?: string) => {
     try {
-      const config = useRuntimeConfig()
-      const baseUrl = config.public.apiBaseUrl?.replace(/\/$/, '') || '/api/v1'
+      const baseUrl = getResolvedApiBaseUrl()
       if (token.value) {
         await $fetch(`${baseUrl}/auth/logout`, {
           method: 'POST',
@@ -655,6 +732,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     clearLocalState(true)
+
+    if (import.meta.client) {
+      try {
+        const toast = useToast()
+        toast?.add?.({
+          severity: 'info',
+          summary: 'Sesi Berakhir',
+          detail: 'Sesi Anda telah berakhir demi keamanan. Silakan login kembali.',
+          life: 4000
+        })
+      } catch {
+        // Ignore if toast provider unavailable
+      }
+    }
 
     const target = redirectPath ? `/login?redirect=${encodeURIComponent(redirectPath)}` : '/login'
     navigateTo(target)

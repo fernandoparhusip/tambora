@@ -67,4 +67,33 @@ describe('Auth Pinia Store', () => {
     expect(authStore.token).toBeNull()
     expect(authStore.refreshToken).toBeNull()
   })
+
+  it('should return false when refreshSession is called without refreshToken', async () => {
+    const authStore = useAuthStore()
+    const result = await authStore.refreshSession()
+    expect(result).toBe(false)
+  })
+
+  it('should auto-logout and navigate to login when fetchUserMe gets 401 and refresh fails', async () => {
+    const { navigateTo } = await import('#app')
+    const authStore = useAuthStore()
+    authStore.setSession({ nama: 'User', role: 'Staff' }, 'expired_token')
+
+    // Mock global $fetch to simulate 401
+    const mockFetch = vi.fn().mockRejectedValue({
+      status: 401,
+      statusCode: 401,
+      message: 'invalid access token'
+    })
+    vi.stubGlobal('$fetch', mockFetch)
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBaseUrl: '/api/v1' } }))
+
+    await authStore.fetchUserMe()
+
+    expect(authStore.isLoggedIn).toBe(false)
+    expect(authStore.token).toBeNull()
+    expect(navigateTo).toHaveBeenCalledWith(expect.stringContaining('/login'))
+
+    vi.unstubAllGlobals()
+  })
 })
