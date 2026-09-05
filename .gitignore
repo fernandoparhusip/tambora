@@ -19,6 +19,7 @@ logs
 .fleet
 .idea
 .agents
+AGENTS.md
 
 # Local env files
 .env

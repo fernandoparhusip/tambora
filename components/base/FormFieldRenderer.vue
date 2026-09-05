@@ -274,6 +274,7 @@ const latValue = computed({
   get: () => props.formData?.[latKey.value] ?? "",
   set: (val: any) => {
     if (props.formData) {
+      // eslint-disable-next-line vue/no-mutating-props
       props.formData[latKey.value] =
         val !== "" && val !== null && !isNaN(Number(val)) ? Number(val) : null;
     }
@@ -284,6 +285,7 @@ const lngValue = computed({
   get: () => props.formData?.[lngKey.value] ?? "",
   set: (val: any) => {
     if (props.formData) {
+      // eslint-disable-next-line vue/no-mutating-props
       props.formData[lngKey.value] =
         val !== "" && val !== null && !isNaN(Number(val)) ? Number(val) : null;
     }

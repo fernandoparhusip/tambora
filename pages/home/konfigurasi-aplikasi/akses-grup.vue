@@ -1,20 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import {
-  Key,
-  ShieldCheck,
-  CheckSquare,
-  Square,
-  Layers,
-  RotateCcw,
-  MinusSquare,
-  Eye,
-  Plus,
-  Pencil,
-  Trash2,
-  CheckCircle2,
-  Check,
-} from "@lucide/vue";
+
 import type { DetailDataItem } from "~/types/master.types";
 import type { RoleItem, TableColumn, PermissionItem } from "~/types";
 import { useAksesGrup } from "~/composables/konfigurasi-aplikasi/useAksesGrup";
@@ -198,12 +184,6 @@ const isPermissionSelected = (p?: PermissionItem): boolean => {
 const isAllPermissionsSelected = computed(() => {
   if (allPermissions.value.length === 0) return false;
   return allPermissions.value.every((p) => isPermissionSelected(p));
-});
-
-const isSomePermissionsSelected = computed(() => {
-  return (
-    selectedPermissionKeys.value.size > 0 && !isAllPermissionsSelected.value
-  );
 });
 
 const selectAllGlobal = () => {
