@@ -79,18 +79,10 @@ export const usePemakaianBahanBakar = () => {
     loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<PemakaianBahanBakarDTO>>(`/pemakaian-bahan-bakar/${id}`, {
-          method: "POST",
-          body: payload
-        });
-      } catch {
-        res = await api<ApiResponse<PemakaianBahanBakarDTO>>(`/pemakaian-bahan-bakar/${id}`, {
-          method: "PUT",
-          body: payload
-        });
-      }
+      const res = await api<ApiResponse<PemakaianBahanBakarDTO>>(`/pemakaian-bahan-bakar/${id}`, {
+        method: "POST",
+        body: payload
+      });
       await fetchList();
       return res?.data;
     } catch (err: any) {
@@ -105,16 +97,9 @@ export const usePemakaianBahanBakar = () => {
     loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<null>>(`/pemakaian-bahan-bakar/${id}/delete`, {
-          method: "POST"
-        });
-      } catch {
-        res = await api<ApiResponse<null>>(`/pemakaian-bahan-bakar/${id}`, {
-          method: "DELETE"
-        });
-      }
+      const res = await api<ApiResponse<null>>(`/pemakaian-bahan-bakar/${id}/delete`, {
+        method: "POST"
+      });
       await fetchList();
       return res;
     } catch (err: any) {

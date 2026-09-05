@@ -1,5 +1,6 @@
 import { useApi } from "~/composables/useApi";
 import { ref, computed } from "vue";
+import { extractApiErrorMessage } from "~/utils/apiError";
 import type {
   CabangItem,
   CreateCabangRequest,
@@ -12,6 +13,7 @@ export const useCabang = () => {
   const cabangList = ref<CabangItem[]>([]);
   const currentCabang = ref<CabangItem | null>(null);
   const loading = ref(false);
+  const detailLoading = ref(false);
   const total = ref(0);
   const error = ref<string | null>(null);
 
@@ -38,7 +40,7 @@ export const useCabang = () => {
       }
       return cabangList.value;
     } catch (err: any) {
-      error.value = err?.message || "Gagal memuat daftar cabang.";
+      error.value = extractApiErrorMessage(err, "Gagal memuat daftar cabang.");
       throw err;
     } finally {
       loading.value = false;
@@ -46,24 +48,28 @@ export const useCabang = () => {
   };
 
   const getCabangById = async (id: string) => {
-    loading.value = true;
+    detailLoading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<CabangItem>>(`/cabang/${id}`);
-      if (res?.data) {
-        currentCabang.value = res.data;
+      const res = await api<any>(`/cabang/${id}`);
+      const data = res?.data || res;
+      if (data) {
+        currentCabang.value = data;
       }
-      return res?.data;
+      return data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal mengambil detail cabang.";
-      throw err;
+      const msg = extractApiErrorMessage(err, "Gagal mengambil detail cabang.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     } finally {
-      loading.value = false;
+      detailLoading.value = false;
     }
   };
 
   const createCabang = async (payload: CreateCabangRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<CabangItem>>("/cabang", {
@@ -73,60 +79,49 @@ export const useCabang = () => {
       await fetchCabang();
       return res?.data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal membuat cabang.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal membuat cabang.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
   const updateCabang = async (id: string, payload: UpdateCabangRequest) => {
-    loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<CabangItem>>(`/cabang/${id}`, {
-          method: "POST",
-          body: payload,
-        });
-      } catch {
-        res = await api<ApiResponse<CabangItem>>(`/cabang/${id}`, {
-          method: "PUT",
-          body: payload,
-        });
-      }
+      const res = await api<ApiResponse<CabangItem>>(`/cabang/${id}`, {
+        method: "POST",
+        body: payload,
+      });
       await fetchCabang();
       return res?.data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal mengubah data cabang.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal mengubah data cabang.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
   const deleteCabang = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<null>>(`/cabang/${id}/delete`, {
-          method: "POST",
-        });
-      } catch {
-        res = await api<ApiResponse<null>>(`/cabang/${id}`, {
-          method: "DELETE",
-        });
-      }
+      const res = await api<ApiResponse<null>>(`/cabang/${id}/delete`, {
+        method: "POST",
+      });
       await fetchCabang();
       return res;
     } catch (err: any) {
-      error.value = err?.message || "Gagal menghapus cabang.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal menghapus cabang.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
@@ -146,6 +141,7 @@ export const useCabang = () => {
     cabangList: computed(() => cabangList.value),
     currentCabang: computed(() => currentCabang.value),
     loading: computed(() => loading.value),
+    detailLoading: computed(() => detailLoading.value),
     total: computed(() => total.value),
     error: computed(() => error.value),
     fetchCabang,

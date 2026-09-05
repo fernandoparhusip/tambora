@@ -31,7 +31,7 @@ export const getAssetFormSections = (
         },
         {
           key: "nama_mesin",
-          label: "Nama Mesin Pembangkit",
+          label: "Nama Mesin",
           type: "text",
           placeholder: "Contoh: PLTD BIMA #07 (CATERPILLAR)",
           required: true,
@@ -39,7 +39,7 @@ export const getAssetFormSections = (
         },
         {
           key: "serial_number",
-          label: "Nomor Seri (Serial Number)",
+          label: "Nomor Seri",
           type: "text",
           placeholder: "Contoh: 28617",
           required: false,

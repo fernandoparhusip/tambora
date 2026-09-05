@@ -4,6 +4,7 @@ import type { TableColumn, SentralItem } from "~/types";
 import { getSentralFormSections } from "~/schemas/master/sentral.schema";
 import type { DetailDataItem } from "~/types/master.types";
 import { useSentral } from "~/composables/master/useSentral";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 import { useRegional } from "~/composables/master/useRegional";
 import { useRanting } from "~/composables/master/useRanting";
 import { useRbac } from "~/composables/useRbac";
@@ -33,9 +34,6 @@ const isSuccessModalOpen = ref(false);
 const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
-
-const isDetailModalOpen = ref(false);
-const detailRecord = ref<SentralItem | null>(null);
 
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<SentralItem | null>(null);
@@ -108,8 +106,8 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "create"
-    ? "Form Tambah Master Data Sentral Pembangkit PLN"
-    : "Form Ubah Master Data Sentral Pembangkit PLN",
+    ? "Form Tambah Sentral"
+    : "Form Ubah Sentral",
 );
 
 const openCreateModal = () => {
@@ -132,16 +130,7 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-const handleView = async (row: SentralItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-  try {
-    const fresh = await getSentralById(row.id);
-    if (fresh) detailRecord.value = fresh;
-  } catch {
-    // Fallback
-  }
-};
+
 
 const handleEdit = (row: SentralItem) => {
   modalMode.value = "edit";
@@ -149,11 +138,18 @@ const handleEdit = (row: SentralItem) => {
   modalOpen.value = true;
 };
 
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    handleEdit(detailRecord.value);
-  }
-};
+// Universal Async Detail Management (Guarded against race conditions & memory leaks)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<SentralItem>({
+  fetchDetail: (id) => getSentralById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const handleDelete = (row: SentralItem) => {
   deleteTarget.value = row;
@@ -423,10 +419,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Sentral"
-      subtitle="Informasi Master Sentral Pembangkit Listrik PLN"
+      subtitle="Informasi Sentral"
+      :record-id="detailRecord?.id || detailRecord?.kode_sentral"
       :data-items="detailDataItems"
-      :loading="detailLoading"
-      @edit="openEditFromDetail"
+      :loading="detailLoading || asyncDetailLoading"
+      @close="closeDetailModal"
+      @edit="openEditFromDetail()"
     />
 
     <!-- Confirm Delete Dialog -->

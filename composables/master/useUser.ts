@@ -129,18 +129,10 @@ export const useUser = () => {
     loading.value = true
     error.value = null
     try {
-      let res: any
-      try {
-        res = await api<ApiResponse<UserItem>>(`/users/${id}`, {
-          method: 'POST',
-          body: payload
-        })
-      } catch {
-        res = await api<ApiResponse<UserItem>>(`/users/${id}`, {
-          method: 'PUT',
-          body: payload
-        })
-      }
+      const res = await api<ApiResponse<UserItem>>(`/users/${id}`, {
+        method: 'POST',
+        body: payload
+      })
       if (res?.data) {
         await fetchUsers()
       }
@@ -157,16 +149,9 @@ export const useUser = () => {
     loading.value = true
     error.value = null
     try {
-      let res: any
-      try {
-        res = await api<ApiResponse<null | { message?: string }>>(`/users/${id}/delete`, {
-          method: 'POST'
-        })
-      } catch {
-        res = await api<ApiResponse<null | { message?: string }>>(`/users/${id}`, {
-          method: 'DELETE'
-        })
-      }
+      const res = await api<ApiResponse<null | { message?: string }>>(`/users/${id}/delete`, {
+        method: 'POST'
+      })
       await fetchUsers()
       return res
     } catch (err: any) {
@@ -181,18 +166,10 @@ export const useUser = () => {
     loading.value = true
     error.value = null
     try {
-      let res: any
-      try {
-        res = await api<ApiResponse<null>>(`/users/${id}/password`, {
-          method: 'POST',
-          body: payload
-        })
-      } catch {
-        res = await api<ApiResponse<null>>(`/users/${id}/password`, {
-          method: 'PUT',
-          body: payload
-        })
-      }
+      const res = await api<ApiResponse<null>>(`/users/${id}/password`, {
+        method: 'POST',
+        body: payload
+      })
       return res
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui password user.'

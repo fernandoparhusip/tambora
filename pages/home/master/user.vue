@@ -10,6 +10,7 @@ import {
   userValidationSchema,
 } from "~/schemas/master/user.schema";
 import { useTableState } from "~/composables/useTableState";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 import { useScope } from "~/composables/master/useScope";
 import { KeyRound } from "@lucide/vue";
 
@@ -132,9 +133,9 @@ const modalTitle = computed(() => {
 });
 
 const modalSubtitle = computed(() => {
-  if (modalMode.value === "view") return "Detail Informasi Pengguna";
-  if (modalMode.value === "edit") return "Form Ubah Data Pengguna dan Hak Akses";
-  return "Form Tambah Data Pengguna dan Hak Akses";
+  if (modalMode.value === "view") return "Informasi Pengguna";
+  if (modalMode.value === "edit") return "Form Ubah Pengguna";
+  return "Form Tambah Pengguna";
 });
 
 const openCreateModal = () => {
@@ -167,19 +168,55 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-const isDetailModalOpen = ref(false);
-const isDetailLoading = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<any>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<any>(null);
 const detailRoles = ref<any[]>([]);
 const detailPermissions = ref<any[]>([]);
 const permissionSearch = ref("");
 const hoveredPermission = ref<any>(null);
 
-const detailModalTitle = computed(() => "View Data Pengguna");
-const detailModalSubtitle = computed(() => "Form View Data Pengguna");
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: isDetailLoading,
+  handleView: baseHandleView,
+  closeDetailModal: baseCloseDetailModal,
+  openEditFromDetail: openEditFromUserDetail,
+} = useAsyncDetail<any>({
+  fetchDetail: async (id: string) => {
+    const res: any = await getUserById(id);
+    if (res) {
+      if (res.roles && Array.isArray(res.roles)) {
+        detailRoles.value = res.roles;
+      }
+      if (res.access?.permissions && Array.isArray(res.access.permissions)) {
+        detailPermissions.value = res.access.permissions;
+      }
+    }
+    return res;
+  },
+  onEdit: (record: any) => handleEdit(record),
+});
+
+const handleView = (row: any) => {
+  detailRoles.value = row.role_assignments || [];
+  detailPermissions.value = [];
+  permissionSearch.value = "";
+  hoveredPermission.value = null;
+  baseHandleView(row);
+};
+
+const closeUserDetailModal = () => {
+  baseCloseDetailModal();
+  detailRoles.value = [];
+  detailPermissions.value = [];
+  permissionSearch.value = "";
+  hoveredPermission.value = null;
+};
+
+const detailModalTitle = computed(() => "Detail Pengguna");
+const detailModalSubtitle = computed(() => "Informasi Pengguna");
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
@@ -267,35 +304,6 @@ const getPermissionTooltipContent = (p: any) => {
   );
 };
 
-const handleView = async (row: any) => {
-  detailRecord.value = row;
-  detailRoles.value = row.role_assignments || [];
-  detailPermissions.value = [];
-  permissionSearch.value = "";
-  hoveredPermission.value = null;
-  isDetailModalOpen.value = true;
-  isDetailLoading.value = true;
-
-  try {
-    const userDetailRes: any = await getUserById(row.id);
-    if (userDetailRes) {
-      if (userDetailRes.roles && Array.isArray(userDetailRes.roles)) {
-        detailRoles.value = userDetailRes.roles;
-      }
-      if (
-        userDetailRes.access?.permissions &&
-        Array.isArray(userDetailRes.access.permissions)
-      ) {
-        detailPermissions.value = userDetailRes.access.permissions;
-      }
-    }
-  } catch {
-    // fallback
-  } finally {
-    isDetailLoading.value = false;
-  }
-};
-
 const handleEdit = async (row: any) => {
   modalMode.value = "edit";
   let matchedRole = "ORG_ADMIN";
@@ -352,10 +360,9 @@ const handleEdit = async (row: any) => {
 };
 
 const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    isDetailModalOpen.value = false;
-    handleEdit(detailRecord.value);
-  }
+  openEditFromUserDetail((record: any) => {
+    handleEdit(record);
+  });
 };
 
 const handleDelete = (row: any) => {
@@ -596,6 +603,7 @@ const handleSave = async (data?: Record<string, any>) => {
       :title="detailModalTitle"
       :subtitle="detailModalSubtitle"
       :record-id="detailRecord?.id"
+      :loading="isDetailLoading"
       :created-date="
         detailRecord?.created_at
           ? new Date(detailRecord.created_at).toLocaleString('id-ID', {
@@ -606,6 +614,7 @@ const handleSave = async (data?: Record<string, any>) => {
       "
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
+      @close="closeUserDetailModal"
     >
       <template #extra>
         <div class="mt-4 pt-4 border-t border-gray-100 space-y-4">

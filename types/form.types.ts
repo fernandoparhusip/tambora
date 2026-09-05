@@ -4,6 +4,7 @@ export interface SelectOption {
   title?: string;
   subtitle?: string;
   description?: string;
+  route?: string;
 }
 
 export interface FormFieldConfig {
@@ -24,7 +25,10 @@ export interface FormFieldConfig {
     | 'textarea'
     | 'email'
     | 'password'
-    | 'switch';
+    | 'switch'
+    | 'coordinate-picker';
+  latKey?: string;
+  lngKey?: string;
   placeholder?: string;
   options?: SelectOption[];
   colSpan?: number; // Dynamic col-span from 1 to 12
@@ -33,8 +37,9 @@ export interface FormFieldConfig {
   hidden?: (formData: Record<string, any>) => boolean;
   maxLength?: number; // For textarea char limit
   rows?: number; // For textarea rows height
+  step?: string | number; // For number input step (e.g. 'any')
   helpText?: string;
-  prefix?: string;
+  prefix?: string | ((formData: Record<string, any>) => string);
 }
 
 export interface FormSectionConfig {

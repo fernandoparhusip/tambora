@@ -91,8 +91,8 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "edit"
-    ? "Form Edit Data Spesifikasi & Rating Mesin"
-    : "Form Tambah Data Spesifikasi & Rating Mesin"
+    ? "Form Ubah Aset"
+    : "Form Tambah Aset"
 );
 
 const openCreateModal = () => {
@@ -125,9 +125,16 @@ const handleView = (row: AssetItem) => {
   isDetailModalOpen.value = true;
 };
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false;
+  detailRecord.value = null;
+};
+
 const openEditFromDetail = () => {
   if (detailRecord.value) {
-    handleEdit(detailRecord.value);
+    const rec = detailRecord.value;
+    closeDetailModal();
+    handleEdit(rec);
   }
 };
 
@@ -361,10 +368,11 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <!-- ── View Detail Modal ─────────────────────────────────── -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Aset Mesin Pembangkit"
-      subtitle="Informasi Lengkap Spesifikasi & Rating Mesin"
+      title="Detail Aset Mesin"
+      subtitle="Informasi Aset Mesin"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
   </div>
 </template>

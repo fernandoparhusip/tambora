@@ -1,19 +1,25 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type { DetailDataItem } from '~/types/master.types';
+import type { DetailDataItem } from "~/types/master.types";
 import type { TableColumn, FormSectionConfig, SystemItem } from "~/types";
+import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
 import { getSystemFormSections } from "~/schemas/master/system.schema";
+import { formatAppDateTime } from "~/utils/formatDate";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
   systems,
   loading,
+  detailLoading,
   fetchSystems,
+  getSystemById,
   createSystem,
   updateSystem,
-  deleteSystem
+  deleteSystem,
 } = useSystem();
 
 const { organizations, fetchOrganizations } = useOrganization();
+const toast = useAppToast();
 
 const searchQuery = ref("");
 const currentPage = ref(1);
@@ -25,28 +31,29 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<SystemItem | null>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<SystemItem | null>(null);
 
 const systemColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "code", label: "Kode Sistem" },
-  { key: "name", label: "Nama Sistem Pembangkit" },
-  { key: "system_type", label: "Tipe Sistem" },
+  { key: "code", label: "Kode " },
+  { key: "name", label: "Nama" },
+  { key: "system_type", label: "Tipe" },
   { key: "coordinates", label: "Koordinat (Lat, Lng)" },
   { key: "description", label: "Deskripsi" },
-  { key: "actions", label: "Aksi" }
+  { key: "actions", label: "Aksi" },
 ];
 
 const orgOptions = computed(() =>
-  organizations.value.map((o: any) => ({ label: `${o.nama} (${o.kode})`, value: o.id }))
+  organizations.value.map((o: any) => ({
+    label: `${o.nama} (${o.kode})`,
+    value: o.id,
+  })),
 );
 
 const formSections = computed<FormSectionConfig[]>(() =>
-  getSystemFormSections({ orgOptions: orgOptions.value })
+  getSystemFormSections({ orgOptions: orgOptions.value }),
 );
 
 onMounted(async () => {
@@ -65,7 +72,7 @@ const filteredData = computed(() => {
       (s.code && s.code.toLowerCase().includes(q)) ||
       (s.name && s.name.toLowerCase().includes(q)) ||
       (s.description && s.description.toLowerCase().includes(q)) ||
-      (s.system_type && s.system_type.toLowerCase().includes(q))
+      (s.system_type && s.system_type.toLowerCase().includes(q)),
   );
 });
 
@@ -75,12 +82,10 @@ const paginatedData = computed(() => {
 });
 
 const modalTitle = computed(() =>
-  modalMode.value === "edit" ? "Edit Data Sistem" : "Tambah Data Sistem"
+  modalMode.value === "edit" ? "Edit Data Sistem" : "Tambah Data Sistem",
 );
 const modalSubtitle = computed(() =>
-  modalMode.value === "edit"
-    ? "Form Edit Sistem Pembangkit Listrik"
-    : "Form Tambah Sistem Pembangkit Listrik"
+  modalMode.value === "edit" ? "Form Edit Sistem" : "Form Tambah Sistem",
 );
 
 const openCreateModal = () => {
@@ -88,23 +93,12 @@ const openCreateModal = () => {
   formData.value = {
     code: "",
     name: "",
-    system_type: "BESAR",
+    system_type: "",
     latitude: "",
     longitude: "",
-    description: ""
+    description: "",
   };
   modalOpen.value = true;
-};
-
-const handleView = (row: SystemItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-};
-
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    handleEdit(detailRecord.value);
-  }
 };
 
 const handleEdit = (row: SystemItem) => {
@@ -112,6 +106,63 @@ const handleEdit = (row: SystemItem) => {
   formData.value = { ...row };
   modalOpen.value = true;
 };
+
+// Universal Async Detail Management
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<SystemItem>({
+  fetchDetail: (id) => getSystemById(id),
+  getId: (row) => row.id || row.code,
+  onEdit: (record) => handleEdit(record),
+});
+
+const formattedCreatedDate = computed(() => {
+  if (!detailRecord.value?.created_at) return "-";
+  return formatAppDateTime(detailRecord.value.created_at);
+});
+
+const activityLogs = computed<ActivityLogItem[]>(() => {
+  if (!detailRecord.value) return [];
+  const historyList = (detailRecord.value as any)?.history;
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    return historyList.map((item: any) => {
+      const userName = item.user_name || "Admin";
+      const initial = userName.charAt(0).toUpperCase();
+      const actionText =
+        item.title ||
+        (item.action === "CREATE"
+          ? `Membuat Sistem ${detailRecord.value?.name || ""}`.trim()
+          : item.action === "UPDATE"
+            ? `Mengubah Sistem ${detailRecord.value?.name || ""}`.trim()
+            : item.action || "Aktivitas Sistem");
+      const dt = formatAppDateTime(item.created_at);
+      return {
+        initial,
+        user: userName,
+        action: actionText,
+        timestamp: dt,
+      };
+    });
+  }
+
+  const creator =
+    (detailRecord.value as any)?.created_by_name ||
+    (detailRecord.value as any)?.created_by ||
+    "Admin";
+  return [
+    {
+      initial: creator.charAt(0).toUpperCase(),
+      user: creator,
+      action: `Membuat Sistem ${detailRecord.value?.name || ""}`.trim(),
+      timestamp: formattedCreatedDate.value,
+    },
+  ];
+});
 
 const handleDelete = (row: SystemItem) => {
   deleteTarget.value = row;
@@ -123,51 +174,66 @@ const confirmDelete = async () => {
   isDeleting.value = true;
   try {
     await deleteSystem(deleteTarget.value.id);
+    toast.success(
+      `Sistem '${deleteTarget.value.name}' berhasil dihapus.`,
+      "Sukses",
+    );
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
-  } catch (err: any) {
+  } catch {
     // Handled by useApi
   } finally {
     isDeleting.value = false;
   }
 };
 
-const handleSave = async () => {
-  if (!formData.value.code || !formData.value.name) {
-    alert("Kode Sistem dan Nama Sistem wajib diisi.");
+const handleSave = async (data?: Record<string, any>) => {
+  const currentData = data || formData.value;
+  if (!currentData.code || !currentData.name) {
+    toast.warning("Kode Sistem dan Nama Sistem wajib diisi.", "Peringatan");
     return;
   }
 
   submitting.value = true;
   try {
-    const lat = formData.value.latitude ? Number(formData.value.latitude) : undefined;
-    const lng = formData.value.longitude ? Number(formData.value.longitude) : undefined;
+    const lat =
+      currentData.latitude != null &&
+      currentData.latitude !== "" &&
+      !isNaN(Number(currentData.latitude))
+        ? Number(currentData.latitude)
+        : undefined;
+    const lng =
+      currentData.longitude != null &&
+      currentData.longitude !== "" &&
+      !isNaN(Number(currentData.longitude))
+        ? Number(currentData.longitude)
+        : undefined;
 
     if (modalMode.value === "create") {
       await createSystem({
-        code: formData.value.code.toUpperCase().replace(/\s+/g, "-"),
-        name: formData.value.name,
-        system_type: formData.value.system_type || "BESAR",
+        code: currentData.code.toUpperCase().replace(/\s+/g, "-"),
+        name: currentData.name,
+        system_type: currentData.system_type || "BESAR",
         latitude: lat,
         longitude: lng,
-        description: formData.value.description || ""
+        description: currentData.description || "",
       });
-    } else {
-      await updateSystem(formData.value.id, {
-        code: formData.value.code.toUpperCase().replace(/\s+/g, "-"),
-        name: formData.value.name,
-        system_type: formData.value.system_type || "BESAR",
-        latitude: lat,
-        longitude: lng,
-        description: formData.value.description || ""
-      });
-    }
-    modalOpen.value = false;
-    setTimeout(() => {
+      modalOpen.value = false;
       isSuccessModalOpen.value = true;
-    }, 150);
-  } catch (err: any) {
-    alert("Gagal menyimpan sistem: " + (err?.message || err));
+    } else {
+      await updateSystem(currentData.id || formData.value.id, {
+        code: currentData.code.toUpperCase().replace(/\s+/g, "-"),
+        name: currentData.name,
+        system_type: currentData.system_type || "BESAR",
+        latitude: lat,
+        longitude: lng,
+        description: currentData.description || "",
+      });
+      modalOpen.value = false;
+      toast.success("Data sistem berhasil diperbarui.", "Sukses");
+    }
+  } catch {
+    // Handled by useApi
   } finally {
     submitting.value = false;
   }
@@ -175,15 +241,36 @@ const handleSave = async () => {
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
-  const upk = organizations.value.find((o) => o.id === detailRecord.value?.upk_id);
+  const upk = organizations.value.find(
+    (o) => o.id === detailRecord.value?.upk_id,
+  );
   return [
     { label: "Kode Sistem", value: detailRecord.value.code },
     { label: "Nama Sistem", value: detailRecord.value.name },
-    { label: "Tipe Sistem", value: detailRecord.value.system_type === "BESAR" ? "Sistem Besar (Interkoneksi)" : "Sistem Kecil (Isolated)" },
-    { label: "Unit Pelaksana (UPK)", value: upk ? `${upk.nama} (${upk.kode})` : "-" },
-    { label: "Latitude", value: detailRecord.value.latitude ? String(detailRecord.value.latitude) : "-" },
-    { label: "Longitude", value: detailRecord.value.longitude ? String(detailRecord.value.longitude) : "-" },
-    { label: "Deskripsi", value: detailRecord.value.description || "-" }
+    {
+      label: "Tipe Sistem",
+      value:
+        detailRecord.value.system_type === "BESAR"
+          ? "Sistem Besar (Interkoneksi)"
+          : "Sistem Kecil (Isolated)",
+    },
+    {
+      label: "Unit Pelaksana (UPK)",
+      value: upk ? `${upk.nama} (${upk.kode})` : "-",
+    },
+    {
+      label: "Latitude",
+      value: detailRecord.value.latitude
+        ? String(detailRecord.value.latitude)
+        : "-",
+    },
+    {
+      label: "Longitude",
+      value: detailRecord.value.longitude
+        ? String(detailRecord.value.longitude)
+        : "-",
+    },
+    { label: "Deskripsi", value: detailRecord.value.description || "-" },
   ];
 });
 </script>
@@ -224,40 +311,60 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #code-data="{ row }">
-            <BaseBadge variant="mono">
-              {{ row.code }}
-            </BaseBadge>
+            <span class="text-xs text-gray-600">{{ row.code }}</span>
           </template>
 
           <template #name-data="{ row }">
-            <span class="text-xs text-gray-900 font-semibold">{{ row.name }}</span>
+            <span class="text-xs text-gray-600">{{ row.name }}</span>
           </template>
 
           <template #system_type-data="{ row }">
-            <BaseBadge :variant="row.system_type === 'BESAR' ? 'primary' : 'warning'">
-              {{ row.system_type === 'BESAR' ? 'Sistem Besar' : 'Sistem Kecil' }}
-            </BaseBadge>
+            <span class="text-xs text-gray-600">
+              {{
+                row.system_type === "BESAR" ? "Sistem Besar" : "Sistem Kecil"
+              }}
+            </span>
           </template>
 
           <template #coordinates-data="{ row }">
-            <span v-if="row.latitude && row.longitude" class="font-mono text-xs text-gray-600">
+            <span
+              v-if="row.latitude && row.longitude"
+              class="text-xs text-gray-600"
+            >
               {{ row.latitude }}, {{ row.longitude }}
             </span>
             <span v-else class="text-xs text-gray-400">-</span>
           </template>
 
           <template #description-data="{ row }">
-            <span class="text-xs text-gray-500 truncate max-w-xs block" :title="row.description">
-              {{ row.description || '-' }}
+            <span
+              class="text-xs text-gray-600 truncate max-w-xs block"
+              :title="row.description"
+            >
+              {{ row.description || "-" }}
             </span>
           </template>
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="SYSTEM" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="SYSTEM" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="view"
+                title="Lihat Detail"
+                @click="handleView(row)"
+              />
+              <BaseActionButton
+                type="edit"
+                resource="SYSTEM"
+                title="Ubah Sistem"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="SYSTEM"
+                title="Hapus Sistem"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>
@@ -300,9 +407,19 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Data Sistem Pembangkit"
-      subtitle="Informasi Lengkap Sistem Interkoneksi Listrik"
+      subtitle="Informasi Sistem Pembangkit"
+      :record-id="detailRecord?.id || detailRecord?.code"
+      :created-date="formattedCreatedDate"
+      :created-by="
+        (detailRecord as any)?.created_by_name ||
+        (detailRecord as any)?.created_by ||
+        'Admin'
+      "
       :data-items="detailDataItems"
+      :activity-logs="activityLogs"
+      :loading="detailLoading || asyncDetailLoading"
       @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
   </div>
 </template>

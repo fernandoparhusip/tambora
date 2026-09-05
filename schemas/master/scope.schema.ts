@@ -23,7 +23,7 @@ export const scopeFormSections: FormSectionConfig[] = [
         key: "description",
         label: "Deskripsi",
         type: "textarea",
-        placeholder: "Masukkan deskripsi cakupan wilayah scope ini...",
+        placeholder: "Deskripsi scope...",
         required: true,
         colSpan: 12,
         rows: 3,

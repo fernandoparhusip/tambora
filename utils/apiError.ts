@@ -10,7 +10,7 @@ export interface ApiErrorResult {
   statusCode?: number
 }
 
-function extractBackendMessage(responseData: any): string | null {
+export function extractBackendMessage(responseData: any): string | null {
   if (!responseData) return null
   if (typeof responseData === 'string') return responseData
 
@@ -37,6 +37,43 @@ function extractBackendMessage(responseData: any): string | null {
   }
 
   return null
+}
+
+export function extractApiErrorMessage(
+  error: any,
+  fallback = 'Terjadi kesalahan pada sistem.'
+): string {
+  if (!error) return fallback
+
+  // 1. Check if backend message exists in response body
+  const responseData =
+    error?.response?._data || error?.data || error?.response?.data || error?._data
+  const backendMsg = extractBackendMessage(responseData)
+  if (backendMsg) return backendMsg
+
+  // 2. Check if error object itself has clean message
+  if (typeof error?.message === 'string' && error.message) {
+    const rawMsg = error.message
+    const isTechnical =
+      rawMsg.startsWith('[') ||
+      rawMsg.includes('Failed to fetch') ||
+      rawMsg.includes('fetch failed') ||
+      rawMsg.includes('NetworkError') ||
+      rawMsg.includes('http://') ||
+      rawMsg.includes('https://')
+    if (!isTechnical) return rawMsg
+  }
+
+  // 3. Direct string passed
+  if (typeof error === 'string') {
+    const isTechnical =
+      error.startsWith('[') ||
+      error.includes('Failed to fetch') ||
+      error.includes('fetch failed')
+    if (!isTechnical) return error
+  }
+
+  return fallback
 }
 
 export function parseApiError(error: any): ApiErrorResult {

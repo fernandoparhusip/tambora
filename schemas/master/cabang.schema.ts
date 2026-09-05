@@ -5,7 +5,7 @@ export interface CabangSchemaOptions {
 }
 
 export const getCabangFormSections = (
-  options: CabangSchemaOptions = {}
+  options: CabangSchemaOptions = {},
 ): FormSectionConfig[] => {
   const regionalOptions = options.regionalOptions || [];
 
@@ -14,32 +14,32 @@ export const getCabangFormSections = (
       fields: [
         {
           key: "kode_wilayah",
-          label: "Regional / Wilayah",
+          label: "Regional",
           type: "searchable-select",
-          placeholder: "Pilih Regional / Wilayah",
+          placeholder: "Pilih Regional",
           options: regionalOptions,
           required: true,
           colSpan: 12,
         },
         {
           key: "kode_cabang",
-          label: "Kode Cabang",
+          label: "Kode",
           type: "text",
           placeholder: "Contoh: CBG-MND",
           required: true,
-          colSpan: 6,
+          colSpan: 12,
         },
         {
           key: "nama_cabang",
-          label: "Nama Cabang",
+          label: "Nama",
           type: "text",
           placeholder: "Contoh: PLN Cabang Manado",
           required: true,
-          colSpan: 6,
+          colSpan: 12,
         },
         {
           key: "approve_status",
-          label: "Status Approval",
+          label: "Status",
           type: "select",
           placeholder: "Pilih Status Approval",
           options: [
@@ -48,16 +48,7 @@ export const getCabangFormSections = (
             { label: "REJECTED", value: "REJECTED" },
           ],
           required: false,
-          colSpan: 6,
-        },
-        {
-          key: "keterangan",
-          label: "Keterangan",
-          type: "textarea",
-          placeholder: "Catatan informasi cabang...",
-          required: false,
           colSpan: 12,
-          rows: 2,
         },
       ],
     },

@@ -222,6 +222,19 @@ const handleView = (row: any) => {
   isDetailModalOpen.value = true;
 };
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false;
+  detailRecord.value = null;
+};
+
+const openEditFromDetail = () => {
+  if (detailRecord.value) {
+    const rec = detailRecord.value;
+    closeDetailModal();
+    handleEdit(rec);
+  }
+};
+
 const handleDelete = (row: any) => {
   deleteTarget.value = row;
   isConfirmDialogOpen.value = true;
@@ -486,7 +499,8 @@ const handleReload = () => {
       :title="activeTab === 'unit' ? 'Detail Pagu Anggaran (Unit)' : 'Detail Alokasi Pagu Bidang'"
       :subtitle="activeTab === 'unit' ? 'Rincian anggaran operasional dan investasi' : 'Rincian alokasi anggaran per bidang kerja'"
       :data-items="detailItems"
-      @close="isDetailModalOpen = false"
+      @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
 
     <!-- Delete Confirmation Modal -->

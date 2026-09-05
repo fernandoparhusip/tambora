@@ -46,7 +46,7 @@ export const getPermissionFormSections = (
           key: "description",
           label: "Deskripsi",
           type: "textarea",
-          placeholder: "Jelaskan batasan dan peruntukan hak akses ini...",
+          placeholder: "Deskripsi hak akses...",
           required: false,
           colSpan: 12,
           rows: 3,

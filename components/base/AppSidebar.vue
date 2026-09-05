@@ -364,7 +364,7 @@ const onSubmenuLeave = (el: Element) => {
               :key="subItem.key"
               class="group relative"
             >
-              <!-- Solid Blue line spanning height of active or hovered sub-group/item, seamless across adjacent items -->
+              <!-- Solid Blue line spanning height of active or hovered sub-group/item, across adjacent items -->
               <span
                 class="absolute -left-[17px] -top-1 -bottom-1 w-[2.5px] bg-[#2671D9] z-10 transition-opacity duration-150"
                 :class="

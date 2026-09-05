@@ -22,17 +22,17 @@
 
 ## 📌 Ringkasan Eksekutif (_Overview_)
 
-**Tambora Web App** adalah platform enterprise modern berbasis _Single Page & Server-Side Rendering (Universal SSR)_ yang dirancang khusus untuk memonitor stabilitas sistem ketenagalistrikan, neraca daya, dan tata kelola master data pembangkitan di lingkungan **PT PLN (Persero)**.
+**Tambora Web App** adalah aplikasi web berbasis _Single Page & Server-Side Rendering (Universal SSR)_ yang dirancang untuk memonitor stabilitas sistem ketenagalistrikan, neraca daya, dan pengelolaan data master pembangkitan di lingkungan **PT PLN (Persero)**.
 
-Platform ini mengintegrasikan pemetaan spasial geografis sentral pembangkit (GIS), analitik kurva beban _real-time_, mesin formulir dinamis (_Schema-Driven Dynamic Form Engine_), modul transaksi pencatatan daya dan anggaran, sistem otentikasi aman terintegrasi, fitur ketangguhan jaringan terpencil (_Low-Bandwidth Resilience & Form Auto-Save_), serta rangkaian animasi mikro modern berstandar enterprise (_60 FPS Hardware-Accelerated_).
+Platform ini menyediakan pemetaan lokasi sentral pembangkit (GIS), visualisasi grafik beban, formulir dinamis berbasis skema, pencatatan transaksi operasional dan anggaran, sistem keamanan sesi pengguna, serta fitur penyimpanan draf otomatis formulir.
 
 ```mermaid
 graph LR
     subgraph CLIENT["Client Layer (Nuxt 4 / PrimeVue Aura)"]
         UI["Dashboard, Master, Transaksi & Konfigurasi Views"] --> FORM["Dynamic Schema Engine (schemas/master, schemas/transaksi & schemas/konfigurasi-aplikasi)"]
-        UI --> TABLE["BaseTable (Column Visibility Toggle & GSAP Stagger)"]
+        UI --> TABLE["BaseTable (Column Visibility Toggle & Animations)"]
         UI --> GIS["GIS Map Monitoring (OpenLayers v10 + MapTiler Positron)"]
-        UI --> TOAST["Modern Toast Notification System (useAppToast)"]
+        UI --> TOAST["Toast Notification System (useAppToast)"]
         UI --> DRAFT["Auto-Save Form Drafts (useFormDraft) & SWR Cache (useApiCache)"]
     end
 
@@ -57,20 +57,20 @@ graph LR
 | Modul                                      | Deskripsi & Kemampuan Teknis                                                                                                                                                                                                      |
 | :----------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **⚡ Dashboard Operasi**                   | Monitoring metrik real-time: **DMN** (Daya Mampu Nyata), **DMP** (Daya Mampu Pasok), **Beban Sistem**, **Unit Max**, dan **Cadangan Total/Putar**.                                                                                |
-| **🗺️ GIS Sentral Map**                     | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan marker status visual (_Operasi_, _Gangguan_, _Pemeliharaan/Standby_), popup detail unit, dan filter wilayah.                                               |
+| **🗺️ GIS Sentral & Coordinate Picker**    | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan penanda status visual, popup detail unit, serta **Interactive Coordinate Picker** (sinkronisasi dua arah klik peta & input koordinat latitude/longitude desimal di form drawer Regional dan Sistem). |
 | **📈 Analisis Beban & Grafik**             | Visualisasi kurva beban harian/mingguan dan tren neraca energi bertenaga **Apache ECharts**.                                                                                                                                      |
-| **📶 Remote Resilience (Sumbawa Edition)** | **Auto-Save Form Drafts** (pencegah kehilangan ketikan saat sinyal mati), **SWR API Client Cache** (buka tabel instan 0ms), dan **Smart Network Retry** (otomatis coba ulang request saat koneksi drop).                          |
-| **🎨 Emil Kowalski Motion System**        | Transisi halaman mulus (_Page Route Transitions_), efek baris tabel meluncur berjenjang (**GSAP Row Stagger** dengan tween cancel safety), akordeon sidebar 60 FPS (**Runtime scrollHeight**), dan perlindungan aksesibilitas (**`prefers-reduced-motion`**). |
-| **🍞 Floating Toast & Form Guard**         | Sistem notifikasi mengambang pojok kanan atas dengan **Timer Countdown Progress Bar** (`useAppToast`), serta perlindungan data form (_Unsaved Changes Guard_ di `BaseFormModal.vue`).                                             |
-| **📝 Dynamic Form Engine**                 | Formulir berbasis skema deklaratif di `schemas/master/`, `schemas/transaksi/`, dan `schemas/konfigurasi-aplikasi/` dengan dukungan _conditional field visibility_ (`hidden`), _functional disabled_, dan validasi otomatis.    |
-| **📊 Smart Data Table & Pagination**       | Komponen tabel terpadu (`BaseTable.vue`) dengan sticky header border fix, **Show/Hide Kolom** (_Column Visibility Toggle_), **Redesigned BasePagination** dengan floating popover glassmorphism & Lucide icons.                   |
-| **🎯 Zero-Config Action Controls**         | Komponen kontrol terstandarisasi global: `<BaseCreateButton @click="openCreateModal" />` (otomatis `"TAMBAH DATA"`) dan `<BaseSearchInput v-model="searchQuery" />` (otomatis `"Cari Data"`).                                     |
-| **⚙️ Modul Konfigurasi Aplikasi**          | Pengaturan hak akses granular: **Master Akses Level**, **Master Akses Grup** (Roles & Responsive Tablet Permission Matrix with rich HTML tooltip), dan **Master Menu** (Dynamic Navigation Management). |
-| **🏛️ 16 Modul Master Data**               | Tata kelola CRUD lengkap dengan standarisasi form drawer satu halaman tanpa tab: _Regional, UIW/UID, UIK, UP2D, UPK, Unit Layanan, Sentral Pembangkit, User (20-field & Hak Akses Khusus), Permission, Driver, Organisasi, Sistem, Aset Mesin, Kondisi Mesin, Scope, dan Role_. |
+| **📶 Remote Resilience & Smart Form Drafts** | **Auto-Save Form Drafts** (penyimpanan draf otomatis per ID/kode record dengan pencegahan banner palsu), **SWR API Client Cache** untuk pemuatan data instan, dan penanganan koneksi ulang otomatis saat jaringan terputus. |
+| **🎨 UI Transitions, Motion & Clean Copy**  | Transisi perpindahan rute halaman, animasi tampilan baris tabel bertingkat, akordeon menu navigasi sidebar, serta standarisasi copywriting bersih tanpa AI buzzwords (*enterprise/seamless*). |
+| **🍞 Floating Toast, LIFO Modal Esc & Guard** | Sistem notifikasi mengambang (`useAppToast`), penutupan modal bertumpuk berbasis LIFO saat menekan tombol `Esc`, serta konfirmasi pengaman perubahan belum tersimpan (_Unsaved Changes Guard_). |
+| **📝 Dynamic Form Engine**                 | Formulir berbasis skema deklaratif di `schemas/master/`, `schemas/transaksi/`, dan `schemas/konfigurasi-aplikasi/` dengan dukungan visibilitas kondisional, status disable dinamis, dan validasi otomatis. |
+| **📊 Smart Data Table & Pagination**       | Komponen tabel terpadu (`BaseTable.vue`) dengan sticky header, pengaturan sembunyikan/tampilkan kolom (_Column Visibility Toggle_), dan komponen paginasi halaman yang praktis. |
+| **🎯 Standard Action Controls**            | Komponen kontrol standar: `<BaseCreateButton @click="openCreateModal" />` (label default `"TAMBAH DATA"`) dan `<BaseSearchInput v-model="searchQuery" />` (label default `"Cari Data"`). |
+| **⚙️ Modul Konfigurasi Aplikasi**          | Pengaturan hak akses pengguna: **Master Akses Level**, **Master Akses Grup** (kartu izin interaktif dengan switch On/Off, master switch toggle, dan filter modul), serta **Master Menu** (manajemen navigasi dinamis). |
+| **🏛️ 16 Modul Master Data**               | Tata kelola CRUD lengkap dengan standarisasi form drawer satu halaman tanpa tab: _Regional, Cabang, Ranting (Paritas Approval Status), UIW/UID, UIK, UP2D, UPK, Unit Layanan, Sentral Pembangkit, User (20-field & Hak Akses Khusus), Permission, Driver, Organisasi, Sistem (GIS Map Picker & Async Detail), Aset Mesin, dan Kondisi Mesin_. |
 | **⚡ Modul Transaksi Terpadu**             | Pencatatan operasional & keuangan: _Operasi Harian_, _Pemakaian Bahan Bakar_, _Pembebanan Generator_, _Pagu Anggaran (Tab Dinamis Unit & Bidang)_, _Prognosa Kinerja (PLTU & Non-PLTU)_, dan _Perhitungan NKO (KPI)_.         |
 | **📥 Dedicated Backend Export**            | Dukungan ekspor laporan spreadsheet resmi dari endpoint backend (`/api/v1/pagu/export`, `/api/v1/prognosa/export`, `/api/v1/nko/export`).                                                                                          |
-| **🛡️ Unified Modal Dialogs**               | Modal konfirmasi hapus modern (`BaseConfirmDialog`) dan modal sukses (`BaseSuccessModal`) menggantikan dialog native browser.                                                                                                     |
-| **🔒 Enterprise Session Security**         | Deteksi inaktivitas (**28 menit idle + popup countdown 2 menit**), _Silent Token Refresh_ dengan _Single-Flight Mutex_ pada error 401, sinkronisasi multi-tab (_BroadcastChannel_), dan navigasi _Return-To_.                     |
+| **🛡️ Unified Modal Dialogs**               | Modal konfirmasi hapus terpadu (`BaseConfirmDialog`) dan modal sukses (`BaseSuccessModal`) untuk interaksi pengguna yang seragam. |
+| **🔒 Keamanan Sesi & Pemantau Inaktivasi** | Deteksi inaktivitas berbasis selisih waktu sistem (`Date.now()`) dengan dialog peringatan 2 menit sebelum logout otomatis, perpanjangan token otomatis di latar belakang, sinkronisasi multi-tab, dan pengembalian rute login. |
 
 ---
 

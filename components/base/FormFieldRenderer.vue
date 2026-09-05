@@ -20,6 +20,14 @@ const isDisabled = computed<boolean>(() => {
   return !!props.field.disabled;
 });
 
+const computedPrefix = computed<string>(() => {
+  if (!props.field.prefix) return "";
+  if (typeof props.field.prefix === "function") {
+    return props.field.prefix(props.formData || {});
+  }
+  return props.field.prefix;
+});
+
 // Vue 3.4 two-way model binding
 const value = defineModel<any>();
 
@@ -105,7 +113,7 @@ const toggleDropdown = async () => {
       window.dispatchEvent(
         new CustomEvent("form-field-dropdown-open", {
           detail: { id: uniqueDropdownId },
-        })
+        }),
       );
     }
     updatePosition();
@@ -132,27 +140,35 @@ const popupStyle = computed(() => ({
 }));
 
 const selectedOptionLabel = computed(() => {
-  const opt = props.field.options?.find((o) => o.value === value.value);
+  if (value.value === undefined || value.value === null || value.value === "") {
+    return "";
+  }
+  const opt = props.field.options?.find(
+    (o) => o && String(o.value) === String(value.value),
+  );
   if (!opt) return "";
   if (opt.title && (opt.description || opt.subtitle)) {
     return `${opt.title} (${opt.description || opt.subtitle})`;
   }
-  return opt.label || opt.title || String(opt.value);
+  return String(opt.label ?? opt.title ?? opt.value ?? "");
 });
 
 const filteredOptions = computed(() => {
   const opts = props.field.options || [];
   if (!selectSearchQuery.value) return opts;
-  const q = selectSearchQuery.value.toLowerCase();
+  const q = String(selectSearchQuery.value).toLowerCase().trim();
   return opts.filter((o) => {
-    const labelMatch = o.label && o.label.toLowerCase().includes(q);
-    const titleMatch = o.title && o.title.toLowerCase().includes(q);
-    const descMatch =
-      (o.description || o.subtitle) &&
-      (o.description || o.subtitle)!.toLowerCase().includes(q);
-    const valMatch =
-      typeof o.value === "string" && o.value.toLowerCase().includes(q);
-    return Boolean(labelMatch || titleMatch || descMatch || valMatch);
+    if (!o) return false;
+    const label = String(o.label ?? o.title ?? "").toLowerCase();
+    const desc = String(o.description ?? o.subtitle ?? "").toLowerCase();
+    const val = String(o.value ?? "").toLowerCase();
+    const route = String((o as any).route ?? "").toLowerCase();
+    return (
+      label.includes(q) ||
+      desc.includes(q) ||
+      val.includes(q) ||
+      route.includes(q)
+    );
   });
 });
 
@@ -186,7 +202,10 @@ onMounted(() => {
     document.addEventListener("click", handleOutsideClick);
     window.addEventListener("scroll", handleScrollOrResize, true);
     window.addEventListener("resize", handleScrollOrResize);
-    window.addEventListener("form-field-dropdown-open", handleOtherDropdownOpen);
+    window.addEventListener(
+      "form-field-dropdown-open",
+      handleOtherDropdownOpen,
+    );
   }
 });
 
@@ -197,7 +216,7 @@ onBeforeUnmount(() => {
     window.removeEventListener("resize", handleScrollOrResize);
     window.removeEventListener(
       "form-field-dropdown-open",
-      handleOtherDropdownOpen
+      handleOtherDropdownOpen,
     );
   }
 });
@@ -246,13 +265,88 @@ const onTimeSelect = (
   const minutes = String(date.getMinutes()).padStart(2, "0");
   value.value = `${hours}:${minutes}`;
 };
+
+// Coordinate Picker (Two-Way BaseMap Integration)
+const latKey = computed(() => props.field.latKey || "latitude");
+const lngKey = computed(() => props.field.lngKey || "longitude");
+
+const latValue = computed({
+  get: () => props.formData?.[latKey.value] ?? "",
+  set: (val: any) => {
+    if (props.formData) {
+      props.formData[latKey.value] =
+        val !== "" && val !== null && !isNaN(Number(val)) ? Number(val) : null;
+    }
+  },
+});
+
+const lngValue = computed({
+  get: () => props.formData?.[lngKey.value] ?? "",
+  set: (val: any) => {
+    if (props.formData) {
+      props.formData[lngKey.value] =
+        val !== "" && val !== null && !isNaN(Number(val)) ? Number(val) : null;
+    }
+  },
+});
+
+const pickerMarkers = computed(() => {
+  const lat = Number(latValue.value);
+  const lng = Number(lngValue.value);
+  if (
+    latValue.value !== "" &&
+    latValue.value !== null &&
+    lngValue.value !== "" &&
+    lngValue.value !== null &&
+    !isNaN(lat) &&
+    !isNaN(lng)
+  ) {
+    return [
+      {
+        id: "picker-pin",
+        lat,
+        lng,
+        title: "Titik Koordinat Terpilih",
+        subtitle: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
+        color: "#2563EB",
+      },
+    ];
+  }
+  return [];
+});
+
+const pickerCenter = computed<[number, number]>(() => {
+  const lat = Number(latValue.value);
+  const lng = Number(lngValue.value);
+  if (
+    latValue.value !== "" &&
+    latValue.value !== null &&
+    lngValue.value !== "" &&
+    lngValue.value !== null &&
+    !isNaN(lat) &&
+    !isNaN(lng)
+  ) {
+    return [lng, lat];
+  }
+  return [117.85, -8.6]; // Default Sumbawa / NTB
+});
+
+const pickerZoom = computed(() => {
+  return pickerMarkers.value.length > 0 ? 10 : 8;
+});
+
+const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
+  if (!coords || isDisabled.value) return;
+  latValue.value = Number(coords.lat.toFixed(6));
+  lngValue.value = Number(coords.lng.toFixed(6));
+};
 </script>
 
 <template>
   <div class="w-full">
     <!-- Label -->
     <label
-      v-if="field.label"
+      v-if="field.label && field.type !== 'coordinate-picker'"
       :for="field.key"
       class="block text-xs font-semibold text-[#4D5E80] mb-1.5 select-none"
     >
@@ -281,8 +375,8 @@ const onTimeSelect = (
           :value="opt.value"
           :disabled="isDisabled"
           class="w-4 h-4 text-blue-600 bg-white border-gray-300 focus:ring-blue-500 cursor-pointer"
-          style="color-scheme: light; accent-color: #2563eb;"
-        >
+          style="color-scheme: light; accent-color: #2563eb"
+        />
         <span>{{ opt.label }}</span>
       </label>
     </div>
@@ -330,7 +424,7 @@ const onTimeSelect = (
         ]"
         :value="phoneInputValue"
         @input="onPhoneInput"
-      >
+      />
     </div>
 
     <!-- Multi Select Field (or Searchable Multi Select) -->
@@ -349,19 +443,23 @@ const onTimeSelect = (
         class="w-full h-10 pl-3.5 pr-9 text-xs rounded-lg transition-all text-left flex items-center shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500 relative"
         :class="[
           isDisabled
-            ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
-            : 'bg-white text-gray-700 border border-gray-200/80 hover:border-gray-300 focus:border-blue-500 cursor-pointer',
-          (!multiSelectValues || multiSelectValues.length === 0) &&
-          !isDisabled
-            ? 'text-gray-400'
-            : 'text-gray-700 font-medium',
+            ? 'bg-[#E2E8F0] border border-transparent cursor-not-allowed'
+            : 'bg-white border border-gray-200/80 hover:border-gray-300 focus:border-blue-500 cursor-pointer',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
         @click.stop="toggleDropdown"
       >
-        <span class="truncate">{{
-          multiSelectDisplayLabel || field.placeholder || "Select..."
-        }}</span>
+        <span
+          class="truncate"
+          :class="
+            !multiSelectDisplayLabel
+              ? 'text-gray-400 font-normal'
+              : 'text-gray-700 font-medium'
+          "
+          >{{
+            multiSelectDisplayLabel || field.placeholder || "Select..."
+          }}</span
+        >
         <div
           class="pointer-events-none text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center"
         >
@@ -402,7 +500,6 @@ const onTimeSelect = (
               v-if="field.type === 'searchable-multi-select'"
               class="p-2 border-b border-gray-100 flex items-center relative bg-white sticky top-0 z-10"
               @click.stop
-              @mousedown.stop
             >
               <input
                 ref="selectSearchInputRef"
@@ -411,9 +508,9 @@ const onTimeSelect = (
                 placeholder="Cari Data ..."
                 class="w-full h-8 pl-3 pr-8 text-xs bg-white border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-gray-700 placeholder-gray-400"
                 @click.stop
-                @mousedown.stop
                 @keydown.space.stop
-              >
+                @keydown.enter.stop.prevent
+              />
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-3.5 h-3.5 text-gray-400 absolute right-4 pointer-events-none"
@@ -444,18 +541,20 @@ const onTimeSelect = (
                     type="checkbox"
                     :checked="isMultiSelected(opt.value)"
                     class="w-3.5 h-3.5 text-blue-600 bg-white rounded-xs border-gray-300 pointer-events-none shrink-0"
-                    style="color-scheme: light; accent-color: #2563eb;"
-                  >
+                    style="color-scheme: light; accent-color: #2563eb"
+                  />
                   <div
                     v-if="opt.description || opt.subtitle"
                     class="flex flex-col gap-0.5 text-left py-0.5 min-w-0"
                   >
-                    <span class="font-bold text-xs text-gray-900 leading-tight truncate">{{
-                      opt.title || opt.label
-                    }}</span>
-                    <span class="text-[11px] text-gray-500 font-normal leading-tight truncate">{{
-                      opt.description || opt.subtitle
-                    }}</span>
+                    <span
+                      class="font-bold text-xs text-gray-900 leading-tight truncate"
+                      >{{ opt.title || opt.label }}</span
+                    >
+                    <span
+                      class="text-[11px] text-gray-500 font-normal leading-tight truncate"
+                      >{{ opt.description || opt.subtitle }}</span
+                    >
                   </div>
                   <span v-else class="truncate">{{ opt.label }}</span>
                 </div>
@@ -486,24 +585,46 @@ const onTimeSelect = (
         class="w-full h-10 pl-3.5 pr-9 text-xs rounded-lg transition-all text-left flex items-center shadow-2xs focus:outline-none focus:ring-1 focus:ring-blue-500 relative"
         :class="[
           isDisabled
-            ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
-            : 'bg-white text-gray-700 border border-gray-200/80 hover:border-gray-300 focus:border-blue-500 cursor-pointer',
-          !value && !isDisabled
-            ? 'text-gray-400'
-            : 'text-gray-700 font-medium',
+            ? 'bg-[#E2E8F0] border border-transparent cursor-not-allowed'
+            : 'bg-white border border-gray-200/80 hover:border-gray-300 focus:border-blue-500 cursor-pointer',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
         @click.stop="toggleDropdown"
       >
-        <span class="truncate">{{
-          selectedOptionLabel || field.placeholder || "Pilih..."
-        }}</span>
-        <div
-          class="pointer-events-none text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center"
+        <span
+          class="truncate"
+          :class="
+            !selectedOptionLabel
+              ? 'text-gray-400 font-normal'
+              : 'text-gray-700 font-medium'
+          "
+          >{{ selectedOptionLabel || field.placeholder || "Pilih..." }}</span
         >
+        <div
+          class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5"
+        >
+          <span
+            v-if="!field.required && value && !isDisabled"
+            class="text-gray-400 hover:text-red-500 p-0.5 rounded transition-colors cursor-pointer"
+            title="Hapus pilihan"
+            @click.stop="selectOption('')"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-3.5 h-3.5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="w-4 h-4 stroke-2 transition-transform duration-200"
+            class="w-4 h-4 stroke-2 transition-transform duration-200 pointer-events-none text-gray-400"
             :class="{ 'rotate-180 text-blue-600': isOpen }"
             fill="none"
             viewBox="0 0 24 24"
@@ -536,7 +657,6 @@ const onTimeSelect = (
             <div
               class="p-2 border-b border-gray-100 flex items-center relative bg-white sticky top-0 z-10"
               @click.stop
-              @mousedown.stop
             >
               <input
                 ref="selectSearchInputRef"
@@ -545,9 +665,9 @@ const onTimeSelect = (
                 placeholder="Cari Data ..."
                 class="w-full h-8 pl-3 pr-8 text-xs bg-white border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-gray-700 placeholder-gray-400"
                 @click.stop
-                @mousedown.stop
                 @keydown.space.stop
-              >
+                @keydown.enter.stop.prevent
+              />
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-3.5 h-3.5 text-gray-400 absolute right-4 pointer-events-none"
@@ -581,12 +701,14 @@ const onTimeSelect = (
                   v-if="opt.description || opt.subtitle"
                   class="flex flex-col gap-0.5 text-left py-0.5 flex-1 min-w-0"
                 >
-                  <span class="font-bold text-xs text-gray-900 leading-tight truncate">{{
-                    opt.title || opt.label
-                  }}</span>
-                  <span class="text-[11px] text-gray-500 font-normal leading-tight truncate">{{
-                    opt.description || opt.subtitle
-                  }}</span>
+                  <span
+                    class="font-bold text-xs text-gray-900 leading-tight truncate"
+                    >{{ opt.title || opt.label }}</span
+                  >
+                  <span
+                    class="text-[11px] text-gray-500 font-normal leading-tight truncate"
+                    >{{ opt.description || opt.subtitle }}</span
+                  >
                 </div>
                 <span v-else class="flex-1 truncate">{{ opt.label }}</span>
                 <svg
@@ -668,12 +790,13 @@ const onTimeSelect = (
         type="number"
         :placeholder="field.placeholder || '0'"
         :disabled="isDisabled"
+        autocomplete="off"
         class="w-full h-10 pl-8 pr-3.5 text-xs bg-white border border-gray-200/80 rounded-lg text-gray-700 placeholder-gray-400 shadow-2xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
         :class="[
           isDisabled ? 'bg-[#E2E8F0] text-gray-600 cursor-not-allowed' : '',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
-      >
+      />
     </div>
 
     <!-- Textarea Field -->
@@ -685,6 +808,7 @@ const onTimeSelect = (
         :disabled="isDisabled"
         :maxlength="field.maxLength || 500"
         :rows="field.rows || 4"
+        autocomplete="off"
         class="w-full px-3.5 py-2.5 text-xs rounded-lg resize-none transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
         :class="[
           isDisabled
@@ -702,29 +826,111 @@ const onTimeSelect = (
 
     <!-- Switch / Toggle Field — PrimeVue ToggleSwitch -->
     <div v-else-if="field.type === 'switch'" class="flex items-center pt-1">
-      <ToggleSwitch
-        :id="field.key"
-        v-model="value"
-        :disabled="isDisabled"
-      />
+      <ToggleSwitch :id="field.key" v-model="value" :disabled="isDisabled" />
+    </div>
+
+    <!-- Coordinate Picker Field (Two-Way BaseMap Integration) -->
+    <div
+      v-else-if="field.type === 'coordinate-picker'"
+      class="flex flex-col gap-3 w-full"
+    >
+      <!-- Dual Input: Latitude & Longitude Side-by-Side -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Latitude -->
+        <div class="flex flex-col">
+          <label
+            :for="`${field.key}-lat`"
+            class="block text-xs font-semibold text-[#4D5E80] mb-1.5 select-none"
+          >
+            Latitude
+          </label>
+          <input
+            :id="`${field.key}-lat`"
+            v-model="latValue"
+            type="number"
+            step="any"
+            placeholder="Contoh: 1.4870"
+            :disabled="isDisabled"
+            autocomplete="off"
+            class="w-full h-10 px-3.5 text-xs bg-white border border-gray-200/80 rounded-lg text-gray-700 placeholder-gray-400 font-mono shadow-2xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+            :class="[
+              isDisabled
+                ? 'bg-[#E2E8F0] text-gray-700 font-medium cursor-not-allowed'
+                : '',
+              error ? 'border-red-500 focus:ring-red-500' : '',
+            ]"
+          />
+        </div>
+
+        <!-- Longitude -->
+        <div class="flex flex-col">
+          <label
+            :for="`${field.key}-lng`"
+            class="block text-xs font-semibold text-[#4D5E80] mb-1.5 select-none"
+          >
+            Longitude
+          </label>
+          <input
+            :id="`${field.key}-lng`"
+            v-model="lngValue"
+            type="number"
+            step="any"
+            placeholder="Contoh: 124.8421"
+            :disabled="isDisabled"
+            autocomplete="off"
+            class="w-full h-10 px-3.5 text-xs bg-white border border-gray-200/80 rounded-lg text-gray-700 placeholder-gray-400 font-mono shadow-2xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+            :class="[
+              isDisabled
+                ? 'bg-[#E2E8F0] text-gray-700 font-medium cursor-not-allowed'
+                : '',
+              error ? 'border-red-500 focus:ring-red-500' : '',
+            ]"
+          />
+        </div>
+      </div>
+
+      <!-- Map Container (Clean BaseMap Only) -->
+      <div
+        class="relative w-full h-[400px] rounded-xl overflow-hidden border border-gray-200/90 shadow-xs"
+      >
+        <BaseMap
+          :center="pickerCenter"
+          :zoom="pickerZoom"
+          :markers="pickerMarkers"
+          :interactive-picker="true"
+          :show-fullscreen-control="false"
+          marker-color="#2563EB"
+          :marker-radius="8"
+          @map-click="onPickerMapClick"
+        />
+      </div>
     </div>
 
     <!-- Text / Number Field -->
     <div v-else class="relative flex items-center">
+      <span
+        v-if="computedPrefix"
+        class="inline-flex items-center px-3 h-10 border border-r-0 border-gray-200/80 bg-gray-50 text-gray-600 font-mono text-xs rounded-l-lg select-none shrink-0"
+      >
+        {{ computedPrefix }}
+      </span>
       <input
         :id="field.key"
         v-model="value"
         :type="field.type || 'text'"
+        :step="field.step || (field.type === 'number' ? 'any' : undefined)"
         :placeholder="field.placeholder"
         :disabled="isDisabled"
+        autocomplete="off"
         class="w-full h-10 px-3.5 text-xs rounded-lg transition-all shadow-2xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
         :class="[
+          computedPrefix ? 'rounded-l-none' : '',
           isDisabled
             ? 'bg-[#E2E8F0] text-gray-700 border border-transparent font-medium cursor-not-allowed'
             : 'bg-white text-gray-700 border border-gray-200/80',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
-      >
+      />
     </div>
 
     <!-- Help Text under input -->

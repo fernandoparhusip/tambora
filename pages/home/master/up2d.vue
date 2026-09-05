@@ -4,6 +4,7 @@ import type { DetailDataItem, Up2dItem } from "~/types/master.types";
 import type { TableColumn } from "~/types";
 import { getUp2dFormSections } from "~/schemas/master/up2d.schema";
 import { useUp2d } from "~/composables/master/useUp2d";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 import { useUiwUid } from "~/composables/master/useUiwUid";
 
 const {
@@ -30,11 +31,9 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<Up2dItem | null>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<Up2dItem | null>(null);
 
 const up2dColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -77,8 +76,8 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "edit"
-    ? "Form Perubahan Unit Pelaksana Pengatur Distribusi PLN"
-    : "Form Penambahan Unit Pelaksana Pengatur Distribusi PLN",
+    ? "Form Ubah UP2D"
+    : "Form Tambah UP2D",
 );
 
 const openCreateModal = () => {
@@ -93,16 +92,7 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-const handleView = async (row: Up2dItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-  try {
-    const fresh = await getUp2dById(row.id);
-    if (fresh) detailRecord.value = fresh;
-  } catch {
-    // Keep local fallback
-  }
-};
+
 
 const handleEdit = (row: Up2dItem) => {
   modalMode.value = "edit";
@@ -116,6 +106,19 @@ const handleEdit = (row: Up2dItem) => {
   };
   modalOpen.value = true;
 };
+
+// Universal Async Detail Management (Guarded against race conditions & memory leaks)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<Up2dItem>({
+  fetchDetail: (id) => getUp2dById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const handleDelete = (row: Up2dItem) => {
   deleteTarget.value = row;
@@ -269,11 +272,14 @@ const createdDateFormatted = computed(() => {
     <!-- Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Master UP2D"
-      subtitle="Informasi data master Unit Pelaksana Pengatur Distribusi"
+      title="Detail UP2D"
+      subtitle="Informasi UP2D"
+      :record-id="detailRecord?.id || detailRecord?.kode"
       :data-items="detailDataItems"
       :created-date="createdDateFormatted"
-      :is-loading="detailLoading"
+      :loading="detailLoading || asyncDetailLoading"
+      @close="closeDetailModal"
+      @edit="openEditFromDetail()"
     />
 
     <!-- Confirm Delete Dialog -->

@@ -33,6 +33,13 @@ watch(isOpen, (val) => {
   }
 });
 
+const closeSuccess = () => {
+  if (timer) clearTimeout(timer);
+  isOpen.value = false;
+};
+
+useModalEsc(isOpen, closeSuccess);
+
 const handleClosed = () => {
   emit("close");
 };
@@ -44,7 +51,7 @@ const handleClosed = () => {
     overlay-transition="vfm-fade"
     content-transition="vfm-fade"
     :click-to-close="true"
-    :esc-to-close="true"
+    :esc-to-close="false"
     class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     content-class="relative z-[100] bg-white w-full max-w-xs sm:max-w-sm rounded-xl p-8 sm:p-10 flex flex-col items-center justify-center text-center shadow-2xl border border-gray-100/80 my-auto select-none"
     overlay-class="fixed inset-0 bg-gray-950/40 backdrop-blur-xs z-[99]"

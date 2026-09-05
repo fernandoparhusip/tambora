@@ -39,13 +39,13 @@ describe('useIdleTimer Composable', () => {
     expect(showWarning.value).toBe(true)
   })
 
-  it('counts down and triggers logout when time expires', async () => {
+  it('counts down, shows expired modal, and triggers logout when time expires', async () => {
     const authStore = useAuthStore()
     authStore.setSession({ nama: 'Operator' }, 'tok', 'ref')
     const logoutMock = vi.fn().mockResolvedValue(undefined)
     authStore.logout = logoutMock
 
-    const { showWarning, resetIdleTimer } = useIdleTimer({
+    const { showWarning, showExpired, resetIdleTimer } = useIdleTimer({
       idleTimeoutMs: 1000,
       countdownSeconds: 5
     })
@@ -54,13 +54,19 @@ describe('useIdleTimer Composable', () => {
     vi.advanceTimersByTime(1000)
     expect(showWarning.value).toBe(true)
 
-    // Advance countdown 5 seconds
+    // Advance warning countdown 5 seconds -> shows expired warning modal
     vi.advanceTimersByTime(5000)
+    await Promise.resolve()
+    expect(showWarning.value).toBe(false)
+    expect(showExpired.value).toBe(true)
+
+    // Advance expired countdown 10 seconds -> triggers logout
+    vi.advanceTimersByTime(10000)
     await Promise.resolve()
     expect(logoutMock).toHaveBeenCalled()
   })
 
-  it('extends session when extendSession is called', async () => {
+  it('extends session when extendSession succeeds', async () => {
     const authStore = useAuthStore()
     authStore.refreshSession = vi.fn().mockResolvedValue(true)
     authStore.setSession({ nama: 'Operator' }, 'tok', 'ref')
@@ -76,5 +82,24 @@ describe('useIdleTimer Composable', () => {
 
     await extendSession()
     expect(showWarning.value).toBe(false)
+  })
+
+  it('shows expired modal when extendSession fails (refresh token expired)', async () => {
+    const authStore = useAuthStore()
+    authStore.refreshSession = vi.fn().mockResolvedValue(false)
+    authStore.setSession({ nama: 'Operator' }, 'tok', 'ref')
+
+    const { showWarning, showExpired, extendSession, resetIdleTimer } = useIdleTimer({
+      idleTimeoutMs: 1000,
+      countdownSeconds: 10
+    })
+
+    resetIdleTimer(true)
+    vi.advanceTimersByTime(1000)
+    expect(showWarning.value).toBe(true)
+
+    await extendSession()
+    expect(showWarning.value).toBe(false)
+    expect(showExpired.value).toBe(true)
   })
 })

@@ -80,8 +80,8 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "edit"
-    ? "Form Edit Data Hierarki Organisasi"
-    : "Form Tambah Data Hierarki Organisasi"
+    ? "Form Ubah Organisasi"
+    : "Form Tambah Organisasi"
 );
 
 const openCreateModal = () => {
@@ -103,9 +103,16 @@ const handleView = (row: OrganizationItem) => {
   isDetailModalOpen.value = true;
 };
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false;
+  detailRecord.value = null;
+};
+
 const openEditFromDetail = () => {
   if (detailRecord.value) {
-    handleEdit(detailRecord.value);
+    const rec = detailRecord.value;
+    closeDetailModal();
+    handleEdit(rec);
   }
 };
 
@@ -292,10 +299,11 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <!-- ── View Detail Modal ─────────────────────────────────── -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Data Organisasi"
-      subtitle="Informasi Lengkap Hierarki Organisasi PLN"
+      title="Detail Organisasi"
+      subtitle="Informasi Organisasi"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
   </div>
 </template>

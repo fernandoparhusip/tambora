@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from "~/types/master.types";
 import type { TableColumn, PermissionItem } from "~/types";
 import { getPermissionFormSections } from "~/schemas/master/permission.schema";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
   permissions,
@@ -29,10 +30,18 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-// Detail Modal State
-const isDetailModalOpen = ref(false);
-const isDetailLoading = ref(false);
-const detailRecord = ref<PermissionItem | null>(null);
+// Detail Modal State (Managed by useAsyncDetail)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: isDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail: openEditFromPermissionDetail,
+} = useAsyncDetail<PermissionItem>({
+  fetchDetail: (id) => getPermissionById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 // Delete Dialog State
 const isConfirmDialogOpen = ref(false);
@@ -217,20 +226,10 @@ const handleEdit = (row: PermissionItem) => {
   isModalOpen.value = true;
 };
 
-const handleView = async (row: PermissionItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-  isDetailLoading.value = true;
-  try {
-    const res = await getPermissionById(row.id);
-    if (res) {
-      detailRecord.value = res;
-    }
-  } catch {
-    // Fallback to row data from table list
-  } finally {
-    isDetailLoading.value = false;
-  }
+const openEditFromDetail = () => {
+  openEditFromPermissionDetail((record) => {
+    handleEdit(record);
+  });
 };
 
 const handleDelete = (row: PermissionItem) => {
@@ -440,8 +439,11 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Akses Permission"
       subtitle="Katalog Akses Permission"
+      :record-id="detailRecord?.id"
+      :loading="isDetailLoading"
       :data-items="detailDataItems"
-      @close="isDetailModalOpen = false"
+      @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
 
     <!-- Delete Confirmation Modal -->

@@ -3,13 +3,18 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, RantingItem } from "~/types";
 import { getRantingFormSections } from "~/schemas/master/ranting.schema";
 import type { DetailDataItem } from "~/types/master.types";
+import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
 import { useRanting } from "~/composables/master/useRanting";
 import { useCabang } from "~/composables/master/useCabang";
+import { formatAppDateTime } from "~/utils/formatDate";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
   rantingList,
   loading,
+  detailLoading,
   fetchRanting,
+  getRantingById,
   createRanting,
   updateRanting,
   deleteRanting,
@@ -30,18 +35,13 @@ const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<RantingItem | null>(null);
 const isDeleting = ref(false);
 
-// Detail Modal States
-const isDetailModalOpen = ref(false);
-const detailRecord = ref<RantingItem | null>(null);
-
 const rantingColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode_cabang", label: "Cabang" },
-  { key: "kode_ranting", label: "Kode Ranting" },
-  { key: "nama_ranting", label: "Nama Ranting" },
+  { key: "kode_cabang", label: "Kode Cabang" },
+  { key: "kode_ranting", label: "Kode" },
+  { key: "nama_ranting", label: "Nama" },
   { key: "status_ranting", label: "Status Ranting" },
-  { key: "approve_status", label: "Status Approval" },
-  { key: "keterangan", label: "Keterangan" },
+  { key: "approve_status", label: "Status" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -89,26 +89,20 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "create"
-    ? "Form Tambah Master Data Ranting PLN"
-    : "Form Ubah Master Data Ranting PLN",
+    ? "Form Tambah Ranting"
+    : "Form Ubah Ranting",
 );
 
 const openCreateModal = () => {
   modalMode.value = "create";
   formData.value = {
-    kode_cabang: cabangList.value[0]?.kode_cabang || "",
+    kode_cabang: "",
     kode_ranting: "",
     nama_ranting: "",
-    status_ranting: "RANTING",
-    approve_status: "APPROVED",
-    keterangan: "",
+    status_ranting: "",
+    approve_status: "",
   };
   modalOpen.value = true;
-};
-
-const handleView = (row: RantingItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
 };
 
 const handleEdit = (row: RantingItem) => {
@@ -117,11 +111,63 @@ const handleEdit = (row: RantingItem) => {
   modalOpen.value = true;
 };
 
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    handleEdit(detailRecord.value);
+// Universal Async Detail Management
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<RantingItem>({
+  fetchDetail: (id) => getRantingById(id),
+  getId: (row) => row.id || row.kode_ranting,
+  onEdit: (record) => handleEdit(record),
+});
+
+const formattedCreatedDate = computed(() => {
+  if (!detailRecord.value?.created_at) return "-";
+  return formatAppDateTime(detailRecord.value.created_at);
+});
+
+const activityLogs = computed<ActivityLogItem[]>(() => {
+  if (!detailRecord.value) return [];
+  const historyList = (detailRecord.value as any)?.history;
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    return historyList.map((item: any) => {
+      const userName = item.user_name || "Admin";
+      const initial = userName.charAt(0).toUpperCase();
+      const actionText =
+        item.title ||
+        (item.action === "CREATE"
+          ? `Membuat Ranting ${detailRecord.value?.nama_ranting || ""}`.trim()
+          : item.action === "UPDATE"
+            ? `Mengubah Ranting ${detailRecord.value?.nama_ranting || ""}`.trim()
+            : item.action || "Aktivitas Ranting");
+      const dt = formatAppDateTime(item.created_at);
+      return {
+        initial,
+        user: userName,
+        action: actionText,
+        timestamp: dt,
+      };
+    });
   }
-};
+
+  const creator =
+    (detailRecord.value as any)?.created_by_name ||
+    (detailRecord.value as any)?.created_by ||
+    "Admin";
+  return [
+    {
+      initial: creator.charAt(0).toUpperCase(),
+      user: creator,
+      action:
+        `Membuat Ranting ${detailRecord.value?.nama_ranting || ""}`.trim(),
+      timestamp: formattedCreatedDate.value,
+    },
+  ];
+});
 
 const handleDelete = (row: RantingItem) => {
   deleteTarget.value = row;
@@ -132,12 +178,17 @@ const confirmDelete = async () => {
   if (!deleteTarget.value) return;
   isDeleting.value = true;
   try {
-    await deleteRanting(deleteTarget.value.id || deleteTarget.value.kode_ranting);
-    toast.success(`Ranting '${deleteTarget.value.nama_ranting}' berhasil dihapus.`, "Sukses");
+    await deleteRanting(
+      deleteTarget.value.id || deleteTarget.value.kode_ranting,
+    );
+    toast.success(
+      `Ranting '${deleteTarget.value.nama_ranting}' berhasil dihapus.`,
+      "Sukses",
+    );
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
-  } catch (err: any) {
-    toast.error(err?.message || "Gagal menghapus ranting.", "Gagal Hapus");
+  } catch {
+    // Error notifikasi sudah ditangani terpusat oleh useApi
   } finally {
     isDeleting.value = false;
   }
@@ -150,9 +201,8 @@ const handleSave = async (data: Record<string, any>) => {
       kode_cabang: data.kode_cabang,
       kode_ranting: data.kode_ranting,
       nama_ranting: data.nama_ranting,
-      status_ranting: data.status_ranting || "RANTING",
+      status_ranting: data.status_ranting || "AKTIF",
       approve_status: data.approve_status || "APPROVED",
-      keterangan: data.keterangan,
     };
 
     if (modalMode.value === "create") {
@@ -165,8 +215,8 @@ const handleSave = async (data: Record<string, any>) => {
       modalOpen.value = false;
       toast.success("Data ranting berhasil diperbarui.", "Sukses");
     }
-  } catch (err: any) {
-    toast.error(err?.message || "Gagal menyimpan data ranting.", "Terjadi Kesalahan");
+  } catch {
+    // Error notifikasi sudah ditangani terpusat oleh useApi
   } finally {
     submitting.value = false;
   }
@@ -185,16 +235,17 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
     { label: "Kode Cabang", value: detailRecord.value.kode_cabang },
-    { label: "Kode Ranting", value: detailRecord.value.kode_ranting },
-    { label: "Nama Ranting", value: detailRecord.value.nama_ranting },
-    { label: "Status Ranting", value: detailRecord.value.status_ranting || "RANTING" },
+    { label: "Kode", value: detailRecord.value.kode_ranting },
+    { label: "Nama", value: detailRecord.value.nama_ranting },
     {
-      label: "Status Approval",
+      label: "Status Ranting",
+      value: detailRecord.value.status_ranting || "AKTIF",
+    },
+    {
+      label: "Status",
       value: detailRecord.value.approve_status || "APPROVED",
       isStatus: true,
     },
-    { label: "Keterangan", value: detailRecord.value.keterangan || "-" },
-    { label: "ID Record", value: detailRecord.value.id || detailRecord.value.kode_ranting },
   ];
 });
 </script>
@@ -217,10 +268,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton
-            resource="RANTING"
-            @click="openCreateModal"
-          />
+          <BaseCreateButton resource="RANTING" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -238,37 +286,43 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #kode_cabang-data="{ row }">
-            <span class="text-xs font-semibold text-gray-800">{{ row.kode_cabang }}</span>
+            <span class="text-xs font-medium text-gray-600">{{
+              row.kode_cabang
+            }}</span>
           </template>
 
           <template #kode_ranting-data="{ row }">
-            <span class="text-xs font-semibold text-primary-700">{{ row.kode_ranting }}</span>
+            <span class="text-xs font-medium text-gray-600">{{
+              row.kode_ranting
+            }}</span>
           </template>
 
           <template #nama_ranting-data="{ row }">
-            <span class="text-xs font-medium text-gray-700">{{ row.nama_ranting }}</span>
+            <span class="text-xs font-medium text-gray-600">{{
+              row.nama_ranting
+            }}</span>
           </template>
 
           <template #status_ranting-data="{ row }">
-            <span class="text-xs text-gray-600">{{ row.status_ranting || 'RANTING' }}</span>
+            <span class="text-xs font-medium text-gray-600">{{
+              row.status_ranting || "AKTIF"
+            }}</span>
           </template>
 
           <template #approve_status-data="{ row }">
             <BaseBadge :variant="getStatusBadgeVariant(row.approve_status)">
-              {{ row.approve_status || 'APPROVED' }}
+              {{ row.approve_status || "APPROVED" }}
             </BaseBadge>
-          </template>
-
-          <template #keterangan-data="{ row }">
-            <span class="text-xs text-gray-500 truncate max-w-xs block" :title="row.keterangan">
-              {{ row.keterangan || '-' }}
-            </span>
           </template>
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
+              <BaseActionButton
+                type="view"
+                title="Lihat Detail"
+                @click="handleView(row)"
+              />
               <BaseActionButton
                 type="edit"
                 resource="RANTING"
@@ -312,9 +366,19 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Ranting"
-      subtitle="Informasi Master Ranting PLN"
+      subtitle="Informasi Ranting"
+      :record-id="detailRecord?.id || detailRecord?.kode_ranting"
+      :created-date="formattedCreatedDate"
+      :created-by="
+        (detailRecord as any)?.created_by_name ||
+        (detailRecord as any)?.created_by ||
+        'Admin'
+      "
       :data-items="detailDataItems"
+      :activity-logs="activityLogs"
+      :loading="detailLoading || asyncDetailLoading"
       @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
 
     <!-- Confirm Delete Dialog -->

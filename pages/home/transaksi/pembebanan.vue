@@ -120,6 +120,19 @@ const handleView = (row: PembebananDTO) => {
   isDetailModalOpen.value = true;
 };
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false;
+  detailRecord.value = null;
+};
+
+const openEditFromDetail = () => {
+  if (detailRecord.value) {
+    const rec = detailRecord.value;
+    closeDetailModal();
+    handleEdit(rec);
+  }
+};
+
 const handleDelete = (row: PembebananDTO) => {
   deleteTarget.value = row;
   isConfirmDialogOpen.value = true;
@@ -290,7 +303,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
       title="Detail Pembebanan Generator"
       subtitle="Parameter operasional beban dan kestabilan frekuensi"
       :data-items="detailItems"
-      @close="isDetailModalOpen = false"
+      @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
 
     <!-- Delete Confirmation Modal -->
