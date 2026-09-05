@@ -89,7 +89,7 @@ const detectedRecordId = computed(() => {
   // Deterministic fallback for edit mode without explicit id/kode field
   if (isEditMode.value) {
     const candidateVals = Object.entries(data)
-      .filter(([k, v]) => typeof v === "string" || typeof v === "number")
+      .filter(([_k, v]) => typeof v === "string" || typeof v === "number")
       .slice(0, 2)
       .map(([k, v]) => `${k}_${v}`)
       .join("_");
@@ -194,7 +194,9 @@ watch(
     let initialObj = {};
     try {
       initialObj = JSON.parse(initialSnapshot.value || "{}");
-    } catch {}
+    } catch {
+      // ignore json parse error
+    }
 
     if (isFormDataEquivalent(newVal, initialObj)) {
       return;
@@ -244,7 +246,9 @@ const isDirty = computed(() => {
   let initialObj = {};
   try {
     initialObj = JSON.parse(initialSnapshot.value || "{}");
-  } catch {}
+  } catch {
+    // ignore json parse error
+  }
   return !isFormDataEquivalent(formData.value || {}, initialObj);
 });
 
@@ -308,7 +312,9 @@ const confirmDiscardChanges = () => {
   try {
     const original = JSON.parse(initialSnapshot.value || "{}");
     formData.value = { ...original };
-  } catch {}
+  } catch {
+    // ignore json parse error
+  }
 
   draftDiscardedThisSession.value = true;
   existingDraft.value = null;
