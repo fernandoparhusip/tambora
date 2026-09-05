@@ -1,33 +1,39 @@
-import type { FormSectionConfig } from '~/types';
+import type { FormSectionConfig, SelectOption } from "~/types";
 
-export const aksesLevelFormSections: FormSectionConfig[] = [
+export const getAksesLevelFormSections = (
+  scopeTypeOptions: SelectOption[] = [],
+): FormSectionConfig[] => [
   {
     fields: [
       {
-        key: 'code',
-        label: 'Kode Akses Level',
-        type: 'text',
-        placeholder: 'Contoh: REG-01, UNIT-PLN-01',
+        key: "name",
+        label: "Nama",
+        type: "text",
+        placeholder: "Masukkan nama akses level...",
         required: true,
-        colSpan: 12
+        colSpan: 12,
       },
       {
-        key: 'name',
-        label: 'Nama Akses Level',
-        type: 'text',
-        placeholder: 'Contoh: Regional Jawa-Bali, Unit Pembangkit',
+        key: "scope_type_id",
+        label: "Tipe",
+        type: "searchable-select",
+        placeholder: "Pilih Tipe Akses Level...",
+        options: scopeTypeOptions,
         required: true,
-        colSpan: 12
+        colSpan: 12,
       },
       {
-        key: 'description',
-        label: 'Deskripsi',
-        type: 'textarea',
-        placeholder: 'Deskripsi detail cakupan wilayah / unit akses level...',
+        key: "description",
+        label: "Deskripsi",
+        type: "textarea",
+        placeholder: "Deskripsi detail cakupan wilayah / unit akses level...",
         required: false,
         colSpan: 12,
-        rows: 3
-      }
-    ]
-  }
+        rows: 3,
+      },
+    ],
+  },
 ];
+
+export const aksesLevelFormSections: FormSectionConfig[] =
+  getAksesLevelFormSections([]);

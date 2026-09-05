@@ -79,18 +79,10 @@ export const useOrganization = () => {
     loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<OrganizationItem>>(`/organization/${id}`, {
-          method: "POST",
-          body: payload
-        });
-      } catch {
-        res = await api<ApiResponse<OrganizationItem>>(`/organization/${id}`, {
-          method: "PUT",
-          body: payload
-        });
-      }
+      const res = await api<ApiResponse<OrganizationItem>>(`/organization/${id}`, {
+        method: "POST",
+        body: payload
+      });
       await fetchOrganizations();
       return res?.data;
     } catch (err: any) {
@@ -105,18 +97,11 @@ export const useOrganization = () => {
     loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<null>>(`/organization/${id}/delete`, {
-          method: "POST"
-        });
-      } catch {
-        res = await api<ApiResponse<null>>(`/organization/${id}`, {
-          method: "DELETE"
-        });
-      }
+      const res = await api<ApiResponse<null>>(`/organization/${id}/delete`, {
+        method: "POST"
+      });
       await fetchOrganizations();
-      return res;
+      return res?.data;
     } catch (err: any) {
       error.value = err?.message || "Gagal menghapus organisasi.";
       throw err;

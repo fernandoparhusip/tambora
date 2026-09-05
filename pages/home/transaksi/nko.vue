@@ -96,6 +96,19 @@ const handleView = (row: NKODTO) => {
   isDetailModalOpen.value = true;
 };
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false;
+  detailRecord.value = null;
+};
+
+const openEditFromDetail = () => {
+  if (detailRecord.value) {
+    const rec = detailRecord.value;
+    closeDetailModal();
+    handleEdit(rec);
+  }
+};
+
 const handleDelete = (row: NKODTO) => {
   deleteTarget.value = row;
   isConfirmDialogOpen.value = true;
@@ -278,7 +291,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
       title="Detail Indikator NKO"
       subtitle="Evaluasi pencapaian target dan realisasi KPI"
       :data-items="detailItems"
-      @close="isDetailModalOpen = false"
+      @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
 
     <!-- Delete Confirmation Modal -->

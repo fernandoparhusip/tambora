@@ -27,20 +27,38 @@
 ## 3. Base Component Conventions & UX Guidelines
 
 ### 3.1. `BaseTable` & Data Grid
-- **Responsive Scrolling**: Untuk tabel padat (seperti *Permission Matrix Akses Grup*), wajib menggunakan pembungkus `overflow-x-auto min-w-[820px]` dengan kolom modul terkunci `w-[220px] shrink-0` agar label teks tidak terlipat menjadi satu huruf pada layar tablet.
+- **Responsive Scrolling**: Tabel padat menggunakan pembungkus `overflow-x-auto` dengan lebar kolom yang proporsional agar label teks tidak terlipat. Untuk formulir Akses Grup, daftar izin menggunakan tata letak kartu 2 kolom (`grid-cols-2`) dengan switch On/Off, master toggle, dan filter modul.
 - **Column Customizer**: Toggle visibilitas kolom (`enableColumnToggle`) dengan penyimpanan otomatis ke `localStorage`.
-- **Row Animations**: Baris tabel dirender dengan animasi berjenjang **GSAP Row Stagger** (`clearProps: 'transform,opacity'`) untuk tampilan berkelas.
-- **Empty & Reload State**: Dilengkapi ilustrasi database dan tombol `[ 🔄 Muat Ulang ]` untuk refresh data instan.
+- **Row Animations**: Baris tabel dirender dengan animasi berjenjang untuk tampilan yang mulus dan nyaman dilihat.
+- **Empty & Reload State**: Dilengkapi ilustrasi data kosong dan tombol `[ 🔄 Muat Ulang ]` untuk refresh data instan.
 
 ### 3.2. `BaseFormModal` & Drawer Engine
 - **Responsive Drawer Width**: Modal drawer form menggunakan kelas responsif berjenjang:
   ```css
   w-full sm:w-11/12 md:w-5/6 lg:w-3/4 xl:w-2/3 max-w-4xl
   ```
-  memberikan ruang pernapasan optimal di Desktop, Laptop, Tablet, maupun Split-Screen.
+  memberikan ruang tampilan yang seimbang di Desktop, Laptop, Tablet, maupun Split-Screen.
 - **Single-Page Form Flow**: Form dirancang mengalir dalam satu halaman drawer bersih (tanpa tab manual) yang dipisahkan oleh *Section Divider* yang jelas.
-- **Safety & Zero Data Loss**: Dilengkapi **Auto-Save Draft** (`useFormDraft`) dan dialog konfirmasi **Unsaved Changes Guard** saat operator mencoba menutup form yang belum disimpan.
+- **Safety & Form Draft**: Dilengkapi penyimpanan draf otomatis (`useFormDraft`) dan dialog konfirmasi *Unsaved Changes Guard* saat pengguna mencoba menutup form yang belum disimpan.
 
 ### 3.3. `FormFieldRenderer` & Popover Teleport
 - **Body Teleportation**: Seluruh dropdown popover (`searchable-select` dan `searchable-multi-select`) di-teleport langsung ke `body` dengan `z-[99999]` dan penyesuaian posisi `getBoundingClientRect()` agar tidak terpotong (*clipped*) oleh kontainer drawer yang memiliki `overflow-y-auto`.
 - **Form Controls Light Theme**: Seluruh input native (radio & checkbox) diatur ke `color-scheme: light !important` dan aksen biru PLN `#2563eb`.
+
+### 3.4. Modal Layering & Stacking Context
+- **Global Z-Index Hierarchy**:
+  - `z-[1000000]`: Sesi Kedaluwarsa (`BaseSessionExpiredModal`).
+  - `z-[999990]`: Popup Timer Inaktivitas (`BaseIdleWarningModal`) — teratas dari segala drawer & modal.
+  - `z-[99999]`: Dropdown Searchable Select Popovers.
+  - `z-[9999]`: Floating Toast Notifications (`BaseToastContainer`).
+  - `z-[105]`: Unsaved Changes Guard Prompt.
+  - `z-[100]`: Form Drawers (`BaseFormModal`) & Modal Detail (`BaseDetailModal`).
+- **LIFO ESC Management**: Penggunaan `useModalEsc()` menjamin penekanan tombol `Esc` hanya menutup modal paling atas tanpa sengaja menutup modal di belakangnya.
+
+### 3.5. Interactive GIS Coordinate Picker & Timezones
+- **Dua Arah (Two-Way Sync)**: Komponen `coordinate-picker` menghubungkan input numerik Latitude & Longitude dengan penanda pin interaktif OpenLayers (`BaseMap`). Mengklik peta otomatis mengisi koordinat, dan mengetik angka otomatis menggeser pin peta secara *live*.
+- **Otomatis Zona Waktu**: [`utils/formatDate.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/utils/formatDate.ts) mendeteksi zona waktu perangkat (`WIB`, `WITA`, `WIT`) secara dinamis untuk menyajikan data tanggal pembuatan dan riwayat log modal detail.
+
+### 3.6. Standar Tampilan Tooltip
+- **PrimeVue Tooltip**: Dikonfigurasi melalui `assets/css/primevue-overrides.css` dengan font `12px`, padding compact `4px 8px`, serta `white-space: nowrap` dan `width: max-content` agar teks tooltip tampil penuh dan rapi dalam satu baris.
+

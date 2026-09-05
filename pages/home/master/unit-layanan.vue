@@ -4,6 +4,7 @@ import type { DetailDataItem, UnitLayananItem } from "~/types/master.types";
 import type { TableColumn } from "~/types";
 import { getUnitLayananFormSections } from "~/schemas/master/unit-layanan.schema";
 import { useUnitLayanan } from "~/composables/master/useUnitLayanan";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 import { useUpk } from "~/composables/master/useUpk";
 
 const {
@@ -30,11 +31,9 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<UnitLayananItem | null>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<UnitLayananItem | null>(null);
 
 const unitLayananColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -83,8 +82,8 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "edit"
-    ? "Form Perubahan Unit Layanan PLN"
-    : "Form Penambahan Unit Layanan PLN",
+    ? "Form Ubah Unit Layanan"
+    : "Form Tambah Unit Layanan",
 );
 
 const openCreateModal = () => {
@@ -98,16 +97,7 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-const handleView = async (row: UnitLayananItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-  try {
-    const fresh = await getUnitLayananById(row.id);
-    if (fresh) detailRecord.value = fresh;
-  } catch {
-    // Keep local fallback
-  }
-};
+
 
 const handleEdit = (row: UnitLayananItem) => {
   modalMode.value = "edit";
@@ -120,6 +110,19 @@ const handleEdit = (row: UnitLayananItem) => {
   };
   modalOpen.value = true;
 };
+
+// Universal Async Detail Management (Guarded against race conditions & memory leaks)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<UnitLayananItem>({
+  fetchDetail: (id) => getUnitLayananById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const handleDelete = (row: UnitLayananItem) => {
   deleteTarget.value = row;
@@ -276,11 +279,14 @@ const createdDateFormatted = computed(() => {
     <!-- Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Master Unit Layanan"
-      subtitle="Informasi data master Unit Layanan"
+      title="Detail Unit Layanan"
+      subtitle="Informasi Unit Layanan"
+      :record-id="detailRecord?.id || detailRecord?.kode"
       :data-items="detailDataItems"
       :created-date="createdDateFormatted"
-      :is-loading="detailLoading"
+      :loading="detailLoading || asyncDetailLoading"
+      @close="closeDetailModal"
+      @edit="openEditFromDetail()"
     />
 
     <!-- Confirm Delete Dialog -->

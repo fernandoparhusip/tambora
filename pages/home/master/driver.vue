@@ -58,8 +58,8 @@ const paginatedData = computed(() => {
   return filteredData.value.slice(start, start + pageSize.value);
 });
 
-const modalTitle = computed(() => modalMode.value === "edit" ? "Edit Data Pengemudi" : "Tambah Data Pengemudi");
-const modalSubtitle = computed(() => modalMode.value === "edit" ? "Form Edit Data Pengemudi" : "Form Tambah Data Pengemudi");
+const modalTitle = computed(() => modalMode.value === "edit" ? "Edit Data Driver" : "Tambah Data Driver");
+const modalSubtitle = computed(() => modalMode.value === "edit" ? "Form Ubah Driver" : "Form Tambah Driver");
 
 const openCreateModal = () => {
   modalMode.value = "create";
@@ -84,9 +84,16 @@ const handleView = (row: DriverItem) => {
   isDetailModalOpen.value = true;
 };
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false;
+  detailRecord.value = null;
+};
+
 const openEditFromDetail = () => {
   if (detailRecord.value) {
-    handleEdit(detailRecord.value);
+    const rec = detailRecord.value;
+    closeDetailModal();
+    handleEdit(rec);
   }
 };
 
@@ -293,10 +300,11 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <!-- ── View Detail Modal ───────────────────────── -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Data Pengemudi"
-      subtitle="Informasi Lengkap Pengemudi Operasional"
+      title="Detail Driver"
+      subtitle="Informasi Driver"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
   </div>
 </template>

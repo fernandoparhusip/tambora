@@ -2,8 +2,13 @@
 import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, RegionalItem } from "~/types";
 import { getRegionalFormSections } from "~/schemas/master/regional.schema";
-import type { DetailDataItem } from "~/types/master.types";
+import type {
+  DetailDataItem,
+  ActivityLogItem,
+} from "~/components/base/BaseDetailModal.vue";
 import { useRegional } from "~/composables/master/useRegional";
+import { formatAppDateTime } from "~/utils/formatDate";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
   regionalList,
@@ -30,16 +35,11 @@ const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<RegionalItem | null>(null);
 const isDeleting = ref(false);
 
-// Detail Modal States
-const isDetailModalOpen = ref(false);
-const detailRecord = ref<RegionalItem | null>(null);
-
 const regionalColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode_regional", label: "Kode Regional" },
-  { key: "nama_regional", label: "Nama Regional" },
-  { key: "coordinates", label: "Koordinat (Lat, Lng)" },
-  { key: "keterangan", label: "Keterangan" },
+  { key: "kode_regional", label: "Kode" },
+  { key: "nama_regional", label: "Nama" },
+  { key: "coordinates", label: "Koordinat (Latitude, Longitude)" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -59,8 +59,7 @@ const filteredData = computed(() => {
   return regionalList.value.filter(
     (item) =>
       (item.kode_regional && item.kode_regional.toLowerCase().includes(q)) ||
-      (item.nama_regional && item.nama_regional.toLowerCase().includes(q)) ||
-      (item.keterangan && item.keterangan.toLowerCase().includes(q)),
+      (item.nama_regional && item.nama_regional.toLowerCase().includes(q)),
   );
 });
 
@@ -74,8 +73,8 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "create"
-    ? "Form Tambah Master Data Regional (Wilayah)"
-    : "Form Ubah Master Data Regional (Wilayah)",
+    ? "Form Tambah Regional"
+    : "Form Ubah Regional",
 );
 
 const openCreateModal = () => {
@@ -85,21 +84,11 @@ const openCreateModal = () => {
     nama_regional: "",
     latitude: null,
     longitude: null,
-    keterangan: "",
   };
   modalOpen.value = true;
 };
 
-const handleView = async (row: RegionalItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-  try {
-    const fresh = await getRegionalById(row.id);
-    if (fresh) detailRecord.value = fresh;
-  } catch {
-    // Fallback
-  }
-};
+
 
 const handleEdit = (row: RegionalItem) => {
   modalMode.value = "edit";
@@ -107,11 +96,18 @@ const handleEdit = (row: RegionalItem) => {
   modalOpen.value = true;
 };
 
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    handleEdit(detailRecord.value);
-  }
-};
+// Universal Async Detail Management (Guarded against race conditions & memory leaks)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<RegionalItem>({
+  fetchDetail: (id) => getRegionalById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const handleDelete = (row: RegionalItem) => {
   deleteTarget.value = row;
@@ -122,8 +118,13 @@ const confirmDelete = async () => {
   if (!deleteTarget.value) return;
   isDeleting.value = true;
   try {
-    await deleteRegional(deleteTarget.value.id || deleteTarget.value.kode_regional);
-    toast.success(`Regional '${deleteTarget.value.nama_regional}' berhasil dihapus.`, "Sukses");
+    await deleteRegional(
+      deleteTarget.value.id || deleteTarget.value.kode_regional,
+    );
+    toast.success(
+      `Regional '${deleteTarget.value.nama_regional}' berhasil dihapus.`,
+      "Sukses",
+    );
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (err: any) {
@@ -139,9 +140,14 @@ const handleSave = async (data: Record<string, any>) => {
     const payload = {
       kode_regional: data.kode_regional,
       nama_regional: data.nama_regional,
-      latitude: data.latitude ? Number(data.latitude) : undefined,
-      longitude: data.longitude ? Number(data.longitude) : undefined,
-      keterangan: data.keterangan,
+      latitude:
+        data.latitude != null && data.latitude !== "" && !isNaN(Number(data.latitude))
+          ? Number(data.latitude)
+          : undefined,
+      longitude:
+        data.longitude != null && data.longitude !== "" && !isNaN(Number(data.longitude))
+          ? Number(data.longitude)
+          : undefined,
     };
 
     if (modalMode.value === "create") {
@@ -155,7 +161,10 @@ const handleSave = async (data: Record<string, any>) => {
       toast.success("Data regional berhasil diperbarui.", "Sukses");
     }
   } catch (err: any) {
-    toast.error(err?.message || "Gagal menyimpan data regional.", "Terjadi Kesalahan");
+    toast.error(
+      err?.message || "Gagal menyimpan data regional.",
+      "Terjadi Kesalahan",
+    );
   } finally {
     submitting.value = false;
   }
@@ -169,21 +178,49 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     { label: "Nama Regional", value: detailRecord.value.nama_regional },
     { label: "Latitude", value: detailRecord.value.latitude ?? "-" },
     { label: "Longitude", value: detailRecord.value.longitude ?? "-" },
-    { label: "Keterangan", value: detailRecord.value.keterangan || "-" },
-    { label: "ID Record", value: detailRecord.value.id || detailRecord.value.kode_regional },
   ];
 });
 
 const createdDateFormatted = computed(() => {
-  if (!detailRecord.value?.created_at) return "-";
-  try {
-    return new Date(detailRecord.value.created_at).toLocaleString("id-ID", {
-      dateStyle: "full",
-      timeStyle: "short",
+  return formatAppDateTime(detailRecord.value?.created_at);
+});
+
+const activityLogs = computed<ActivityLogItem[]>(() => {
+  const historyList = (detailRecord.value as any)?.history;
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    return historyList.map((item: any) => {
+      const userName = item.user_name || "Admin";
+      const initial = userName.charAt(0).toUpperCase();
+      const actionText =
+        item.title ||
+        (item.action === "CREATE"
+          ? "Membuat Master Regional"
+          : item.action === "UPDATE"
+            ? "Mengubah Master Regional"
+            : item.action || "Aktivitas Regional");
+      const dt = formatAppDateTime(item.created_at);
+      return {
+        initial,
+        user: userName,
+        action: actionText,
+        timestamp: dt,
+      };
     });
-  } catch {
-    return detailRecord.value.created_at;
   }
+
+  const creator =
+    (detailRecord.value as any)?.created_by_name ||
+    (detailRecord.value as any)?.created_by ||
+    "Admin";
+  return [
+    {
+      initial: creator.charAt(0).toUpperCase(),
+      user: creator,
+      action:
+        `Membuat Master Regional ${detailRecord.value?.nama_regional || ""}`.trim(),
+      timestamp: createdDateFormatted.value,
+    },
+  ];
 });
 </script>
 
@@ -205,10 +242,7 @@ const createdDateFormatted = computed(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton
-            resource="REGIONAL"
-            @click="openCreateModal"
-          />
+          <BaseCreateButton resource="REGIONAL" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -220,36 +254,43 @@ const createdDateFormatted = computed(() => {
           @reload="fetchRegional"
         >
           <template #no-data="{ index }">
-            <span class="text-xs text-gray-700 font-medium">
+            <span class="text-xs text-gray-600 font-medium">
               {{ (currentPage - 1) * pageSize + index + 1 }}.
             </span>
           </template>
 
           <template #kode_regional-data="{ row }">
-            <span class="font-semibold text-gray-800 font-mono text-xs">{{ row.kode_regional }}</span>
+            <span class="text-xs text-gray-600 font-medium">{{
+              row.kode_regional
+            }}</span>
           </template>
 
           <template #nama_regional-data="{ row }">
-            <span class="font-medium text-gray-900 text-xs">{{ row.nama_regional }}</span>
+            <span class="text-xs text-gray-600 font-medium">{{
+              row.nama_regional
+            }}</span>
           </template>
 
           <template #coordinates-data="{ row }">
-            <span v-if="row.latitude != null && row.longitude != null" class="text-xs text-gray-600 font-mono">
+            <span
+              v-if="row.latitude != null && row.longitude != null"
+              class="text-xs text-gray-600 font-medium"
+            >
               {{ row.latitude }}, {{ row.longitude }}
             </span>
-            <span v-else class="text-xs text-gray-400 italic">Belum diset</span>
-          </template>
-
-          <template #keterangan-data="{ row }">
-            <span class="text-xs text-gray-500 truncate max-w-xs block" :title="row.keterangan">
-              {{ row.keterangan || '-' }}
-            </span>
+            <span v-else class="text-xs text-gray-600 font-medium"
+              >Belum diset</span
+            >
           </template>
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
+              <BaseActionButton
+                type="view"
+                title="Lihat Detail"
+                @click="handleView(row)"
+              />
               <BaseActionButton
                 type="edit"
                 resource="REGIONAL"
@@ -292,12 +333,20 @@ const createdDateFormatted = computed(() => {
     <!-- Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Master Regional"
-      subtitle="Informasi data master regional PLN"
-      :data-items="detailDataItems"
+      title="Detail Regional"
+      subtitle="Informasi Regional"
+      :record-id="detailRecord?.id || detailRecord?.kode_regional"
       :created-date="createdDateFormatted"
-      :loading="detailLoading"
-      @edit="openEditFromDetail"
+      :created-by="
+        (detailRecord as any)?.created_by_name ||
+        (detailRecord as any)?.created_by ||
+        'Admin'
+      "
+      :data-items="detailDataItems"
+      :activity-logs="activityLogs"
+      :loading="detailLoading || asyncDetailLoading"
+      @close="closeDetailModal"
+      @edit="openEditFromDetail()"
     />
 
     <!-- Confirm Delete Dialog -->

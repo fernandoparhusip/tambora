@@ -1,7 +1,7 @@
 import { useAuthStore } from '~/stores/auth'
 import { defineNuxtRouteMiddleware, navigateTo } from '#app'
 
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = useAuthStore()
 
   // If the user is NOT logged in and is trying to access any page other than /login, redirect to /login with redirect query
@@ -18,8 +18,17 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo(redirectUrl)
   }
 
-  // Route Menu RBAC Guard: Protect unauthorized manual URL navigation
-  if (authStore.isLoggedIn && to.path.startsWith('/home') && to.path !== '/home') {
+  // Route Menu RBAC Guard: Protect unauthorized manual URL navigation (evaluated on client where permissions & localStorage are loaded)
+  if (import.meta.client && authStore.isLoggedIn && to.path.startsWith('/home') && to.path !== '/home') {
+    // Hold the route if permissions are not yet resolved (e.g. cold start / empty cache)
+    if ((!authStore.user || authStore.permissions.length === 0) && authStore.token) {
+      try {
+        await authStore.fetchUserMe()
+      } catch {
+        // Fallback gracefully
+      }
+    }
+
     if (!authStore.hasMenuAccess(to.path)) {
       return navigateTo('/home')
     }

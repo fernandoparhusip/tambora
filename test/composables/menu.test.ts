@@ -36,10 +36,10 @@ describe('useMenu Composable', () => {
 
     const { createMenu, getMenuById, updateMenu, deleteMenu } = useMenu();
 
-    await createMenu({ nama: 'Dashboard', order: 1, status: 1 });
+    await createMenu({ nama: 'Dashboard', url: '/dashboard', status: 1 });
     expect(mockApi).toHaveBeenCalledWith('/menu', {
       method: 'POST',
-      body: { nama: 'Dashboard', order: 1, status: 1 }
+      body: { nama: 'Dashboard', url: '/dashboard', status: 1 }
     });
 
     const detail = await getMenuById('menu-1');

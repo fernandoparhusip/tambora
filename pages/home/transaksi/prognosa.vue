@@ -119,6 +119,19 @@ const handleView = (row: PrognosaDTO) => {
   isDetailModalOpen.value = true;
 };
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false;
+  detailRecord.value = null;
+};
+
+const openEditFromDetail = () => {
+  if (detailRecord.value) {
+    const rec = detailRecord.value;
+    closeDetailModal();
+    handleEdit(rec);
+  }
+};
+
 const handleDelete = (row: PrognosaDTO) => {
   deleteTarget.value = row;
   isConfirmDialogOpen.value = true;
@@ -300,7 +313,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
       title="Detail Prognosa Pembangkit"
       subtitle="Rincian parameter prognosa kesiapan unit pembangkit"
       :data-items="detailItems"
-      @close="isDetailModalOpen = false"
+      @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
 
     <!-- Delete Confirmation Modal -->

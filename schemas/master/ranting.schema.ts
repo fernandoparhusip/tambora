@@ -5,7 +5,7 @@ export interface RantingSchemaOptions {
 }
 
 export const getRantingFormSections = (
-  options: RantingSchemaOptions = {}
+  options: RantingSchemaOptions = {},
 ): FormSectionConfig[] => {
   const cabangOptions = options.cabangOptions || [];
 
@@ -23,19 +23,19 @@ export const getRantingFormSections = (
         },
         {
           key: "kode_ranting",
-          label: "Kode Ranting",
+          label: "Kode",
           type: "text",
           placeholder: "Contoh: RNT-TMH",
           required: true,
-          colSpan: 6,
+          colSpan: 12,
         },
         {
           key: "nama_ranting",
-          label: "Nama Ranting",
+          label: "Nama",
           type: "text",
-          placeholder: "Contoh: PLN Ranting Tomohon",
+          placeholder: "Contoh: Ranting Tomohon",
           required: true,
-          colSpan: 6,
+          colSpan: 12,
         },
         {
           key: "status_ranting",
@@ -44,14 +44,14 @@ export const getRantingFormSections = (
           placeholder: "Pilih Status Ranting",
           options: [
             { label: "AKTIF", value: "AKTIF" },
-            { label: "NONAKTIF", value: "NONAKTIF" },
+            { label: "TIDAK AKTIF", value: "TIDAK AKTIF" },
           ],
           required: false,
-          colSpan: 6,
+          colSpan: 12,
         },
         {
           key: "approve_status",
-          label: "Status Approval",
+          label: "Status",
           type: "select",
           placeholder: "Pilih Status Approval",
           options: [
@@ -60,16 +60,7 @@ export const getRantingFormSections = (
             { label: "REJECTED", value: "REJECTED" },
           ],
           required: false,
-          colSpan: 6,
-        },
-        {
-          key: "keterangan",
-          label: "Keterangan",
-          type: "textarea",
-          placeholder: "Catatan informasi ranting...",
-          required: false,
           colSpan: 12,
-          rows: 2,
         },
       ],
     },

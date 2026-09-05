@@ -47,13 +47,14 @@
 
 ---
 
-## 3. Enterprise Session Security Architecture
+## 3. Arsitektur Keamanan Sesi
 
 ```mermaid
 flowchart TD
     subgraph IDLE_SYSTEM["1. Inactivity Monitor (useIdleTimer)"]
-        ACTIVITY["User Event: Mouse, Key, Touch, Scroll"] -->|"Reset Timer"| TIMER["Idle Countdown: 28 Menit"]
-        TIMER -->|"28 Menit Inaktif"| WARNING_MODAL["BaseIdleWarningModal: Grace Period 2 Menit"]
+        ACTIVITY["User Event / Visibility / Focus"] --> CHECK_DELTA{"Date.now() - lastActivity >= 13m?"}
+        CHECK_DELTA -->|"No (Aktif)"| RESET_TS["Update lastActivity = Date.now() & Heartbeat 2s"]
+        CHECK_DELTA -->|"Yes (Inaktif >= 13m)"| WARNING_MODAL["BaseIdleWarningModal (z-[999990]): Grace Period 2 Menit"]
         WARNING_MODAL -->|"Klik Lanjutkan Sesi"| KEEP_ALIVE["Reset Timer & Silent Refresh Token"]
         WARNING_MODAL -->|"Countdown 0 / Klik Keluar"| LOGOUT_TRIGGER["Panggil authStore.logout"]
     end
@@ -72,11 +73,11 @@ flowchart TD
 
 ---
 
-## 4. Modern UI/UX Animation & Notification Architecture
+## 4. Arsitektur Transisi UI & Notifikasi
 
 ```mermaid
 flowchart TD
-    subgraph ANIM_SUITE["1. High-Impact Animations"]
+    subgraph ANIM_SUITE["1. UI Transitions & Feedback"]
         PAGES["Page Navigation"] -->|"GPU Cubic-Bezier"| PAGE_TRANS["Smooth Fade & Slide-Up 6px"]
         DATA_LOAD["API Data Arrived"] -->|"GSAP gsap.fromTo"| STAGGER["Table Rows Cascade (20ms Stagger)"]
         LOADING["Table Loading"] -->|"Tailwind Gradient Wave"| SKELETON["5-Row Shimmer Skeleton Loader"]
@@ -84,7 +85,7 @@ flowchart TD
     end
 
     subgraph SAFETY_FEEDBACK["2. Data Safety & Global Toast"]
-        FORM_DIRTY["Form Input Modified"] -->|"Close Attempt"| GUARD["Unsaved Changes Guard Dialog"]
+        FORM_DIRTY["Form Input Modified"] -->|"Close Attempt"| GUARD["Unsaved Changes Guard Dialog (z-[105])"]
         CRUD_ACTION["API Success or Error"] -->|"useAppToast"| TOAST["BaseToastContainer (Animated Progress Bar)"]
     end
 ```
@@ -95,12 +96,12 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    subgraph DRAFT_SYSTEM["1. Form Draft Auto-Save (useFormDraft)"]
-        INPUT["Operator Typings in Form"] -->|"Debounce 500ms"| LOCAL_STORAGE["Browser LocalStorage (Isolated Key)"]
+    subgraph DRAFT_SYSTEM["1. Universal Form Draft (useFormDraft & BaseFormModal)"]
+        INPUT["Operator Typings in Form"] -->|"Debounce 500ms"| LOCAL_STORAGE["Browser LocalStorage (route + universal pk)"]
         BROWSER_CLOSE["Browser Crash or Tab Closed"] --> OPEN_MODAL["Modal Form Opened Again"]
-        LOCAL_STORAGE -->|"Detect Existing Draft"| DRAFT_BANNER["Draft Recovery Banner"]
+        LOCAL_STORAGE -->|"Semantic Diff & Valid Content"| DRAFT_BANNER["Draft Recovery Banner (Formatted Time & TTL 24h)"]
         DRAFT_BANNER -->|"Klik Pulihkan"| RESTORE["Populate Form Inputs"]
-        DRAFT_BANNER -->|"Klik Abaikan / Submit OK"| PURGE["Auto-Purge Storage"]
+        DRAFT_BANNER -->|"Klik Abaikan / Buang / Submit OK"| PURGE["Auto-Purge Storage & Reset Clean State"]
     end
 
     subgraph CACHE_SYSTEM["2. SWR API Caching (useApiCache)"]

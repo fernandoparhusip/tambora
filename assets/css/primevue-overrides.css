@@ -248,14 +248,16 @@ button[data-p-selected="true"] {
 /* ── Page & Layout Route GPU Transitions ────────────────────── */
 .page-enter-active,
 .layout-enter-active {
-  transition: opacity var(--motion-duration-normal) var(--motion-ease-out),
+  transition:
+    opacity var(--motion-duration-normal) var(--motion-ease-out),
     transform var(--motion-duration-normal) var(--motion-ease-out);
   will-change: opacity, transform;
 }
 
 .page-leave-active,
 .layout-leave-active {
-  transition: opacity 0.15s var(--motion-ease-in),
+  transition:
+    opacity 0.15s var(--motion-ease-in),
     transform 0.15s var(--motion-ease-in);
   will-change: opacity, transform;
 }
@@ -320,8 +322,70 @@ input[type="radio"]:not(:checked) {
   background-color: #ffffff !important;
 }
 
+/* ── Global Autofill Consistency Override ──────────────────────
+   Prevents browser native autofill (Chrome/Edge/Safari/Firefox)
+   from changing background color, border, or text color on ANY field.
+─────────────────────────────────────────────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #374151 !important;
+  color: #374151 !important;
+  caret-color: #374151 !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
 
+/* ── Disable User Selection on Placeholders ────────────────────
+   Prevents placeholder text from being selected or highlighted
+   when dragging or selecting text across inputs/forms.
+─────────────────────────────────────────────────────────────── */
+input:placeholder-shown,
+textarea:placeholder-shown {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
 
+input:placeholder-shown::selection,
+textarea:placeholder-shown::selection {
+  background: transparent !important;
+  background-color: transparent !important;
+}
 
+/* ── Remove Harsh Browser Focus Outline on Mouse Click ────────
+   Removes default black focus rectangle on mouse click while
+   preserving clean, accessible focus ring for keyboard (Tab) navigation.
+─────────────────────────────────────────────────────────────── */
+button:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none !important;
+}
 
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 1px;
+}
 
+/* ── Tooltip ───────────────────────────────────────── */
+.p-tooltip {
+  max-width: none !important;
+}
+.p-tooltip .p-tooltip-text {
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  white-space: nowrap !important;
+  width: max-content !important;
+  max-width: none !important;
+}

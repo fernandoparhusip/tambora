@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from "vue";
+import { ref, computed, watch, onBeforeUnmount, nextTick } from "vue";
 import { VueFinalModal } from "vue-final-modal";
 import { FileText, RotateCcw, X } from "@lucide/vue";
 import type { FormSectionConfig, FormFieldConfig } from "~/types";
-import { useFormDraft, type FormDraftData } from "~/composables/useFormDraft";
+import {
+  useFormDraft,
+  type FormDraftData,
+  isFormDataEquivalent,
+  hasMeaningfulContent,
+} from "~/composables/useFormDraft";
 
 interface Props {
   title: string;
@@ -14,6 +19,10 @@ interface Props {
   variant?: "drawer" | "centered";
   /** Optional unique key for auto-saving form drafts to prevent data loss */
   draftKey?: string;
+  /** Optional explicit record ID to isolate drafts in edit mode */
+  recordId?: string | number;
+  /** Optional explicit edit mode flag (auto-detected if omitted) */
+  isEdit?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,6 +31,8 @@ const props = withDefaults(defineProps<Props>(), {
   errors: () => ({}),
   variant: "drawer",
   draftKey: "",
+  recordId: "",
+  isEdit: undefined,
 });
 
 const emit = defineEmits<{
@@ -35,38 +46,124 @@ const formData = defineModel<Record<string, any>>("formData", {
   default: () => ({}),
 });
 
-// Draft handling
+// Draft handling composable
 const { saveDraft, getDraft, clearDraft } = useFormDraft();
 const existingDraft = ref<FormDraftData | null>(null);
 const showDraftBanner = ref(false);
+const isCheckingDraft = ref(false);
+const draftDiscardedThisSession = ref(false);
 let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Safe route retrieval for universal namespacing
+let routePath = "";
+try {
+  const route = useRoute();
+  routePath = route?.path || "";
+} catch {
+  // SSR or test fallback
+}
+
+// Universal Edit mode detection (checks prop or title semantics: ubah, edit, perbarui)
+const isEditMode = computed(() => {
+  if (props.isEdit !== undefined) return props.isEdit;
+  return /(ubah|edit|perbarui)/i.test(props.title || "");
+});
+
+// Universal primary key detection: inspects explicit prop or any primary identifier in formData
+const detectedRecordId = computed(() => {
+  if (props.recordId !== undefined && props.recordId !== null && String(props.recordId).trim() !== "") {
+    return String(props.recordId).trim();
+  }
+  const data = formData.value || {};
+
+  // Search for standard primary key field patterns in Tambora
+  const key = Object.keys(data).find(
+    (k) =>
+      /^(id|_id|uuid|code|kode_.*)$/i.test(k) &&
+      data[k] !== null &&
+      data[k] !== undefined &&
+      String(data[k]).trim() !== "",
+  );
+  if (key) return String(data[key]).trim();
+
+  // Deterministic fallback for edit mode without explicit id/kode field
+  if (isEditMode.value) {
+    const candidateVals = Object.entries(data)
+      .filter(([k, v]) => typeof v === "string" || typeof v === "number")
+      .slice(0, 2)
+      .map(([k, v]) => `${k}_${v}`)
+      .join("_");
+    if (candidateVals) return candidateVals.replace(/[^a-zA-Z0-9_-]/g, "_");
+  }
+  return "";
+});
+
+// Context-aware & collision-proof draft key
+const effectiveDraftKey = computed(() => {
+  const routeBase = routePath
+    ? routePath.replace(/^\/|\/$/g, "").replace(/\//g, "_")
+    : "";
+
+  const base =
+    props.draftKey ||
+    routeBase ||
+    (props.title
+      ? props.title
+          .toLowerCase()
+          .replace(/^(tambah|ubah|edit|perbarui)\s+/i, "")
+          .trim()
+          .replace(/[^a-z0-9]+/g, "_")
+      : "form");
+
+  if (isEditMode.value) {
+    const id = detectedRecordId.value || "unidentified";
+    return `${base}_edit_${id}`;
+  }
+  return `${base}_create`;
+});
 
 // State for unsaved changes guard
 const initialSnapshot = ref("");
 const showUnsavedPrompt = ref(false);
 
-// Record initial snapshot and check for existing drafts whenever modal opens
+const checkForExistingDraft = () => {
+  if (!effectiveDraftKey.value) return;
+
+  const found = getDraft(effectiveDraftKey.value);
+  if (found && found.data) {
+    // Only show banner if draft data actually differs semantically from current form
+    const isEquivalent = isFormDataEquivalent(formData.value, found.data);
+    if (!isEquivalent && hasMeaningfulContent(found.data)) {
+      existingDraft.value = found;
+      showDraftBanner.value = true;
+      return;
+    }
+  }
+
+  existingDraft.value = null;
+  showDraftBanner.value = false;
+};
+
+// Lifecycle synchronization: wait for parent formData assignment before taking initial snapshot
 watch(
   isOpen,
-  (open) => {
+  async (open) => {
     if (open) {
       showUnsavedPrompt.value = false;
-      initialSnapshot.value = JSON.stringify(formData.value || {});
+      draftDiscardedThisSession.value = false;
+      isCheckingDraft.value = true;
 
-      // Check for available draft
-      if (props.draftKey) {
-        const found = getDraft(props.draftKey);
-        if (found && found.data) {
-          // Only show banner if draft data is different from current form data
-          const currentStr = JSON.stringify(formData.value || {});
-          const draftStr = JSON.stringify(found.data);
-          if (currentStr !== draftStr) {
-            existingDraft.value = found;
-            showDraftBanner.value = true;
-          }
-        }
-      }
+      // Allow parent component to settle formData binding in the current microtask
+      await nextTick();
+
+      initialSnapshot.value = JSON.stringify(formData.value || {});
+      checkForExistingDraft();
+      isCheckingDraft.value = false;
     } else {
+      if (saveDebounceTimer) {
+        clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = null;
+      }
       showDraftBanner.value = false;
       existingDraft.value = null;
     }
@@ -75,18 +172,41 @@ watch(
 );
 
 // Auto-save draft on form input changes (debounced 500ms)
+// ONLY save if user modified form away from initial state and has not discarded
 watch(
   formData,
   (newVal) => {
-    if (!isOpen.value || !props.draftKey) return;
+    if (
+      !isOpen.value ||
+      !effectiveDraftKey.value ||
+      isCheckingDraft.value ||
+      draftDiscardedThisSession.value
+    ) {
+      return;
+    }
 
     if (saveDebounceTimer) {
       clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = null;
+    }
+
+    // Do NOT auto-save if formData is semantically equivalent to initial snapshot
+    let initialObj = {};
+    try {
+      initialObj = JSON.parse(initialSnapshot.value || "{}");
+    } catch {}
+
+    if (isFormDataEquivalent(newVal, initialObj)) {
+      return;
     }
 
     saveDebounceTimer = setTimeout(() => {
-      if (props.draftKey && isOpen.value) {
-        saveDraft(props.draftKey, newVal || {});
+      if (
+        effectiveDraftKey.value &&
+        isOpen.value &&
+        !draftDiscardedThisSession.value
+      ) {
+        saveDraft(effectiveDraftKey.value, newVal || {});
       }
     }, 500);
   },
@@ -110,22 +230,22 @@ const restoreDraft = () => {
 };
 
 const discardDraft = () => {
-  if (props.draftKey) {
-    clearDraft(props.draftKey);
+  if (effectiveDraftKey.value) {
+    clearDraft(effectiveDraftKey.value);
   }
+  draftDiscardedThisSession.value = true;
   showDraftBanner.value = false;
   existingDraft.value = null;
 };
 
-// Check if form data has been modified by the user
+// Check if form data has been modified by the user using semantic comparison
 const isDirty = computed(() => {
   if (!isOpen.value) return false;
-  const current = JSON.stringify(formData.value || {});
-  if (current === initialSnapshot.value) return false;
-  const data = formData.value || {};
-  return Object.values(data).some(
-    (v) => v !== "" && v !== null && v !== undefined,
-  );
+  let initialObj = {};
+  try {
+    initialObj = JSON.parse(initialSnapshot.value || "{}");
+  } catch {}
+  return !isFormDataEquivalent(formData.value || {}, initialObj);
 });
 
 const isFieldVisible = (field: FormFieldConfig) => {
@@ -160,7 +280,12 @@ const isFormValid = computed(() => {
 });
 
 const handleAttemptClose = () => {
-  if (isDirty.value && !props.submitting) {
+  if (props.submitting) return;
+  if (showUnsavedPrompt.value) {
+    showUnsavedPrompt.value = false;
+    return;
+  }
+  if (isDirty.value) {
     showUnsavedPrompt.value = true;
   } else {
     isOpen.value = false;
@@ -168,14 +293,24 @@ const handleAttemptClose = () => {
   }
 };
 
+useModalEsc(isOpen, handleAttemptClose);
+
 const confirmDiscardChanges = () => {
   if (saveDebounceTimer) {
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = null;
   }
-  if (props.draftKey) {
-    clearDraft(props.draftKey);
+  if (effectiveDraftKey.value) {
+    clearDraft(effectiveDraftKey.value);
   }
+
+  // Restore formData back to original initial snapshot so parent state stays clean
+  try {
+    const original = JSON.parse(initialSnapshot.value || "{}");
+    formData.value = { ...original };
+  } catch {}
+
+  draftDiscardedThisSession.value = true;
   existingDraft.value = null;
   showDraftBanner.value = false;
   showUnsavedPrompt.value = false;
@@ -189,8 +324,12 @@ const continueEditing = () => {
 
 const handleSubmit = () => {
   if (!isFormValid.value || props.submitting) return;
-  if (props.draftKey) {
-    clearDraft(props.draftKey);
+  if (saveDebounceTimer) {
+    clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = null;
+  }
+  if (effectiveDraftKey.value) {
+    clearDraft(effectiveDraftKey.value);
   }
   emit("submit", formData.value);
 };
@@ -199,12 +338,13 @@ const handleSubmit = () => {
 <template>
   <VueFinalModal
     v-model="isOpen"
+    :focus-trap="false"
     overlay-transition="vfm-slide-fade"
     :content-transition="
       variant === 'centered' ? 'vfm-slide-fade' : 'vfm-slide-right'
     "
     :click-to-close="!isDirty"
-    :esc-to-close="!isDirty"
+    :esc-to-close="false"
     :class="
       variant === 'centered'
         ? 'fixed inset-0 z-[100] flex items-center justify-center p-4'
@@ -261,48 +401,57 @@ const handleSubmit = () => {
 
       <!-- Drawer Body (Full height scrollable, bg-[#F6FAFD]) -->
       <div class="flex-1 overflow-y-auto p-6 bg-[#F6FAFD] space-y-6">
-        <!-- Draft Recovery Banner -->
+        <!-- Draft Recovery Banner (Smart Assistant Card) -->
         <Transition
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="transform -translate-y-2 opacity-0"
-          enter-to-class="transform translate-y-0 opacity-100"
-          leave-active-class="transition duration-200 ease-in"
-          leave-from-class="transform translate-y-0 opacity-100"
-          leave-to-class="transform -translate-y-2 opacity-0"
+          enter-active-class="transition-all duration-200 ease-out"
+          enter-from-class="transform -translate-y-2 scale-[0.98] opacity-0"
+          enter-to-class="transform translate-y-0 scale-100 opacity-100"
+          leave-active-class="transition-all duration-150 ease-in"
+          leave-from-class="transform translate-y-0 scale-100 opacity-100"
+          leave-to-class="transform -translate-y-2 scale-[0.98] opacity-0"
         >
           <div
             v-if="showDraftBanner"
-            class="p-4 bg-amber-50/90 border border-amber-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+            class="bg-white/95 border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-xs backdrop-blur-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           >
-            <div class="flex items-start sm:items-center gap-3">
-              <div class="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0">
+            <div class="flex items-center gap-3">
+              <div
+                class="p-2 bg-[#008284]/10 text-[#008284] rounded-lg shrink-0 flex items-center justify-center"
+              >
                 <FileText class="w-4 h-4" />
               </div>
-              <div>
-                <p class="text-xs font-semibold text-amber-900">
-                  Ditemukan Draft Tersimpan
-                </p>
-                <p class="text-[11px] text-amber-700 mt-0.5">
+              <div class="text-left">
+                <div class="flex items-center gap-2">
+                  <p class="text-xs font-bold text-[#2C3E50]">
+                    Ditemukan Draf Tersimpan
+                  </p>
+                  <span
+                    class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                  >
+                    Auto-Save
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
                   Tersimpan otomatis
-                  <span v-if="existingDraft?.formattedTime"
+                  <span v-if="existingDraft?.formattedTime" class="font-medium text-slate-700"
                     >pukul {{ existingDraft.formattedTime }}</span
-                  >. Pulihkan data input sebelumnya?
+                  >. Pulihkan data sebelumnya?
                 </p>
               </div>
             </div>
             <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
               <button
                 type="button"
-                class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                class="px-3 py-1.5 bg-[#008284] hover:bg-[#006e70] active:scale-[0.97] text-white rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
                 @click="restoreDraft"
               >
                 <RotateCcw class="w-3.5 h-3.5" />
-                <span>Pulihkan Draft</span>
+                <span>Pulihkan Draf</span>
               </button>
               <button
                 type="button"
-                class="px-2.5 py-1.5 text-amber-700 hover:bg-amber-100 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer"
-                title="Abaikan dan hapus draft"
+                class="px-2.5 py-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 active:scale-[0.97] rounded-lg text-xs font-medium transition-all flex items-center gap-1 cursor-pointer"
+                title="Abaikan dan hapus draf"
                 @click="discardDraft"
               >
                 <X class="w-3.5 h-3.5" />
@@ -395,59 +544,76 @@ const handleSubmit = () => {
         </button>
       </div>
 
-      <!-- Unsaved Changes Prompt Overlay (Teleported to Body for clean full-screen backdrop) -->
+      <!-- Unsaved Changes Prompt Overlay (Centered, Balanced, & Impeccable) -->
       <Teleport to="body">
-        <Transition name="fade">
+        <Transition
+          enter-active-class="transition-all duration-200 ease-out"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition-all duration-150 ease-in"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
           <div
             v-if="showUnsavedPrompt"
-            class="fixed inset-0 z-[100] bg-gray-950/45 backdrop-blur-xs flex items-center justify-center p-4 select-none"
+            class="fixed inset-0 z-[105] bg-gray-950/40 backdrop-blur-xs flex items-center justify-center p-4 select-none"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-prompt-title"
+            aria-describedby="unsaved-prompt-desc"
           >
             <div
-              class="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-[0_25px_60px_-15px_rgba(0,0,0,0.22)] border border-gray-100 flex flex-col gap-4 animate-in zoom-in-95 duration-150"
+              class="bg-white rounded-2xl p-6 sm:p-7 max-w-sm sm:max-w-md w-full shadow-2xl border border-gray-100/90 flex flex-col items-center text-center select-none transform transition-all duration-200 ease-out animate-in zoom-in-[0.98]"
             >
-              <!-- Left-Aligned Header with Icon Badge -->
-              <div class="flex items-start gap-3.5">
-                <div
-                  class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0"
+              <!-- Layered Ring Warning Icon Badge -->
+              <div
+                class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 ring-8 ring-amber-50/50 flex items-center justify-center mb-3.5"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-7 h-7"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                </div>
-                <div class="flex-1">
-                  <h4 class="text-base font-bold text-gray-900">
-                    Perubahan Belum Disimpan
-                  </h4>
-                  <p class="text-xs text-gray-500 mt-1 leading-relaxed">
-                    Anda memiliki data yang belum disimpan pada formulir ini.
-                    Yakin ingin menutup dan membuang perubahan?
-                  </p>
-                </div>
+                  <path
+                    d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+                  />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
               </div>
 
-              <!-- Action Buttons -->
-              <div class="flex items-center justify-end gap-2.5 pt-2">
+              <!-- Header & Message -->
+              <h4
+                id="unsaved-prompt-title"
+                class="text-base sm:text-lg font-bold text-[#2C3E50] mb-2 leading-snug"
+              >
+                Perubahan Belum Disimpan
+              </h4>
+              <p
+                id="unsaved-prompt-desc"
+                class="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed mb-6 max-w-xs sm:max-w-sm"
+              >
+                Anda memiliki data yang belum disimpan pada formulir ini.
+                Yakin ingin menutup dan membuang perubahan?
+              </p>
+
+              <!-- Action Buttons (Balanced Full-Width Standard Tambora Buttons) -->
+              <div class="flex items-center justify-center gap-3 w-full">
                 <button
                   type="button"
-                  class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 border border-gray-200 transition-colors cursor-pointer"
+                  class="flex-1 py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] rounded-xl transition-all cursor-pointer"
                   @click="continueEditing"
                 >
                   Lanjut Mengisi
                 </button>
                 <button
                   type="button"
-                  class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors cursor-pointer"
+                  class="flex-1 py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-700 active:scale-[0.98] rounded-xl shadow-xs transition-all cursor-pointer"
                   @click="confirmDiscardChanges"
                 >
                   Buang & Tutup

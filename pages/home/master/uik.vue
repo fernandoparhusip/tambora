@@ -4,6 +4,7 @@ import type { DetailDataItem, UikItem } from "~/types/master.types";
 import type { TableColumn } from "~/types";
 import { uikFormSections } from "~/schemas/master/uik.schema";
 import { useUik } from "~/composables/master/useUik";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
   uiks,
@@ -27,11 +28,9 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<UikItem | null>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<UikItem | null>(null);
 
 const uikColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -68,8 +67,8 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "edit"
-    ? "Form Perubahan Unit Induk Pembangkitan PLN"
-    : "Form Penambahan Unit Induk Pembangkitan PLN",
+    ? "Form Ubah UIK"
+    : "Form Tambah UIK",
 );
 
 const openCreateModal = () => {
@@ -81,16 +80,7 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-const handleView = async (row: UikItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-  try {
-    const fresh = await getUikById(row.id);
-    if (fresh) detailRecord.value = fresh;
-  } catch {
-    // Keep local fallback
-  }
-};
+
 
 const handleEdit = (row: UikItem) => {
   modalMode.value = "edit";
@@ -101,6 +91,19 @@ const handleEdit = (row: UikItem) => {
   };
   modalOpen.value = true;
 };
+
+// Universal Async Detail Management (Guarded against race conditions & memory leaks)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<UikItem>({
+  fetchDetail: (id) => getUikById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const handleDelete = (row: UikItem) => {
   deleteTarget.value = row;
@@ -237,11 +240,14 @@ const createdDateFormatted = computed(() => {
     <!-- Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Master UIK"
-      subtitle="Informasi data master Unit Induk Pembangkitan"
+      title="Detail UIK"
+      subtitle="Informasi UIK"
+      :record-id="detailRecord?.id || detailRecord?.kode"
       :data-items="detailDataItems"
       :created-date="createdDateFormatted"
-      :is-loading="detailLoading"
+      :loading="detailLoading || asyncDetailLoading"
+      @close="closeDetailModal"
+      @edit="openEditFromDetail()"
     />
 
     <!-- Confirm Delete Dialog -->

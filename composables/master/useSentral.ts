@@ -100,18 +100,10 @@ export const useSentral = () => {
     loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`, {
-          method: "POST",
-          body: payload,
-        });
-      } catch {
-        res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`, {
-          method: "PUT",
-          body: payload,
-        });
-      }
+      const res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`, {
+        method: "POST",
+        body: payload,
+      });
       await fetchSentral();
       return res?.data || res;
     } catch (err: any) {
@@ -126,16 +118,9 @@ export const useSentral = () => {
     loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<null>>(`/sentral/${id}/delete`, {
-          method: "POST",
-        });
-      } catch {
-        res = await api<ApiResponse<null>>(`/sentral/${id}`, {
-          method: "DELETE",
-        });
-      }
+      const res = await api<ApiResponse<null>>(`/sentral/${id}/delete`, {
+        method: "POST",
+      });
       await fetchSentral();
       return res;
     } catch (err: any) {

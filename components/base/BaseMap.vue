@@ -8,7 +8,7 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
-import { fromLonLat } from "ol/proj";
+import { fromLonLat, toLonLat } from "ol/proj";
 import { Style, Circle, Fill } from "ol/style";
 import Overlay from "ol/Overlay";
 import "ol/ol.css";
@@ -40,6 +40,7 @@ interface Props {
   markerRadius?: number;
   showZoomControls?: boolean;
   showFullscreenControl?: boolean;
+  interactivePicker?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -53,6 +54,7 @@ const props = withDefaults(defineProps<Props>(), {
   markerRadius: 8,
   showZoomControls: true,
   showFullscreenControl: true,
+  interactivePicker: false,
 });
 
 const DEFAULT_MAPTILER_KEY = "vAiwKNYltLbMYEotSzTT";
@@ -82,7 +84,7 @@ const resolvedTileUrl = computed(() => {
 
 const emit = defineEmits<{
   "marker-click": [marker: any];
-  "map-click": [];
+  "map-click": [coordinate?: { lat: number; lng: number }];
   "zoom-change": [zoom: number];
   "fullscreen-change": [isFullscreen: boolean];
 }>();
@@ -247,7 +249,7 @@ const initMap = async () => {
   // Handle marker selection / map click
   map.on("click", (evt) => {
     const feature = map?.forEachFeatureAtPixel(evt.pixel, (f) => f);
-    if (feature) {
+    if (feature && !props.interactivePicker) {
       const item = feature.get("itemData");
       if (item) {
         selectedMarker.value = item;
@@ -258,7 +260,17 @@ const initMap = async () => {
     } else {
       selectedMarker.value = null;
       if (overlay) overlay.setPosition(undefined);
-      emit("map-click");
+      if (evt.coordinate) {
+        const coords = toLonLat(evt.coordinate);
+        const lng = coords[0] ?? 0;
+        const lat = coords[1] ?? 0;
+        emit("map-click", {
+          lng: Number(lng.toFixed(6)),
+          lat: Number(lat.toFixed(6)),
+        });
+      } else {
+        emit("map-click");
+      }
     }
   });
 
@@ -266,7 +278,13 @@ const initMap = async () => {
   map.on("pointermove", (evt) => {
     if (!mapContainerRef.value || !map) return;
     const hit = map.hasFeatureAtPixel(evt.pixel);
-    mapContainerRef.value.style.cursor = hit ? "pointer" : "";
+    if (hit && !props.interactivePicker) {
+      mapContainerRef.value.style.cursor = "pointer";
+    } else if (props.interactivePicker) {
+      mapContainerRef.value.style.cursor = "crosshair";
+    } else {
+      mapContainerRef.value.style.cursor = "";
+    }
   });
 
   // Emit zoom changes

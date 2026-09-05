@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { extractApiErrorMessage } from '~/utils/apiError'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -17,7 +18,7 @@ const toasts = ref<ToastItem[]>([])
 export const useAppToast = () => {
   const addToast = (
     type: ToastType,
-    message: string,
+    message: any,
     title?: string,
     duration = 4000
   ): string => {
@@ -31,11 +32,21 @@ export const useAppToast = () => {
       info: 'Informasi',
     }
 
+    const cleanMessage =
+      type === 'error'
+        ? extractApiErrorMessage(
+            message,
+            typeof message === 'string' ? message : 'Terjadi kesalahan pada sistem.'
+          )
+        : typeof message === 'string'
+          ? message
+          : String(message || '')
+
     const newToast: ToastItem = {
       id,
       type,
       title: title || defaultTitles[type],
-      message,
+      message: cleanMessage,
       duration,
       createdAt: Date.now(),
     }

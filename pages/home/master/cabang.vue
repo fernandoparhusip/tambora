@@ -3,13 +3,18 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, CabangItem } from "~/types";
 import { getCabangFormSections } from "~/schemas/master/cabang.schema";
 import type { DetailDataItem } from "~/types/master.types";
+import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
 import { useCabang } from "~/composables/master/useCabang";
 import { useRegional } from "~/composables/master/useRegional";
+import { formatAppDateTime } from "~/utils/formatDate";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
   cabangList,
   loading,
+  detailLoading,
   fetchCabang,
+  getCabangById,
   createCabang,
   updateCabang,
   deleteCabang,
@@ -30,17 +35,12 @@ const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<CabangItem | null>(null);
 const isDeleting = ref(false);
 
-// Detail Modal States
-const isDetailModalOpen = ref(false);
-const detailRecord = ref<CabangItem | null>(null);
-
 const cabangColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode_wilayah", label: "Regional / Wilayah" },
-  { key: "kode_cabang", label: "Kode Cabang" },
-  { key: "nama_cabang", label: "Nama Cabang" },
-  { key: "approve_status", label: "Status Approval" },
-  { key: "keterangan", label: "Keterangan" },
+  { key: "kode_wilayah", label: "Kode Regional" },
+  { key: "kode_cabang", label: "Kode" },
+  { key: "nama_cabang", label: "Nama" },
+  { key: "approve_status", label: "Status" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -87,25 +87,19 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "create"
-    ? "Form Tambah Master Data Cabang PLN"
-    : "Form Ubah Master Data Cabang PLN",
+    ? "Form Tambah Cabang"
+    : "Form Ubah Cabang",
 );
 
 const openCreateModal = () => {
   modalMode.value = "create";
   formData.value = {
-    kode_wilayah: regionalList.value[0]?.kode_regional || "",
+    kode_wilayah: "",
     kode_cabang: "",
     nama_cabang: "",
-    approve_status: "APPROVED",
-    keterangan: "",
+    approve_status: "",
   };
   modalOpen.value = true;
-};
-
-const handleView = (row: CabangItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
 };
 
 const handleEdit = (row: CabangItem) => {
@@ -114,11 +108,62 @@ const handleEdit = (row: CabangItem) => {
   modalOpen.value = true;
 };
 
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    handleEdit(detailRecord.value);
+// Universal Async Detail Management
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<CabangItem>({
+  fetchDetail: (id) => getCabangById(id),
+  getId: (row) => row.id || row.kode_cabang,
+  onEdit: (record) => handleEdit(record),
+});
+
+const formattedCreatedDate = computed(() => {
+  if (!detailRecord.value?.created_at) return "-";
+  return formatAppDateTime(detailRecord.value.created_at);
+});
+
+const activityLogs = computed<ActivityLogItem[]>(() => {
+  if (!detailRecord.value) return [];
+  const historyList = (detailRecord.value as any)?.history;
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    return historyList.map((item: any) => {
+      const userName = item.user_name || "Admin";
+      const initial = userName.charAt(0).toUpperCase();
+      const actionText =
+        item.title ||
+        (item.action === "CREATE"
+          ? `Membuat Cabang ${detailRecord.value?.nama_cabang || ""}`.trim()
+          : item.action === "UPDATE"
+            ? `Mengubah Cabang ${detailRecord.value?.nama_cabang || ""}`.trim()
+            : item.action || "Aktivitas Cabang");
+      const dt = formatAppDateTime(item.created_at);
+      return {
+        initial,
+        user: userName,
+        action: actionText,
+        timestamp: dt,
+      };
+    });
   }
-};
+
+  const creator =
+    (detailRecord.value as any)?.created_by_name ||
+    (detailRecord.value as any)?.created_by ||
+    "Admin";
+  return [
+    {
+      initial: creator.charAt(0).toUpperCase(),
+      user: creator,
+      action: `Membuat Cabang ${detailRecord.value?.nama_cabang || ""}`.trim(),
+      timestamp: formattedCreatedDate.value,
+    },
+  ];
+});
 
 const handleDelete = (row: CabangItem) => {
   deleteTarget.value = row;
@@ -130,11 +175,14 @@ const confirmDelete = async () => {
   isDeleting.value = true;
   try {
     await deleteCabang(deleteTarget.value.id || deleteTarget.value.kode_cabang);
-    toast.success(`Cabang '${deleteTarget.value.nama_cabang}' berhasil dihapus.`, "Sukses");
+    toast.success(
+      `Cabang '${deleteTarget.value.nama_cabang}' berhasil dihapus.`,
+      "Sukses",
+    );
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
-  } catch (err: any) {
-    toast.error(err?.message || "Gagal menghapus cabang.", "Gagal Hapus");
+  } catch {
+    // Error notifikasi sudah ditangani terpusat oleh useApi
   } finally {
     isDeleting.value = false;
   }
@@ -148,7 +196,6 @@ const handleSave = async (data: Record<string, any>) => {
       kode_cabang: data.kode_cabang,
       nama_cabang: data.nama_cabang,
       approve_status: data.approve_status || "APPROVED",
-      keterangan: data.keterangan,
     };
 
     if (modalMode.value === "create") {
@@ -161,8 +208,8 @@ const handleSave = async (data: Record<string, any>) => {
       modalOpen.value = false;
       toast.success("Data cabang berhasil diperbarui.", "Sukses");
     }
-  } catch (err: any) {
-    toast.error(err?.message || "Gagal menyimpan data cabang.", "Terjadi Kesalahan");
+  } catch {
+    // Error notifikasi sudah ditangani terpusat oleh useApi
   } finally {
     submitting.value = false;
   }
@@ -180,7 +227,10 @@ const getStatusBadgeVariant = (status?: string): any => {
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
-    { label: "Kode Wilayah / Regional", value: detailRecord.value.kode_wilayah },
+    {
+      label: "Kode Wilayah / Regional",
+      value: detailRecord.value.kode_wilayah,
+    },
     { label: "Kode Cabang", value: detailRecord.value.kode_cabang },
     { label: "Nama Cabang", value: detailRecord.value.nama_cabang },
     {
@@ -188,8 +238,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       value: detailRecord.value.approve_status || "APPROVED",
       isStatus: true,
     },
-    { label: "Keterangan", value: detailRecord.value.keterangan || "-" },
-    { label: "ID Record", value: detailRecord.value.id || detailRecord.value.kode_cabang },
   ];
 });
 </script>
@@ -212,10 +260,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton
-            resource="CABANG"
-            @click="openCreateModal"
-          />
+          <BaseCreateButton resource="CABANG" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -233,33 +278,37 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #kode_wilayah-data="{ row }">
-            <span class="text-xs font-semibold text-gray-800">{{ row.kode_wilayah }}</span>
+            <span class="text-xs font-medium text-gray-600">{{
+              row.kode_wilayah
+            }}</span>
           </template>
 
           <template #kode_cabang-data="{ row }">
-            <span class="text-xs font-semibold text-primary-700">{{ row.kode_cabang }}</span>
+            <span class="text-xs font-medium text-gray-600">{{
+              row.kode_cabang
+            }}</span>
           </template>
 
           <template #nama_cabang-data="{ row }">
-            <span class="text-xs font-medium text-gray-700">{{ row.nama_cabang }}</span>
+            <span class="text-xs font-medium text-gray-600">{{
+              row.nama_cabang
+            }}</span>
           </template>
 
           <template #approve_status-data="{ row }">
             <BaseBadge :variant="getStatusBadgeVariant(row.approve_status)">
-              {{ row.approve_status || 'APPROVED' }}
+              {{ row.approve_status || "APPROVED" }}
             </BaseBadge>
-          </template>
-
-          <template #keterangan-data="{ row }">
-            <span class="text-xs text-gray-500 truncate max-w-xs block" :title="row.keterangan">
-              {{ row.keterangan || '-' }}
-            </span>
           </template>
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
+              <BaseActionButton
+                type="view"
+                title="Lihat Detail"
+                @click="handleView(row)"
+              />
               <BaseActionButton
                 type="edit"
                 resource="CABANG"
@@ -303,9 +352,19 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Cabang"
-      subtitle="Informasi Master Cabang PLN"
+      subtitle="Informasi Cabang"
+      :record-id="detailRecord?.id || detailRecord?.kode_cabang"
+      :created-date="formattedCreatedDate"
+      :created-by="
+        (detailRecord as any)?.created_by_name ||
+        (detailRecord as any)?.created_by ||
+        'Admin'
+      "
       :data-items="detailDataItems"
+      :activity-logs="activityLogs"
+      :loading="detailLoading || asyncDetailLoading"
       @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
 
     <!-- Confirm Delete Dialog -->

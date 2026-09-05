@@ -1,5 +1,6 @@
 import { useApi } from "~/composables/useApi";
 import { ref, computed } from "vue";
+import { extractApiErrorMessage } from "~/utils/apiError";
 import type {
   RantingItem,
   CreateRantingRequest,
@@ -12,6 +13,7 @@ export const useRanting = () => {
   const rantingList = ref<RantingItem[]>([]);
   const currentRanting = ref<RantingItem | null>(null);
   const loading = ref(false);
+  const detailLoading = ref(false);
   const total = ref(0);
   const error = ref<string | null>(null);
 
@@ -38,7 +40,7 @@ export const useRanting = () => {
       }
       return rantingList.value;
     } catch (err: any) {
-      error.value = err?.message || "Gagal memuat daftar ranting.";
+      error.value = extractApiErrorMessage(err, "Gagal memuat daftar ranting.");
       throw err;
     } finally {
       loading.value = false;
@@ -60,24 +62,28 @@ export const useRanting = () => {
   };
 
   const getRantingById = async (id: string) => {
-    loading.value = true;
+    detailLoading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<RantingItem>>(`/ranting/${id}`);
-      if (res?.data) {
-        currentRanting.value = res.data;
+      const res = await api<any>(`/ranting/${id}`);
+      const data = res?.data || res;
+      if (data) {
+        currentRanting.value = data;
       }
-      return res?.data;
+      return data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal mengambil detail ranting.";
-      throw err;
+      const msg = extractApiErrorMessage(err, "Gagal mengambil detail ranting.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     } finally {
-      loading.value = false;
+      detailLoading.value = false;
     }
   };
 
   const createRanting = async (payload: CreateRantingRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<RantingItem>>("/ranting", {
@@ -87,60 +93,49 @@ export const useRanting = () => {
       await fetchRanting();
       return res?.data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal membuat ranting.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal membuat ranting.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
   const updateRanting = async (id: string, payload: UpdateRantingRequest) => {
-    loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<RantingItem>>(`/ranting/${id}`, {
-          method: "POST",
-          body: payload,
-        });
-      } catch {
-        res = await api<ApiResponse<RantingItem>>(`/ranting/${id}`, {
-          method: "PUT",
-          body: payload,
-        });
-      }
+      const res = await api<ApiResponse<RantingItem>>(`/ranting/${id}`, {
+        method: "POST",
+        body: payload,
+      });
       await fetchRanting();
       return res?.data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal mengubah data ranting.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal mengubah data ranting.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
   const deleteRanting = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<null>>(`/ranting/${id}/delete`, {
-          method: "POST",
-        });
-      } catch {
-        res = await api<ApiResponse<null>>(`/ranting/${id}`, {
-          method: "DELETE",
-        });
-      }
+      const res = await api<ApiResponse<null>>(`/ranting/${id}/delete`, {
+        method: "POST",
+      });
       await fetchRanting();
       return res;
     } catch (err: any) {
-      error.value = err?.message || "Gagal menghapus ranting.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal menghapus ranting.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
@@ -148,6 +143,7 @@ export const useRanting = () => {
     rantingList: computed(() => rantingList.value),
     currentRanting: computed(() => currentRanting.value),
     loading: computed(() => loading.value),
+    detailLoading: computed(() => detailLoading.value),
     total: computed(() => total.value),
     error: computed(() => error.value),
     fetchRanting,

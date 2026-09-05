@@ -5,17 +5,17 @@ export const machineConditionFormSections: FormSectionConfig[] = [
     fields: [
       {
         key: "name",
-        label: "Nama Kondisi Mesin",
+        label: "Nama Kondisi",
         type: "text",
-        placeholder: "Contoh: Beroperasi, Standby, Derating, Gangguan, Pemeliharaan",
+        placeholder: "Contoh: Beroperasi, Standby, Gangguan",
         required: true,
         colSpan: 12,
       },
       {
         key: "description",
-        label: "Deskripsi Operasional",
+        label: "Deskripsi",
         type: "textarea",
-        placeholder: "Jelaskan definisi dan dampak operasional kondisi mesin ini...",
+        placeholder: "Deskripsi kondisi...",
         required: false,
         colSpan: 12,
         rows: 3,

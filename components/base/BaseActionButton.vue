@@ -115,7 +115,7 @@ const handleClick = (e: MouseEvent) => {
     :disabled="isDisabled"
     :aria-disabled="isDisabled"
     :aria-label="effectiveTooltip || buttonConfig.ariaLabel"
-    class="w-7 h-7 flex items-center justify-center rounded-lg border transition-all duration-150 transform select-none shrink-0"
+    class="w-7 h-7 flex items-center justify-center rounded-lg border transition-all duration-150 transform select-none shrink-0 outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none"
     :class="[
       isDisabled
         ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60 shadow-none'

@@ -17,9 +17,9 @@ export const getSentralFormSections = (
       fields: [
         {
           key: "kode_wilayah",
-          label: "Regional / Wilayah",
+          label: "Regional",
           type: "select",
-          placeholder: "Pilih Regional / Wilayah",
+          placeholder: "Pilih Regional",
           options: regionalOptions,
           required: false,
           colSpan: 6,
@@ -43,7 +43,7 @@ export const getSentralFormSections = (
         },
         {
           key: "nama_sentral",
-          label: "Nama Sentral Pembangkit",
+          label: "Nama Sentral",
           type: "text",
           placeholder: "Contoh: Sentral Bitung",
           required: true,
@@ -80,7 +80,7 @@ export const getSentralFormSections = (
         },
         {
           key: "jenis_bahan_bakar",
-          label: "Jenis Bahan Bakar Utama",
+          label: "Bahan Bakar Utama",
           type: "select",
           placeholder: "Pilih Bahan Bakar",
           options: [

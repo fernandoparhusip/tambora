@@ -25,8 +25,9 @@ export const useMenu = () => {
       if (res?.data && Array.isArray(res.data)) {
         menus.value = res.data;
         parentMenuOptions.value = res.data.map(item => ({
-          label: item.nama,
-          value: item.id
+          label: item.nama || (item as any).name,
+          value: item.id,
+          route: (item as any).route || item.url || ""
         }));
       } else {
         menus.value = [];
@@ -98,9 +99,16 @@ export const useMenu = () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<any>>(`/menu/${id}`, {
-        method: 'DELETE'
-      });
+      let res;
+      try {
+        res = await api<ApiResponse<any>>(`/menu/${id}`, {
+          method: 'DELETE'
+        });
+      } catch {
+        res = await api<ApiResponse<any>>(`/menu/${id}/delete`, {
+          method: 'POST'
+        });
+      }
       await fetchMenus();
       return res?.data;
     } catch (err: any) {

@@ -5,7 +5,7 @@ export interface SystemSchemaOptions {
 }
 
 export const getSystemFormSections = (
-  options: SystemSchemaOptions = {}
+  options: SystemSchemaOptions = {},
 ): FormSectionConfig[] => {
   const orgOptions = options.orgOptions || [];
 
@@ -14,7 +14,7 @@ export const getSystemFormSections = (
       fields: [
         {
           key: "code",
-          label: "Kode Sistem",
+          label: "Kode",
           type: "text",
           placeholder: "Contoh: SYS-LBK, SYS-SBW, SYS-BIMA",
           required: true,
@@ -22,7 +22,7 @@ export const getSystemFormSections = (
         },
         {
           key: "name",
-          label: "Nama Sistem Pembangkit",
+          label: "Nama",
           type: "text",
           placeholder: "Contoh: Sistem Tambora - Sumbawa",
           required: true,
@@ -30,9 +30,9 @@ export const getSystemFormSections = (
         },
         {
           key: "system_type",
-          label: "Tipe Sistem Kelistrikan",
+          label: "Tipe",
           type: "select",
-          placeholder: "Pilih Tipe Sistem",
+          placeholder: "Pilih Tipe",
           options: [
             { label: "SISTEM BESAR (Interkoneksi)", value: "BESAR" },
             { label: "SISTEM KECIL (Isolated / Kepulauan)", value: "KECIL" },
@@ -42,46 +42,39 @@ export const getSystemFormSections = (
         },
         {
           key: "upk_id",
-          label: "UPK Penanggung Jawab (Organisasi)",
+          label: "UPK",
           type: "searchable-select",
-          placeholder: "Pilih Unit Pelaksana Pembangkitan",
+          placeholder: "Pilih UPK",
           options: orgOptions,
           required: false,
           colSpan: 6,
         },
         {
           key: "service_unit_ids",
-          label: "Unit Layanan / Sentral Terkait",
+          label: "Unit Layanan",
           type: "searchable-multi-select",
-          placeholder: "Pilih Sentral-Sentral Terkait",
+          placeholder: "Pilih Unit Layanan",
           options: orgOptions,
           required: false,
           colSpan: 12,
         },
         {
-          key: "latitude",
-          label: "Latitude Pusat Sistem",
-          type: "number",
-          placeholder: "Contoh: -8.4526",
-          required: false,
-          colSpan: 6,
-        },
-        {
-          key: "longitude",
-          label: "Longitude Pusat Sistem",
-          type: "number",
-          placeholder: "Contoh: 117.4285",
-          required: false,
-          colSpan: 6,
-        },
-        {
           key: "description",
-          label: "Deskripsi & Karakteristik Beban",
+          label: "Deskripsi",
           type: "textarea",
-          placeholder: "Catatan atau spesifikasi sistem kelistrikan ini...",
+          placeholder: "Deskripsi sistem...",
           required: false,
           colSpan: 12,
           rows: 3,
+        },
+        {
+          key: "coordinates",
+          label: "",
+          type: "coordinate-picker",
+          latKey: "latitude",
+          lngKey: "longitude",
+          required: false,
+          colSpan: 12,
         },
       ],
     },

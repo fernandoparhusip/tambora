@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type { DetailDataItem } from "~/types/master.types";
+import type {
+  DetailDataItem,
+  ActivityLogItem,
+} from "~/components/base/BaseDetailModal.vue";
 import type { ScopeItem, TableColumn } from "~/types";
-import { aksesLevelFormSections } from "~/schemas/konfigurasi-aplikasi/akses-level.schema";
+import { formatAppDateTime } from "~/utils/formatDate";
+import { getAksesLevelFormSections } from "~/schemas/konfigurasi-aplikasi/akses-level.schema";
 import { useAksesLevel } from "~/composables/konfigurasi-aplikasi/useAksesLevel";
 
 const {
   aksesLevels,
+  scopeTypeOptions,
   loading,
-  detailLoading,
   fetchAksesLevels,
+  fetchScopeTypeCombo,
   getAksesLevelById,
   createAksesLevel,
   updateAksesLevel,
@@ -28,10 +33,6 @@ const editingId = ref<string | null>(null);
 const isSubmitting = ref(false);
 const isSuccessModalOpen = ref(false);
 
-// Detail Modal States
-const isDetailModalOpen = ref(false);
-const detailRecord = ref<ScopeItem | null>(null);
-
 // Confirm Delete Dialog States
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<ScopeItem | null>(null);
@@ -42,14 +43,13 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   isEditMode.value
-    ? "Form Ubah Akses Level Regional / Unit"
-    : "Form Tambah Akses Level Regional / Unit",
+    ? "Form Ubah Akses Level"
+    : "Form Tambah Akses Level",
 );
 
 const aksesLevelColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "code", label: "Kode Akses Level" },
-  { key: "name", label: "Nama Akses Level" },
+  { key: "name", label: "Nama" },
   { key: "scope_type_name", label: "Tipe" },
   { key: "description", label: "Deskripsi" },
   { key: "actions", label: "Aksi" },
@@ -58,11 +58,16 @@ const aksesLevelColumns: TableColumn[] = [
 const formData = ref<Record<string, any>>({
   code: "",
   name: "",
+  scope_type_id: "",
   description: "",
 });
 
+const activeFormSections = computed(() =>
+  getAksesLevelFormSections(scopeTypeOptions.value),
+);
+
 onMounted(async () => {
-  await fetchAksesLevels();
+  await Promise.allSettled([fetchAksesLevels(), fetchScopeTypeCombo()]);
 });
 
 watch(searchQuery, () => {
@@ -70,71 +75,89 @@ watch(searchQuery, () => {
 });
 
 const filteredRows = computed(() => {
-  if (!searchQuery.value) return aksesLevels.value;
-  const q = searchQuery.value.toLowerCase();
-  return aksesLevels.value.filter(
-    (s) =>
-      s.code.toLowerCase().includes(q) ||
-      s.name.toLowerCase().includes(q) ||
-      (s.description && s.description.toLowerCase().includes(q)),
-  );
+  const list = Array.isArray(aksesLevels.value) ? aksesLevels.value : [];
+  if (!searchQuery.value) return list;
+  const q = searchQuery.value.toLowerCase().trim();
+  return list.filter((s) => {
+    const code = (s.code || "").toLowerCase();
+    const name = (s.name || "").toLowerCase();
+    const desc = (s.description || "").toLowerCase();
+    return code.includes(q) || name.includes(q) || desc.includes(q);
+  });
 });
 
 const paginatedRows = computed(() => {
+  const rows = filteredRows.value || [];
   const start = (currentPage.value - 1) * pageSize.value;
-  return filteredRows.value.slice(start, start + pageSize.value);
+  return rows.slice(start, start + pageSize.value);
 });
 
 // Modal Handlers
-const openCreateModal = () => {
+const openCreateModal = async () => {
   isEditMode.value = false;
   editingId.value = null;
   formData.value = {
     code: "",
     name: "",
+    scope_type_id: "",
     description: "",
   };
+  if (scopeTypeOptions.value.length === 0) {
+    await fetchScopeTypeCombo();
+  }
   isModalOpen.value = true;
 };
 
-const handleView = async (row: ScopeItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-  try {
-    const res = await getAksesLevelById(row.id);
-    if (res) {
-      detailRecord.value = res;
-    }
-  } catch {
-    // Fallback to row data from table list
-  }
-};
-
-const handleEdit = (row: ScopeItem) => {
+const handleEdit = async (row: ScopeItem) => {
   isEditMode.value = true;
   editingId.value = row.id;
+
+  if (scopeTypeOptions.value.length === 0) {
+    await fetchScopeTypeCombo();
+  }
+
+  const rawId = (row as any).scope_type_id;
+  const isZeroUuid = rawId === "00000000-0000-0000-0000-000000000000";
+  const matchedTypeId = scopeTypeOptions.value.find(
+    (opt) =>
+      opt.value === rawId ||
+      opt.label.toLowerCase() === (row.scope_type_name || "").toLowerCase(),
+  )?.value;
+
   formData.value = {
-    code: row.code,
-    name: row.name,
+    code: row.code || "",
+    name: row.name || "",
+    scope_type_id: matchedTypeId || (rawId && !isZeroUuid ? rawId : ""),
     description: row.description || "",
   };
   isModalOpen.value = true;
 };
 
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    handleEdit(detailRecord.value);
-  }
-};
+// Universal Async Detail Management (Guarded against race conditions & memory leaks)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<ScopeItem>({
+  fetchDetail: (id) => getAksesLevelById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const closeModal = () => {
   isModalOpen.value = false;
 };
 
 const handleSave = async () => {
-  if (!formData.value.code || !formData.value.name) {
+  const name = (formData.value.name || "").trim();
+  const scopeTypeId = formData.value.scope_type_id;
+  const description = (formData.value.description || "").trim() || name;
+
+  if (!scopeTypeId || !name) {
     toast.error(
-      "Mohon lengkapi Kode Akses Level dan Nama Akses Level.",
+      "Mohon lengkapi Tipe Akses Level dan Nama Akses Level.",
       "Validasi Form",
     );
     return;
@@ -142,26 +165,38 @@ const handleSave = async () => {
 
   isSubmitting.value = true;
   try {
+    const payload: {
+      name: string;
+      scope_type_id: string;
+      description: string;
+      code?: string;
+    } = {
+      name,
+      scope_type_id: scopeTypeId,
+      description,
+    };
+
     if (isEditMode.value && editingId.value) {
-      await updateAksesLevel(editingId.value, {
-        code: formData.value.code,
-        name: formData.value.name,
-        description: formData.value.description || formData.value.name,
-      });
-      toast.success(
-        `Akses Level '${formData.value.name}' berhasil diperbarui.`,
-        "Sukses",
-      );
+      // Backend scopes table requires 'code' not to be empty/omitted on update
+      const existing = aksesLevels.value.find((s) => s.id === editingId.value);
+      const codeToKeep = (formData.value.code || existing?.code || "").trim();
+      if (codeToKeep) {
+        payload.code = codeToKeep;
+      }
+      await updateAksesLevel(editingId.value, payload);
+      toast.success(`Akses Level '${name}' berhasil diperbarui.`, "Sukses");
     } else {
-      await createAksesLevel({
-        code: formData.value.code.toUpperCase().replace(/\s+/g, "-"),
-        name: formData.value.name,
-        description: formData.value.description || formData.value.name,
-      });
-      toast.success(
-        `Akses Level baru '${formData.value.name}' berhasil dibuat.`,
-        "Sukses",
-      );
+      const codeToUse =
+        (formData.value.code || "").trim() ||
+        name
+          .toUpperCase()
+          .replace(/[^A-Z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+      if (codeToUse) {
+        payload.code = codeToUse;
+      }
+      await createAksesLevel(payload);
+      toast.success(`Akses Level baru '${name}' berhasil dibuat.`, "Sukses");
     }
 
     isModalOpen.value = false;
@@ -204,30 +239,49 @@ const confirmDelete = async () => {
 // Detail Data Items
 const formattedCreatedDate = computed(() => {
   if (!detailRecord.value?.created_at) return "-";
-  return new Date(detailRecord.value.created_at).toLocaleString("id-ID", {
-    dateStyle: "full",
-    timeStyle: "short",
-  });
+  return formatAppDateTime(detailRecord.value.created_at);
 });
 
-const activityLogs = computed(() => {
+const activityLogs = computed<ActivityLogItem[]>(() => {
   if (!detailRecord.value) return [];
-  const dt = detailRecord.value.created_at
-    ? new Date(detailRecord.value.created_at).toLocaleString("id-ID", {
-        dateStyle: "full",
-        timeStyle: "short",
-      })
-    : "-";
+
+  const historyList = (detailRecord.value as any)?.history;
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    return historyList.map((item: any) => {
+      const userName =
+        item.user_name ||
+        item.updated_by_name ||
+        item.created_by_name ||
+        (detailRecord.value as any)?.created_by_name ||
+        "Super Administrator";
+      const initial = userName.charAt(0).toUpperCase();
+      const actionText =
+        item.title ||
+        (item.action === "CREATE"
+          ? `Membuat Akses Level ${detailRecord.value?.name || ""}`
+          : item.action === "UPDATE"
+            ? `Mengubah Akses Level ${detailRecord.value?.name || ""}`
+            : item.action || "Aktivitas Akses Level");
+      const dt = formatAppDateTime(item.created_at || item.updated_at);
+      return {
+        initial,
+        user: userName,
+        action: actionText,
+        timestamp: dt,
+      };
+    });
+  }
+
+  const creator =
+    (detailRecord.value as any)?.created_by_name ||
+    (detailRecord.value as any)?.created_by ||
+    "Admin";
   return [
     {
-      initial: (
-        ((detailRecord.value as any)?.created_by as string) || "A"
-      )
-        .charAt(0)
-        .toUpperCase(),
-      user: ((detailRecord.value as any)?.created_by as string) || "Admin",
-      action: `Membuat Akses Level ${detailRecord.value.name}`,
-      timestamp: dt,
+      initial: creator.charAt(0).toUpperCase(),
+      user: creator,
+      action: `Membuat Akses Level ${detailRecord.value?.name || ""}`.trim(),
+      timestamp: formattedCreatedDate.value,
     },
   ];
 });
@@ -235,18 +289,17 @@ const activityLogs = computed(() => {
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
-    { label: "Kode Akses Level", value: detailRecord.value.code },
-    { label: "Nama Akses Level", value: detailRecord.value.name },
+    { label: "Kode", value: detailRecord.value.code },
+    { label: "Nama", value: detailRecord.value.name },
     {
       label: "Tipe",
       value:
         detailRecord.value.scope_type_name ||
         detailRecord.value.scope_type_code ||
         "Organization",
-      isStatus: true,
+      isStatus: false,
     },
     { label: "Deskripsi", value: detailRecord.value.description || "-" },
-    { label: "ID Akses Level", value: detailRecord.value.id },
   ];
 });
 </script>
@@ -280,27 +333,17 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           @reload="fetchAksesLevels"
         >
           <template #no-data="{ index }">
-            <span class="text-xs text-gray-700 font-medium">
+            <span class="text-xs text-gray-700">
               {{ (currentPage - 1) * pageSize + index + 1 }}.
             </span>
           </template>
 
-          <template #code-data="{ row }">
-            <span class="text-xs font-semibold text-sky-800 font-mono">
-              {{ row.code }}
-            </span>
-          </template>
-
           <template #name-data="{ row }">
-            <span class="text-xs text-gray-900 font-medium">{{
-              row.name
-            }}</span>
+            <span class="text-xs text-gray-600">{{ row.name }}</span>
           </template>
 
           <template #scope_type_name-data="{ row }">
-            <BaseBadge variant="info">
-              {{ row.scope_type_name || row.scope_type_code || "Organization" }}
-            </BaseBadge>
+            {{ row.scope_type_name || "-" }}
           </template>
 
           <template #description-data="{ row }">
@@ -351,7 +394,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:form-data="formData"
       :title="modalTitle"
       :subtitle="modalSubtitle"
-      :sections="aksesLevelFormSections"
+      :sections="activeFormSections"
       :submitting="isSubmitting"
       draft-key="konfigurasi-akses-level"
       @submit="handleSave"
@@ -362,15 +405,19 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Akses Level"
-      subtitle="Informasi lengkap cakupan Akses Level"
+      subtitle="Informasi Akses Level"
       :record-id="detailRecord?.id"
       :created-date="formattedCreatedDate"
-      :created-by="(detailRecord as any)?.created_by || 'Admin'"
+      :created-by="
+        (detailRecord as any)?.created_by_name ||
+        (detailRecord as any)?.created_by ||
+        'Admin'
+      "
       :data-items="detailDataItems"
       :activity-logs="activityLogs"
       :loading="detailLoading"
-      @close="isDetailModalOpen = false"
-      @edit="openEditFromDetail"
+      @close="closeDetailModal"
+      @edit="openEditFromDetail()"
     />
 
     <!-- Confirm Delete Modal -->

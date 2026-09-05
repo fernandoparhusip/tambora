@@ -118,6 +118,19 @@ const handleView = (row: PemakaianBahanBakarDTO) => {
   isDetailModalOpen.value = true;
 };
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false;
+  detailRecord.value = null;
+};
+
+const openEditFromDetail = () => {
+  if (detailRecord.value) {
+    const rec = detailRecord.value;
+    closeDetailModal();
+    handleEdit(rec);
+  }
+};
+
 const handleDelete = (row: PemakaianBahanBakarDTO) => {
   deleteTarget.value = row;
   isConfirmDialogOpen.value = true;
@@ -279,7 +292,8 @@ const detailItems = computed<DetailDataItem[]>(() => {
       title="Detail Pemakaian Bahan Bakar"
       subtitle="Rincian kuantitas konsumsi dan sisa stok BBM"
       :data-items="detailItems"
-      @close="isDetailModalOpen = false"
+      @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
 
     <!-- Delete Confirmation Modal -->

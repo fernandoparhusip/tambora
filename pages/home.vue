@@ -35,9 +35,10 @@ onBeforeUnmount(() => {
       </main>
     </div>
 
-    <!-- Inactivity Idle Warning Modal -->
+    <!-- Inactivity Idle Warning Modal & Session Expired Modal -->
     <ClientOnly>
       <BaseIdleWarningModal />
+      <BaseSessionExpiredModal />
     </ClientOnly>
 
   </div>

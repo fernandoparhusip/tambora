@@ -202,22 +202,25 @@ export interface ScopeItem {
   parent_id?: string;
   created_at?: string;
   created_by?: string;
+  created_by_name?: string;
   updated_at?: string;
   updated_by?: string;
+  updated_by_name?: string;
+  history?: any[];
 }
 
 export interface CreateScopeRequest {
-  code: string;
   name: string;
-  description: string;
   scope_type_id?: string;
+  description: string;
+  code?: string;
 }
 
 export interface UpdateScopeRequest {
-  code?: string;
   name: string;
-  description: string;
   scope_type_id?: string;
+  description: string;
+  code?: string;
 }
 
 /** Master Driver DTOs */
@@ -418,7 +421,6 @@ export interface RegionalItem {
   nama_regional: string;
   latitude?: number;
   longitude?: number;
-  keterangan?: string;
   created_at?: string;
   created_by?: string;
   updated_at?: string;
@@ -430,7 +432,6 @@ export interface CreateRegionalRequest {
   nama_regional: string;
   latitude?: number;
   longitude?: number;
-  keterangan?: string;
 }
 
 export interface UpdateRegionalRequest {
@@ -438,7 +439,6 @@ export interface UpdateRegionalRequest {
   nama_regional?: string;
   latitude?: number;
   longitude?: number;
-  keterangan?: string;
 }
 
 /** Master Cabang DTOs */
@@ -762,9 +762,11 @@ export interface MenuItem {
   id: string;
   nama: string;
   description?: string;
+  route?: string;
   url?: string;
   icon?: string;
-  order: number;
+  order?: number;
+  sort_no?: number;
   parent_id?: string;
   parent_nama?: string;
   status: number;
@@ -776,20 +778,20 @@ export interface MenuItem {
 
 export interface CreateMenuRequest {
   nama: string;
-  description?: string;
-  url?: string;
-  icon?: string;
-  order: number;
   parent_id?: string;
   status: number;
+  route?: string;
+  url?: string;
+  sort_no?: number;
+  order?: number;
 }
 
 export interface UpdateMenuRequest {
   nama?: string;
-  description?: string;
-  url?: string;
-  icon?: string;
-  order?: number;
   parent_id?: string;
   status?: number;
+  route?: string;
+  url?: string;
+  sort_no?: number;
+  order?: number;
 }

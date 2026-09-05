@@ -68,25 +68,63 @@ export const extractScopeKey = (s: any): string => {
 const AUTH_CHANNEL_NAME = 'tambora_auth_channel'
 
 export const useAuthStore = defineStore('auth', () => {
-  // 24 Hours Session Cookie (Standard 1 Shift Enterprise)
+  // 24 Hours Session Cookie (Standard 1 Shift)
   const authCookie = useCookie<AuthSession | null>('auth-session', {
-    maxAge: 60 * 60 * 24
+    maxAge: 60 * 60 * 24,
+    path: '/'
   })
   const accessTokenCookie = useCookie<string | null>('access_token', {
-    maxAge: 60 * 60 * 24
+    maxAge: 60 * 60 * 24,
+    path: '/'
   })
   const refreshTokenCookie = useCookie<string | null>('refresh_token', {
-    maxAge: 60 * 60 * 24
+    maxAge: 60 * 60 * 24,
+    path: '/'
   })
 
-  const isLoggedIn = ref(authCookie.value?.isLoggedIn ?? !!accessTokenCookie.value)
-  const user = ref<UserSession | null>(authCookie.value?.user ?? null)
-  const token = ref<string | null>(authCookie.value?.token || accessTokenCookie.value || null)
-  const refreshToken = ref<string | null>(authCookie.value?.refreshToken || refreshTokenCookie.value || null)
-  const permissions = ref<string[]>(authCookie.value?.permissions || authCookie.value?.user?.permissions || [])
-  const scopes = ref<string[]>(authCookie.value?.scopes || authCookie.value?.user?.scopes || [])
+  const storedToken = import.meta.client ? localStorage.getItem('token') : null
+  const storedRefreshToken = import.meta.client ? localStorage.getItem('refresh_token') : null
+
+  let storedUser: UserSession | null = null
+  let storedPermissions: string[] = []
+  let storedScopes: string[] = []
+  let storedMenus: any[] = []
+
+  if (import.meta.client) {
+    try {
+      const u = localStorage.getItem('user')
+      if (u) storedUser = JSON.parse(u)
+      const p = localStorage.getItem('permissions')
+      if (p) storedPermissions = JSON.parse(p)
+      const s = localStorage.getItem('scopes')
+      if (s) storedScopes = JSON.parse(s)
+      const m = localStorage.getItem('menus')
+      if (m) storedMenus = JSON.parse(m)
+    } catch {
+      // Graceful fallback on JSON parse error
+    }
+  }
+
+  const isLoggedIn = ref(authCookie.value?.isLoggedIn ?? (!!accessTokenCookie.value || !!storedToken))
+  const user = ref<UserSession | null>(authCookie.value?.user || storedUser || null)
+  const token = ref<string | null>(authCookie.value?.token || accessTokenCookie.value || storedToken || null)
+  const refreshToken = ref<string | null>(authCookie.value?.refreshToken || refreshTokenCookie.value || storedRefreshToken || null)
+  const permissions = ref<string[]>(
+    (authCookie.value?.permissions && authCookie.value.permissions.length > 0)
+      ? authCookie.value.permissions
+      : (storedPermissions.length > 0 ? storedPermissions : (authCookie.value?.user?.permissions || []))
+  )
+  const scopes = ref<string[]>(
+    (authCookie.value?.scopes && authCookie.value.scopes.length > 0)
+      ? authCookie.value.scopes
+      : (storedScopes.length > 0 ? storedScopes : (authCookie.value?.user?.scopes || []))
+  )
   const permissionOverrides = ref<PermissionOverride[]>(authCookie.value?.user?.permission_overrides || [])
-  const userMenus = ref<any[]>(authCookie.value?.menus || authCookie.value?.user?.menus || [])
+  const userMenus = ref<any[]>(
+    (authCookie.value?.menus && authCookie.value.menus.length > 0)
+      ? authCookie.value.menus
+      : (storedMenus.length > 0 ? storedMenus : (authCookie.value?.user?.menus || []))
+  )
   const errorMessage = ref('')
   const message = ref('')
   const isError = ref(false)
@@ -187,9 +225,10 @@ export const useAuthStore = defineStore('auth', () => {
       refreshTokenCookie.value = newRefreshToken
     }
     if (authCookie.value) {
-      authCookie.value.token = newAccessToken
-      if (newRefreshToken) {
-        authCookie.value.refreshToken = newRefreshToken
+      authCookie.value = {
+        ...authCookie.value,
+        token: newAccessToken,
+        ...(newRefreshToken ? { refreshToken: newRefreshToken } : {})
       }
     }
     if (import.meta.client) {
@@ -313,6 +352,19 @@ export const useAuthStore = defineStore('auth', () => {
             ? accessData.data.Menus
             : []
 
+          const rawRoles = Array.isArray(accessData.roles)
+            ? accessData.roles
+            : Array.isArray(accessData.Roles)
+            ? accessData.Roles
+            : Array.isArray(accessData.data?.roles)
+            ? accessData.data.roles
+            : Array.isArray(accessData.data?.Roles)
+            ? accessData.data.Roles
+            : []
+          const rls: string[] = rawRoles
+            .map((r: any) => (typeof r === 'string' ? r : r?.role_code || r?.name || ''))
+            .filter(Boolean)
+
           permissions.value = perms
           scopes.value = scps
           permissionOverrides.value = overrides
@@ -323,12 +375,21 @@ export const useAuthStore = defineStore('auth', () => {
             user.value.scopes = scps
             user.value.permission_overrides = overrides
             user.value.menus = rawMenus
+            if (rls.length > 0) {
+              user.value.roles = rls
+              if (!user.value.role) {
+                user.value.role = rls[0]
+              }
+            }
           }
 
           if (import.meta.client) {
             localStorage.setItem('permissions', JSON.stringify(perms))
             localStorage.setItem('scopes', JSON.stringify(scps))
             localStorage.setItem('menus', JSON.stringify(rawMenus))
+            if (user.value) {
+              localStorage.setItem('user', JSON.stringify(user.value))
+            }
           }
 
           lastFetchedAccess = Date.now()
@@ -383,7 +444,7 @@ export const useAuthStore = defineStore('auth', () => {
             nip: u.nip,
             prnr: u.prnr,
             status: u.status,
-            role: u.organization || u.akses_grup || (u.role_assignments?.[0]?.role_code) || 'Admin',
+            role: u.role || u.akses_grup || u.role_assignments?.[0]?.role_code,
             akses_grup: u.akses_grup || u.role_assignments?.[0]?.role_code,
             roles: u.roles || (u.role_assignments?.map((r: any) => r.role_code)) || [],
             permissions: u.permissions || permissions.value,
@@ -429,7 +490,7 @@ export const useAuthStore = defineStore('auth', () => {
                     nip: u.nip,
                     prnr: u.prnr,
                     status: u.status,
-                    role: u.organization || u.akses_grup || (u.role_assignments?.[0]?.role_code) || 'Admin',
+                    role: u.role || u.akses_grup || u.role_assignments?.[0]?.role_code,
                     akses_grup: u.akses_grup || u.role_assignments?.[0]?.role_code,
                     roles: u.roles || (u.role_assignments?.map((r: any) => r.role_code)) || [],
                     permissions: u.permissions || permissions.value,
@@ -478,6 +539,15 @@ export const useAuthStore = defineStore('auth', () => {
         return key === '*'
       })
 
+    // Index permissions into normalized Set for fast O(1) evaluation
+    const permissionSet = new Set<string>()
+    for (const p of permissions.value) {
+      const pKey = extractPermissionKey(p)
+      if (pKey) {
+        permissionSet.add(String(pKey).trim().toUpperCase())
+      }
+    }
+
     const checkSingle = (key: string): boolean => {
       if (!key) return false
       const normalizedKey = key.trim().toUpperCase()
@@ -498,31 +568,35 @@ export const useAuthStore = defineStore('auth', () => {
         return true
       }
 
-      // 3. Check direct permissions list
-      if (
-        permissions.value.some((p: any) => {
-          const pKey = extractPermissionKey(p)
-          const normalizedPKey = String(pKey).trim().toUpperCase()
-          return normalizedPKey === normalizedKey || normalizedPKey === '*'
-        })
-      ) {
+      // 3. Direct match
+      if (permissionSet.has(normalizedKey)) {
         return true
       }
 
-      // 4. Default role-based fallback matrices for standard personas if permissions array is empty
-      if (permissions.value.length === 0) {
-        if (roleCode === 'ORG_ADMIN') {
-          // Admin Regional: Full CRUD
+      // 4. Wildcard matching: global '*'
+      if (permissionSet.has('*')) {
+        return true
+      }
+
+      // 5. Resource wildcard: e.g. "MENU.*" grants "MENU.CREATE"
+      const dotIndex = normalizedKey.indexOf('.')
+      if (dotIndex > 0) {
+        const resourcePrefix = normalizedKey.slice(0, dotIndex)
+        if (permissionSet.has(`${resourcePrefix}.*`)) {
           return true
         }
-        if (roleCode === 'ORG_MANAGER') {
-          // Operator Cabang: Create & Update only, no DELETE
-          return !normalizedKey.endsWith('.DELETE')
-        }
-        if (roleCode === 'ORG_VIEWER') {
-          // Viewer Ranting: Read-only
-          return normalizedKey.endsWith('.VIEW') || normalizedKey.endsWith('.READ') || normalizedKey.endsWith('.LIST')
-        }
+      }
+
+      // 6. Delimiter compatibility: underscore variant (e.g. "MENU_CREATE")
+      const underscoreKey = normalizedKey.replace(/\./g, '_')
+      if (permissionSet.has(underscoreKey)) {
+        return true
+      }
+
+      // 7. Delimiter compatibility: colon variant (e.g. "MENU:CREATE")
+      const colonKey = normalizedKey.replace(/\./g, ':')
+      if (permissionSet.has(colonKey)) {
+        return true
       }
 
       return false

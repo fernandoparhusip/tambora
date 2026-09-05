@@ -67,8 +67,8 @@ const modalTitle = computed(() =>
 )
 const modalSubtitle = computed(() =>
   modalMode.value === 'create'
-    ? 'Form Tambah Master Kondisi Mesin Pembangkit'
-    : 'Form Ubah Master Kondisi Mesin Pembangkit',
+    ? 'Form Tambah Kondisi Mesin'
+    : 'Form Ubah Kondisi Mesin',
 )
 
 const openCreateModal = () => {
@@ -92,9 +92,16 @@ const handleEdit = (row: MachineConditionItem) => {
   modalOpen.value = true
 }
 
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false
+  detailRecord.value = null
+}
+
 const openEditFromDetail = () => {
   if (detailRecord.value) {
-    handleEdit(detailRecord.value)
+    const rec = detailRecord.value
+    closeDetailModal()
+    handleEdit(rec)
   }
 }
 
@@ -281,9 +288,10 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Kondisi Mesin"
-      subtitle="Informasi Status & Deskripsi Operasional Mesin"
+      subtitle="Informasi Kondisi Mesin"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
+      @close="closeDetailModal"
     />
   </div>
 </template>

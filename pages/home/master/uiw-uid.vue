@@ -4,6 +4,7 @@ import type { DetailDataItem, UiwUidItem } from "~/types/master.types";
 import type { TableColumn } from "~/types";
 import { uiwUidFormSections } from "~/schemas/master/uiw-uid.schema";
 import { useUiwUid } from "~/composables/master/useUiwUid";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
   uiwUids,
@@ -27,11 +28,9 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<UiwUidItem | null>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<UiwUidItem | null>(null);
 
 const uiwUidColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -70,8 +69,8 @@ const modalTitle = computed(() =>
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "edit"
-    ? "Form Perubahan Unit Induk Wilayah / Distribusi PLN"
-    : "Form Penambahan Unit Induk Wilayah / Distribusi PLN",
+    ? "Form Ubah UIW / UID"
+    : "Form Tambah UIW / UID",
 );
 
 const openCreateModal = () => {
@@ -85,16 +84,7 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-const handleView = async (row: UiwUidItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-  try {
-    const fresh = await getUiwUidById(row.id);
-    if (fresh) detailRecord.value = fresh;
-  } catch {
-    // Keep local fallback
-  }
-};
+
 
 const handleEdit = (row: UiwUidItem) => {
   modalMode.value = "edit";
@@ -107,6 +97,19 @@ const handleEdit = (row: UiwUidItem) => {
   };
   modalOpen.value = true;
 };
+
+// Universal Async Detail Management (Guarded against race conditions & memory leaks)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<UiwUidItem>({
+  fetchDetail: (id) => getUiwUidById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const handleDelete = (row: UiwUidItem) => {
   deleteTarget.value = row;
@@ -251,11 +254,14 @@ const createdDateFormatted = computed(() => {
     <!-- Detail Modal -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
-      title="Detail Master UIW / UID"
-      subtitle="Informasi data master Unit Induk Wilayah / Distribusi"
+      title="Detail UIW / UID"
+      subtitle="Informasi UIW / UID"
+      :record-id="detailRecord?.id || detailRecord?.kode"
       :data-items="detailDataItems"
       :created-date="createdDateFormatted"
-      :is-loading="detailLoading"
+      :loading="detailLoading || asyncDetailLoading"
+      @close="closeDetailModal"
+      @edit="openEditFromDetail()"
     />
 
     <!-- Confirm Delete Dialog -->

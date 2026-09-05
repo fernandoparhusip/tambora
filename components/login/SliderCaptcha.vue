@@ -244,8 +244,8 @@ async function stopDrag() {
   const distance = Math.abs(pieceX.value - targetX.value);
   debugInfo.value.lastDistance = distance;
 
-  // Implementasi algoritma verifikasi yang lebih akurat
-  // Jika jarak sangat dekat (dalam 10px), anggap sebagai match sempurna
+  // Implementasi algoritma verifikasi
+  // Jika jarak sangat dekat (dalam 10px), anggap sebagai match valid
   // Jika jarak dalam toleransi, anggap sebagai match yang cukup baik
   const isPerfectMatch = distance < 10;
   const isGoodMatch = distance < tolerance;

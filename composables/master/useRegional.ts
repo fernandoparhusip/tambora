@@ -77,7 +77,6 @@ export const useRegional = () => {
 
   const getRegionalById = async (id: string) => {
     detailLoading.value = true;
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<any>(`/regional/${id}`);
@@ -89,7 +88,6 @@ export const useRegional = () => {
       throw err;
     } finally {
       detailLoading.value = false;
-      loading.value = false;
     }
   };
 
@@ -115,18 +113,10 @@ export const useRegional = () => {
     loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<RegionalItem>>(`/regional/${id}`, {
-          method: "POST",
-          body: payload,
-        });
-      } catch {
-        res = await api<ApiResponse<RegionalItem>>(`/regional/${id}`, {
-          method: "PUT",
-          body: payload,
-        });
-      }
+      const res = await api<ApiResponse<RegionalItem>>(`/regional/${id}`, {
+        method: "POST",
+        body: payload,
+      });
       await fetchRegional();
       return res?.data || res;
     } catch (err: any) {
@@ -141,16 +131,9 @@ export const useRegional = () => {
     loading.value = true;
     error.value = null;
     try {
-      let res: any;
-      try {
-        res = await api<ApiResponse<null>>(`/regional/${id}/delete`, {
-          method: "POST",
-        });
-      } catch {
-        res = await api<ApiResponse<null>>(`/regional/${id}`, {
-          method: "DELETE",
-        });
-      }
+      const res = await api<ApiResponse<null>>(`/regional/${id}/delete`, {
+        method: "POST",
+      });
       await fetchRegional();
       return res;
     } catch (err: any) {

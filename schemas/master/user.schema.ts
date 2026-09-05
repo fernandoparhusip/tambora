@@ -66,9 +66,9 @@ export const getUserFormSections = (
         },
         {
           key: "nip",
-          label: "NIP / Nomor Pegawai",
+          label: "NIP",
           type: "text",
-          placeholder: "Masukkan NIP pegawai...",
+          placeholder: "Masukkan NIP...",
           colSpan: 6,
           required: false,
         },
@@ -76,7 +76,7 @@ export const getUserFormSections = (
           key: "password",
           label: "Password",
           type: "password",
-          placeholder: "Masukkan password akun (Default: PLN@Tambora123)...",
+          placeholder: "Masukkan password...",
           colSpan: 12,
           required: false,
           hidden: (formData) => formData.tipe === "SSO PLN",
@@ -152,9 +152,9 @@ export const getUserFormSections = (
         },
         {
           key: "scopeLevel",
-          label: "Akses Level (Scope Wilayah)",
+          label: "Akses Level",
           type: "searchable-select",
-          placeholder: "Pilih Scope Wilayah...",
+          placeholder: "Pilih Akses Level...",
           options: scopeOptions,
           colSpan: 6,
           required: true,
@@ -162,12 +162,12 @@ export const getUserFormSections = (
         },
         {
           key: "permissions",
-          label: "Akses Permission (Hak Akses Khusus)",
+          label: "Akses Permission",
           type: "searchable-multi-select",
-          placeholder: "Pilih Akses Permission khusus jika ada...",
+          placeholder: "Pilih permission khusus jika ada...",
           options: permissionOptions,
           helpText:
-            "Pilih permission tambahan/khusus di luar hak akses default role.",
+            "Pilih permission tambahan di luar hak akses default role.",
           colSpan: 12,
           required: false,
           hidden: (formData) => formData.akunPengelola === true,
@@ -176,7 +176,7 @@ export const getUserFormSections = (
         // ── 4. Kontak & Domisili ──
         {
           key: "noTelp",
-          label: "No. Telepon / WA",
+          label: "No. Telepon",
           type: "phone",
           placeholder: "+6281234567890",
           colSpan: 6,

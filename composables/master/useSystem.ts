@@ -1,5 +1,6 @@
 import { useApi } from '~/composables/useApi';
 import { ref, computed } from "vue";
+import { extractApiErrorMessage } from "~/utils/apiError";
 import type {
   SystemItem,
   CreateSystemRequest,
@@ -12,6 +13,7 @@ export const useSystem = () => {
   const systems = ref<SystemItem[]>([]);
   const currentSystem = ref<SystemItem | null>(null);
   const loading = ref(false);
+  const detailLoading = ref(false);
   const total = ref(0);
   const error = ref<string | null>(null);
 
@@ -33,7 +35,7 @@ export const useSystem = () => {
       }
       return systems.value;
     } catch (err: any) {
-      error.value = err?.message || "Gagal memuat daftar sistem pembangkit.";
+      error.value = extractApiErrorMessage(err, "Gagal memuat daftar sistem pembangkit.");
       throw err;
     } finally {
       loading.value = false;
@@ -41,24 +43,28 @@ export const useSystem = () => {
   };
 
   const getSystemById = async (id: string) => {
-    loading.value = true;
+    detailLoading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<SystemItem>>(`/systems/${id}`);
-      if (res?.data) {
-        currentSystem.value = res.data;
+      const res = await api<any>(`/systems/${id}`);
+      const data = res?.data || res;
+      if (data) {
+        currentSystem.value = data;
       }
-      return res?.data;
+      return data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal mengambil detail sistem.";
-      throw err;
+      const msg = extractApiErrorMessage(err, "Gagal mengambil detail sistem.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     } finally {
-      loading.value = false;
+      detailLoading.value = false;
     }
   };
 
   const createSystem = async (payload: CreateSystemRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<SystemItem>>("/systems", {
@@ -68,15 +74,16 @@ export const useSystem = () => {
       await fetchSystems();
       return res?.data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal membuat sistem pembangkit.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal membuat sistem pembangkit.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
   const updateSystem = async (id: string, payload: UpdateSystemRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<SystemItem>>(`/systems/${id}`, {
@@ -86,15 +93,16 @@ export const useSystem = () => {
       await fetchSystems();
       return res?.data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal mengubah sistem pembangkit.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal mengubah sistem pembangkit.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
   const deleteSystem = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<null>>(`/systems/${id}/delete`, {
@@ -103,10 +111,12 @@ export const useSystem = () => {
       await fetchSystems();
       return res;
     } catch (err: any) {
-      error.value = err?.message || "Gagal menghapus sistem pembangkit.";
-      throw err;
-    } finally {
-      loading.value = false;
+      const msg = extractApiErrorMessage(err, "Gagal menghapus sistem pembangkit.");
+      error.value = msg;
+      const customErr = new Error(msg);
+      (customErr as any).data = err?.data;
+      (customErr as any).response = err?.response;
+      throw customErr;
     }
   };
 
@@ -114,6 +124,7 @@ export const useSystem = () => {
     systems: computed(() => systems.value),
     currentSystem: computed(() => currentSystem.value),
     loading: computed(() => loading.value),
+    detailLoading: computed(() => detailLoading.value),
     total: computed(() => total.value),
     error: computed(() => error.value),
     fetchSystems,
