@@ -18,6 +18,7 @@ export const useDriver = () => {
   const drivers = ref<DriverItem[]>([])
   const currentDriver = ref<DriverItem | null>(null)
   const loading = ref(false)
+  const detailLoading = ref(false)
   const total = ref(0)
   const error = ref<string | null>(null)
 
@@ -47,7 +48,7 @@ export const useDriver = () => {
   }
 
   const getDriverById = async (id: string) => {
-    loading.value = true
+    detailLoading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<DriverItem>>(`/drivers/${id}`)
@@ -59,7 +60,7 @@ export const useDriver = () => {
       error.value = err?.message || 'Gagal mengambil detail pengemudi.'
       throw err
     } finally {
-      loading.value = false
+      detailLoading.value = false
     }
   }
 
@@ -88,9 +89,14 @@ export const useDriver = () => {
   const updateDriver = async (id: string, payload: UpdateDriverRequest) => {
     error.value = null
     try {
+      const body: UpdateDriverRequest = {
+        ...payload,
+        birth_date: formatIsoDate(payload.birth_date),
+        employment_start_date: formatIsoDate(payload.employment_start_date)
+      }
       const res = await api<ApiResponse<DriverItem>>(`/drivers/${id}`, {
         method: 'POST',
-        body: payload
+        body
       })
       if (res?.data) {
         await fetchDrivers()
@@ -120,6 +126,7 @@ export const useDriver = () => {
     drivers: computed(() => drivers.value),
     currentDriver: computed(() => currentDriver.value),
     loading: computed(() => loading.value),
+    detailLoading: computed(() => detailLoading.value),
     total: computed(() => total.value),
     error: computed(() => error.value),
     fetchDrivers,

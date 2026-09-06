@@ -13,6 +13,7 @@ const searchQuery = ref("");
 const currentPage = ref(1);
 const pageSize = ref(10);
 
+const toast = useAppToast();
 const modalOpen = ref(false);
 const isSuccessModalOpen = ref(false);
 const modalMode = ref<"create" | "edit">("create");
@@ -165,7 +166,7 @@ const confirmDelete = async () => {
 
 const handleSave = async () => {
   if (!formData.value.kode_mesin || !formData.value.nama_mesin) {
-    alert("Kode Mesin dan Nama Mesin wajib diisi.");
+    toast.error("Kode Mesin dan Nama Mesin wajib diisi.");
     return;
   }
 
@@ -210,8 +211,8 @@ const handleSave = async () => {
     setTimeout(() => {
       isSuccessModalOpen.value = true;
     }, 150);
-  } catch (err: any) {
-    alert("Gagal menyimpan aset mesin: " + (err?.message || err));
+  } catch {
+    // Handled by useApi
   } finally {
     submitting.value = false;
   }
