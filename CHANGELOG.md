@@ -4,6 +4,15 @@ Semua perubahan penting pada proyek ini didokumentasikan di berkas ini.
 Format penulisan mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/),
 dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.7.3] - 2026-09-06
+
+### Penyelarasan Parameter CRUD Master Pengemudi, Detail API & Standarisasi Notifikasi Form
+
+- **penyelarasan-parameter-crud-driver:** Menyelaraskan seluruh 11 parameter data pengemudi (`full_name`, `phone_number`, `nik`, `license_number`, `license_type`, `birth_place`, `birth_date`, `employment_start_date`, `employment_status`, `address`, `description`) agar terkirim lengkap dan bersih pada aksi Create (`CreateDriverRequest`) maupun Update (`UpdateDriverRequest`), serta menghapus seluruh nilai dummy/hardcoded fallback lama pada [`pages/home/master/driver.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/driver.vue), [`composables/master/useDriver.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/master/useDriver.ts), dan [`types/master.types.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/types/master.types.ts).
+- **integrasi-api-detail-driver:** Menghubungkan tombol view detail pengemudi dengan endpoint backend `GET /api/v1/drivers/{id}` via `useAsyncDetail`, memisahkan state `detailLoading` agar tabel utama tidak terblokir saat membaca detail data, dan mengikat data record ke `<BaseDetailModal />`.
+- **penyesuaian-skema-form-driver:** Mengubah input jenis SIM (`license_type`) dari combobox/select menjadi input teks biasa pada [`schemas/master/driver.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/driver.schema.ts) serta menata ulang urutan field utama (NIK, Nama, Jenis SIM, Nomor SIM).
+- **standarisasi-toast-form:** Menggantikan dialog native browser `alert(...)` dengan notifikasi toast via `useAppToast()` (`toast.error(...)`) untuk validasi form pada Master Pengemudi ([`pages/home/master/driver.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/driver.vue)) dan Master Mesin/Aset ([`pages/home/master/asset.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/asset.vue)).
+
 ## [0.7.2] - 2026-09-06
 
 ### Penanganan Sesi Login saat Akun Ditabrak & Penyelarasan ID Combobox Master

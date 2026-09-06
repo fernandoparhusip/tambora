@@ -173,13 +173,21 @@ describe('Master Composables Test Suite', () => {
         .mockResolvedValueOnce({ data: [] })
 
       const { createPermission, updatePermission, deletePermission } = usePermission()
-      await createPermission({ permission_key: 'USER.VIEW' })
+      await createPermission({
+        permission_key: 'USER.VIEW',
+        resource_id: 'r-1',
+        action_id: 'a-1'
+      })
       expect(mockApi).toHaveBeenCalledWith('/permissions/create', {
         method: 'POST',
         body: expect.objectContaining({ permission_key: 'USER.VIEW' })
       })
 
-      await updatePermission('p-1', { permission_key: 'USER.VIEW_UPDATED' })
+      await updatePermission('p-1', {
+        permission_key: 'USER.VIEW_UPDATED',
+        resource_id: 'r-1',
+        action_id: 'a-1'
+      })
       expect(mockApi).toHaveBeenCalledWith('/permissions/p-1', {
         method: 'POST',
         body: expect.objectContaining({ permission_key: 'USER.VIEW_UPDATED' })
@@ -284,6 +292,31 @@ describe('Master Composables Test Suite', () => {
       expect(mockApi).toHaveBeenCalledWith('/drivers', {
         method: 'POST',
         body: expect.objectContaining({ full_name: 'Driver Baru' })
+      })
+    })
+
+    it('getDriverById fetches driver detail by id', async () => {
+      mockApi.mockResolvedValueOnce({ data: { id: 'd-1', full_name: 'Driver 1' } })
+      const { getDriverById } = useDriver()
+      const result = await getDriverById('d-1')
+      expect(mockApi).toHaveBeenCalledWith('/drivers/d-1')
+      expect(result).toEqual({ id: 'd-1', full_name: 'Driver 1' })
+    })
+
+    it('updateDriver sends updated payload to /drivers/:id', async () => {
+      mockApi
+        .mockResolvedValueOnce({ data: { id: 'd-1', full_name: 'Driver Update' } })
+        .mockResolvedValueOnce({ data: [] })
+
+      const { updateDriver } = useDriver()
+      await updateDriver('d-1', {
+        full_name: 'Driver Update',
+        license_type: 'B2 Umum'
+      })
+
+      expect(mockApi).toHaveBeenCalledWith('/drivers/d-1', {
+        method: 'POST',
+        body: expect.objectContaining({ full_name: 'Driver Update', license_type: 'B2 Umum' })
       })
     })
 

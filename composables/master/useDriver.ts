@@ -89,9 +89,14 @@ export const useDriver = () => {
   const updateDriver = async (id: string, payload: UpdateDriverRequest) => {
     error.value = null
     try {
+      const body: UpdateDriverRequest = {
+        ...payload,
+        birth_date: formatIsoDate(payload.birth_date),
+        employment_start_date: formatIsoDate(payload.employment_start_date)
+      }
       const res = await api<ApiResponse<DriverItem>>(`/drivers/${id}`, {
         method: 'POST',
-        body: payload
+        body
       })
       if (res?.data) {
         await fetchDrivers()

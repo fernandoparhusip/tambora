@@ -14,6 +14,7 @@ const {
   updateDriver,
   deleteDriver,
 } = useDriver();
+const toast = useAppToast();
 
 const searchQuery = ref("");
 const currentPage = ref(1);
@@ -141,56 +142,43 @@ const formatDateDisplay = (dateStr?: string) => {
 
 const handleSave = async () => {
   if (!formData.value.full_name || formData.value.full_name.trim() === "") {
-    alert("Nama Pengemudi wajib diisi.");
+    toast.error("Nama Pengemudi wajib diisi.");
     return;
   }
 
-  // Auto-generate 16-digit valid NIK if left blank for smooth demo/dev
-  let nik = formData.value.nik?.trim() || "";
-  if (!nik) {
-    nik = `5271${String(Date.now()).slice(-12)}`;
-  } else if (nik.length !== 16) {
-    alert("NIK (KTP) harus tepat 16 digit angka.");
+  const nik = formData.value.nik?.trim() || "";
+  if (nik && nik.length !== 16) {
+    toast.error("NIK (KTP) harus tepat 16 digit angka.");
     return;
   }
+
+  const payload = {
+    full_name: formData.value.full_name?.trim() || "",
+    phone_number: formData.value.phone_number?.trim() || "",
+    nik,
+    license_number: formData.value.license_number?.trim() || "",
+    license_type: formData.value.license_type?.trim() || "",
+    birth_place: formData.value.birth_place?.trim() || "",
+    birth_date: formData.value.birth_date || "",
+    employment_start_date: formData.value.employment_start_date || "",
+    employment_status: formData.value.employment_status || "",
+    address: formData.value.address?.trim() || "",
+    description: formData.value.description?.trim() || "",
+  };
 
   submitting.value = true;
   try {
     if (modalMode.value === "create") {
-      await createDriver({
-        full_name: formData.value.full_name.trim(),
-        phone_number: formData.value.phone_number?.trim() || "+6281234567890",
-        nik,
-        license_number:
-          formData.value.license_number?.trim() ||
-          `SIM-${Date.now().toString().slice(-6)}`,
-        license_type: formData.value.license_type?.trim() || "",
-        birth_place: formData.value.birth_place?.trim() || "Mataram",
-        birth_date: formData.value.birth_date || "1990-01-01",
-        employment_start_date:
-          formData.value.employment_start_date || "2024-01-01",
-        employment_status: formData.value.employment_status || "Aktif",
-        address: formData.value.address?.trim() || "Kota Bima",
-        description:
-          formData.value.description?.trim() ||
-          "Pengemudi kendaraan operasional",
-      });
+      await createDriver(payload);
     } else {
-      await updateDriver(formData.value.id, {
-        full_name: formData.value.full_name.trim(),
-        phone_number: formData.value.phone_number?.trim() || "+6281234567890",
-        employment_status: formData.value.employment_status || "Aktif",
-        address: formData.value.address?.trim() || "Kota Bima",
-        description:
-          formData.value.description?.trim() || "Pengemudi operasional",
-      });
+      await updateDriver(formData.value.id, payload);
     }
     modalOpen.value = false;
     setTimeout(() => {
       isSuccessModalOpen.value = true;
     }, 150);
-  } catch (err: any) {
-    alert("Gagal menyimpan pengemudi: " + (err?.message || err));
+  } catch {
+    // Handled by useApi
   } finally {
     submitting.value = false;
   }

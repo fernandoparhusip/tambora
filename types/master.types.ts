@@ -258,6 +258,12 @@ export interface CreateDriverRequest {
 export interface UpdateDriverRequest {
   full_name?: string;
   phone_number?: string;
+  license_number?: string;
+  license_type?: string;
+  nik?: string;
+  birth_place?: string;
+  birth_date?: string;
+  employment_start_date?: string;
   employment_status?: string;
   address?: string;
   description?: string;
