@@ -348,6 +348,8 @@ export interface UpdateSystemRequest {
   code?: string;
   name?: string;
   system_type?: string;
+  upk_id?: string;
+  service_unit_ids?: string[];
   latitude?: number;
   longitude?: number;
   description?: string;
@@ -412,6 +414,7 @@ export interface UpdateAssetRequest {
   daya_mampu_netto?: number;
   daya_mampu_pasok?: number;
   kondisi_mesin?: string;
+  system_id?: string;
 }
 
 /** Master Regional DTOs */

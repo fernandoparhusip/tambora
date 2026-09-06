@@ -44,7 +44,7 @@ const cabangColumns: TableColumn[] = [
 const regionalOptions = computed(() =>
   regionalList.value.map((r) => ({
     label: `${r.nama_regional} (${r.kode_regional})`,
-    value: r.kode_regional,
+    value: r.id,
   })),
 );
 
@@ -99,7 +99,16 @@ const openCreateModal = () => {
 
 const handleEdit = (row: CabangItem) => {
   modalMode.value = "edit";
-  formData.value = { ...row };
+  const matchedReg = regionalList.value.find(
+    (r) =>
+      r.id === row.kode_wilayah ||
+      r.kode_regional === row.kode_wilayah,
+  );
+  formData.value = {
+    ...row,
+    kode_wilayah:
+      matchedReg?.id || row.kode_wilayah || "",
+  };
   modalOpen.value = true;
 };
 
@@ -143,8 +152,14 @@ const confirmDelete = async () => {
 const handleSave = async (data: Record<string, any>) => {
   submitting.value = true;
   try {
+    const matchedReg = regionalList.value.find(
+      (r) =>
+        r.id === data.kode_wilayah ||
+        r.kode_regional === data.kode_wilayah,
+    );
+    const regId = matchedReg?.id || data.kode_wilayah;
     const payload = {
-      kode_wilayah: data.kode_wilayah,
+      kode_wilayah: regId,
       kode_cabang: data.kode_cabang,
       nama_cabang: data.nama_cabang,
     };
@@ -173,8 +188,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
     {
-      label: "Kode Wilayah / Regional",
-      value: detailRecord.value.kode_wilayah,
+      label: "Regional / Wilayah",
+      value:
+        regionalList.value.find(
+          (r) => r.id === detailRecord.value?.kode_wilayah,
+        )?.nama_regional ||
+        detailRecord.value.nama_wilayah ||
+        detailRecord.value.kode_wilayah,
     },
     { label: "Kode Cabang", value: detailRecord.value.kode_cabang },
     { label: "Nama Cabang", value: detailRecord.value.nama_cabang },
@@ -219,6 +239,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <template #kode_wilayah-data="{ row }">
             <span class="text-xs font-medium text-gray-600">{{
+              regionalList.find((r) => r.id === row.kode_wilayah)?.nama_regional ||
+              row.nama_wilayah ||
               row.kode_wilayah
             }}</span>
           </template>
