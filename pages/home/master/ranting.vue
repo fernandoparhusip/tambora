@@ -44,7 +44,7 @@ const rantingColumns: TableColumn[] = [
 const cabangOptions = computed(() =>
   cabangList.value.map((c) => ({
     label: `${c.nama_cabang} (${c.kode_cabang})`,
-    value: c.kode_cabang,
+    value: c.id,
   })),
 );
 
@@ -99,7 +99,16 @@ const openCreateModal = () => {
 
 const handleEdit = (row: RantingItem) => {
   modalMode.value = "edit";
-  formData.value = { ...row };
+  const matchedCabang = cabangList.value.find(
+    (c) =>
+      c.id === row.kode_cabang ||
+      c.kode_cabang === row.kode_cabang,
+  );
+  formData.value = {
+    ...row,
+    kode_cabang:
+      matchedCabang?.id || row.kode_cabang || "",
+  };
   modalOpen.value = true;
 };
 
@@ -145,8 +154,14 @@ const confirmDelete = async () => {
 const handleSave = async (data: Record<string, any>) => {
   submitting.value = true;
   try {
+    const matchedCabang = cabangList.value.find(
+      (c) =>
+        c.id === data.kode_cabang ||
+        c.kode_cabang === data.kode_cabang,
+    );
+    const cabId = matchedCabang?.id || data.kode_cabang;
     const payload = {
-      kode_cabang: data.kode_cabang,
+      kode_cabang: cabId,
       kode_ranting: data.kode_ranting,
       nama_ranting: data.nama_ranting,
     };
@@ -174,7 +189,14 @@ const handleSave = async (data: Record<string, any>) => {
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
-    { label: "Kode Cabang", value: detailRecord.value.kode_cabang },
+    {
+      label: "Cabang",
+      value:
+        cabangList.value.find((c) => c.id === detailRecord.value?.kode_cabang)
+          ?.nama_cabang ||
+        detailRecord.value.nama_cabang ||
+        detailRecord.value.kode_cabang,
+    },
     { label: "Kode", value: detailRecord.value.kode_ranting },
     { label: "Nama", value: detailRecord.value.nama_ranting },
   ];
@@ -218,6 +240,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <template #kode_cabang-data="{ row }">
             <span class="text-xs font-medium text-gray-600">{{
+              cabangList.find((c) => c.id === row.kode_cabang)?.nama_cabang ||
+              row.nama_cabang ||
               row.kode_cabang
             }}</span>
           </template>

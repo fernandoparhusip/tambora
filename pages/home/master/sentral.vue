@@ -58,14 +58,14 @@ const sentralColumns: TableColumn[] = [
 const regionalOptions = computed(() =>
   regionalList.value.map((r) => ({
     label: `${r.kode_regional} - ${r.nama_regional}`,
-    value: r.kode_regional,
+    value: r.id,
   })),
 );
 
 const rantingOptions = computed(() =>
   rantingList.value.map((rt) => ({
     label: `${rt.kode_ranting} - ${rt.nama_ranting}`,
-    value: rt.kode_ranting,
+    value: rt.id,
   })),
 );
 
@@ -130,11 +130,25 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-
-
 const handleEdit = (row: SentralItem) => {
   modalMode.value = "edit";
-  formData.value = { ...row };
+  const matchedReg = regionalList.value.find(
+    (r) =>
+      r.id === row.kode_wilayah ||
+      r.kode_regional === row.kode_wilayah,
+  );
+  const matchedRanting = rantingList.value.find(
+    (rt) =>
+      rt.id === row.kode_ranting ||
+      rt.kode_ranting === row.kode_ranting,
+  );
+  formData.value = {
+    ...row,
+    kode_wilayah:
+      matchedReg?.id || row.kode_wilayah || "",
+    kode_ranting:
+      matchedRanting?.id || row.kode_ranting || "",
+  };
   modalOpen.value = true;
 };
 
@@ -194,9 +208,22 @@ const confirmApprove = async () => {
 const handleSave = async (data: Record<string, any>) => {
   submitting.value = true;
   try {
+    const matchedReg = regionalList.value.find(
+      (r) =>
+        r.id === data.kode_wilayah ||
+        r.kode_regional === data.kode_wilayah,
+    );
+    const regId = matchedReg?.id || data.kode_wilayah;
+    const matchedRanting = rantingList.value.find(
+      (rt) =>
+        rt.id === data.kode_ranting ||
+        rt.kode_ranting === data.kode_ranting,
+    );
+    const rantingId = matchedRanting?.id || data.kode_ranting;
+
     const payload = {
-      kode_wilayah: data.kode_wilayah,
-      kode_ranting: data.kode_ranting,
+      kode_wilayah: regId,
+      kode_ranting: rantingId,
       kode_sentral: data.kode_sentral,
       nama_sentral: data.nama_sentral,
       kode_jenis_pembangkit: data.kode_jenis_pembangkit,
@@ -255,8 +282,25 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   return [
     { label: "Kode Sentral", value: detailRecord.value.kode_sentral },
     { label: "Nama Sentral", value: detailRecord.value.nama_sentral },
-    { label: "Kode Regional", value: detailRecord.value.kode_wilayah || "-" },
-    { label: "Kode Ranting", value: detailRecord.value.kode_ranting || "-" },
+    {
+      label: "Regional",
+      value:
+        regionalList.value.find(
+          (r) => r.id === detailRecord.value?.kode_wilayah,
+        )?.nama_regional ||
+        detailRecord.value.kode_wilayah ||
+        "-",
+    },
+    {
+      label: "Ranting",
+      value:
+        rantingList.value.find(
+          (rt) => rt.id === detailRecord.value?.kode_ranting,
+        )?.nama_ranting ||
+        detailRecord.value.nama_ranting ||
+        detailRecord.value.kode_ranting ||
+        "-",
+    },
     { label: "Jenis Pembangkit", value: detailRecord.value.kode_jenis_pembangkit || "-" },
     { label: "Jenis Bahan Bakar", value: detailRecord.value.jenis_bahan_bakar || "-" },
     { label: "Daya Terpasang", value: detailRecord.value.daya_terpasang ? `${detailRecord.value.daya_terpasang.toLocaleString("id-ID")} kW` : "-" },
@@ -326,7 +370,11 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #kode_wilayah-data="{ row }">
-            <span class="text-xs text-gray-600">{{ row.kode_wilayah || '-' }}</span>
+            <span class="text-xs text-gray-600">{{
+              regionalList.find((r) => r.id === row.kode_wilayah)?.nama_regional ||
+              row.kode_wilayah ||
+              '-'
+            }}</span>
           </template>
 
           <template #kode_jenis_pembangkit-data="{ row }">

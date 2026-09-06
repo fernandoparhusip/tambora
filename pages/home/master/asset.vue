@@ -202,7 +202,8 @@ const handleSave = async () => {
         daya_terpasang: Number(formData.value.daya_terpasang) || 0,
         daya_mampu_netto: Number(formData.value.daya_mampu_netto) || 0,
         daya_mampu_pasok: Number(formData.value.daya_mampu_pasok) || 0,
-        kondisi_mesin: formData.value.kondisi_mesin || "Beroperasi"
+        kondisi_mesin: formData.value.kondisi_mesin || "Beroperasi",
+        system_id: formData.value.system_id || undefined,
       });
     }
     modalOpen.value = false;

@@ -88,20 +88,29 @@ const dynamicResourceOptions = computed(() => {
     return resourcesCombo.value;
   }
   // Fallback from existing permissions list
-  const map = new Map<string, string>();
+  const map = new Map<string, { id: string; code: string; name: string }>();
   permissions.value.forEach((p) => {
-    if (p.resource_code) {
-      map.set(p.resource_code, p.resource_name || p.resource_code);
+    const code = p.resource_code || "";
+    const id = (p as any).resource_id || code;
+    if (code || id) {
+      const key = id || code;
+      if (!map.has(key)) {
+        map.set(key, {
+          id: id,
+          code: code || id,
+          name: p.resource_name || code || id,
+        });
+      }
     }
   });
-  return Array.from(map.entries()).map(([code, name]) => ({
-    value: code,
-    id: code,
-    code: code,
-    label: `${code} - ${name}`,
-    title: code,
-    subtitle: name,
-    description: name,
+  return Array.from(map.values()).map((item) => ({
+    value: item.id,
+    id: item.id,
+    code: item.code,
+    label: `${item.code} - ${item.name}`,
+    title: item.code,
+    subtitle: item.name,
+    description: item.name,
   }));
 });
 
@@ -110,20 +119,29 @@ const dynamicActionOptions = computed(() => {
     return actionsCombo.value;
   }
   // Fallback from existing permissions list
-  const map = new Map<string, string>();
+  const map = new Map<string, { id: string; code: string; name: string }>();
   permissions.value.forEach((p) => {
-    if (p.action_code) {
-      map.set(p.action_code, p.action_name || p.action_code);
+    const code = p.action_code || "";
+    const id = (p as any).action_id || code;
+    if (code || id) {
+      const key = id || code;
+      if (!map.has(key)) {
+        map.set(key, {
+          id: id,
+          code: code || id,
+          name: p.action_name || code || id,
+        });
+      }
     }
   });
-  return Array.from(map.entries()).map(([code, name]) => ({
-    value: code,
-    id: code,
-    code: code,
-    label: `${code} - ${name}`,
-    title: code,
-    subtitle: name,
-    description: name,
+  return Array.from(map.values()).map((item) => ({
+    value: item.id,
+    id: item.id,
+    code: item.code,
+    label: `${item.code} - ${item.name}`,
+    title: item.code,
+    subtitle: item.name,
+    description: item.name,
   }));
 });
 

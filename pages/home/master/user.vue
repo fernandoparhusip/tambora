@@ -40,7 +40,7 @@ const userTableColumns: TableColumn[] = [
   { key: "email", label: "Email", sortable: true, type: "text" },
   { key: "nama", label: "Nama", sortable: true, type: "text" },
   { key: "nip", label: "NIP", sortable: true, type: "text" },
-  { key: "organisasi", label: "Organisasi", sortable: true, type: "text" },
+  { key: "organisasi", label: "Organisasi", sortable: true, type: "custom" },
   {
     key: "statusKaryawan",
     label: "Status Karyawan",
@@ -53,7 +53,7 @@ const userTableColumns: TableColumn[] = [
 const orgOptions = computed(() =>
   organizations.value.map((o: any) => ({
     label: `${o.nama} (${o.kode})`,
-    value: o.nama,
+    value: o.id,
   })),
 );
 
@@ -237,7 +237,18 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     },
     {
       label: "Organisasi",
-      value: u.organisasi || u.organization || u.organization_name || "-",
+      value:
+        organizations.value.find(
+          (o: any) =>
+            o.id === u.organisasi ||
+            o.id === u.organization_id ||
+            o.nama === u.organisasi ||
+            o.nama === u.organization,
+        )?.nama ||
+        u.organisasi ||
+        u.organization ||
+        u.organization_name ||
+        "-",
     },
     {
       label: "Jabatan",
@@ -358,13 +369,25 @@ const handleEdit = async (row: any) => {
     });
   }
 
+  const matchedOrg = organizations.value.find(
+    (o: any) =>
+      o.id === userObj.organization_id ||
+      o.id === userObj.organisasi ||
+      o.nama === userObj.organisasi ||
+      o.nama === userObj.organization ||
+      o.kode === userObj.organisasi,
+  );
+  const resolvedOrgId =
+    matchedOrg?.id || userObj.organization_id || userObj.organisasi || "";
+
   formData.value = {
     ...userObj,
     id: userObj.id || row.id,
     nama: userObj.nama || userObj.full_name,
     username: userObj.username || "",
     email: userObj.email || "",
-    organisasi: userObj.organisasi || userObj.organization || "",
+    organisasi: resolvedOrgId,
+    organization_id: resolvedOrgId,
     nip: userObj.nip || "",
     perNr: userObj.perNr || userObj.prnr || userObj.pernr || "",
     statusKaryawan:
@@ -444,13 +467,15 @@ const handleSave = async (data?: Record<string, any>) => {
 
     const matchedOrg = organizations.value.find(
       (o: any) =>
-        o.nama === currentData.organisasi ||
+        o.id === currentData.organisasi ||
         o.id === currentData.organization_id ||
+        o.nama === currentData.organisasi ||
         o.kode === currentData.organisasi,
     );
     const orgId =
       matchedOrg?.id ||
       currentData.organization_id ||
+      currentData.organisasi ||
       "90000000-0000-0000-0000-000000000001";
     const orgName =
       matchedOrg?.nama || currentData.organisasi || "PLN Unit Induk Distribusi";
@@ -502,7 +527,7 @@ const handleSave = async (data?: Record<string, any>) => {
       jenis_pengguna: currentData.jenis_pengguna || "Pegawai",
       main_application: "TAMBORA",
       nip: nip,
-      organization: orgName,
+      organization: orgId,
       organization_id: orgId,
       password: password,
       permission_overrides: permissionOverrides,
@@ -565,6 +590,22 @@ const handleSave = async (data?: Record<string, any>) => {
           class="flex-1 min-h-0"
           @reload="fetchUsers"
         >
+          <template #organisasi-data="{ row }">
+            <span class="text-xs font-medium text-gray-700">
+              {{
+                organizations.find(
+                  (o: any) =>
+                    o.id === row.organisasi ||
+                    o.id === row.organization_id ||
+                    o.nama === row.organisasi,
+                )?.nama ||
+                row.organisasi ||
+                row.organization ||
+                "-"
+              }}
+            </span>
+          </template>
+
           <template #statusKaryawan-data="{ row }">
             <BaseBadge
               class="w-20 min-w-[76px]"

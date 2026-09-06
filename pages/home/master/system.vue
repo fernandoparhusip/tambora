@@ -92,6 +92,8 @@ const openCreateModal = () => {
     code: "",
     name: "",
     system_type: "",
+    upk_id: "",
+    service_unit_ids: [],
     latitude: "",
     longitude: "",
     description: "",
@@ -101,7 +103,11 @@ const openCreateModal = () => {
 
 const handleEdit = (row: SystemItem) => {
   modalMode.value = "edit";
-  formData.value = { ...row };
+  formData.value = {
+    ...row,
+    upk_id: row.upk_id || "",
+    service_unit_ids: row.service_unit_ids || [],
+  };
   modalOpen.value = true;
 };
 
@@ -172,6 +178,8 @@ const handleSave = async (data?: Record<string, any>) => {
         latitude: lat,
         longitude: lng,
         description: currentData.description || "",
+        upk_id: currentData.upk_id || undefined,
+        service_unit_ids: currentData.service_unit_ids || undefined,
       });
       modalOpen.value = false;
       setTimeout(() => {
@@ -185,6 +193,8 @@ const handleSave = async (data?: Record<string, any>) => {
         latitude: lat,
         longitude: lng,
         description: currentData.description || "",
+        upk_id: currentData.upk_id || undefined,
+        service_unit_ids: currentData.service_unit_ids || undefined,
       });
       modalOpen.value = false;
       toast.success("Data sistem berhasil diperbarui.", "Sukses");
