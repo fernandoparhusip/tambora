@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type { DetailDataItem } from '~/types/master.types';
+import type { DetailDataItem } from "~/types/master.types";
 import type { TableColumn, DriverItem } from "~/types";
 import { driverFormSections } from "~/schemas/master/driver.schema";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
-const { drivers, loading, fetchDrivers, createDriver, updateDriver, deleteDriver } = useDriver();
+const {
+  drivers,
+  loading,
+  fetchDrivers,
+  getDriverById,
+  createDriver,
+  updateDriver,
+  deleteDriver,
+} = useDriver();
 
 const searchQuery = ref("");
 const currentPage = ref(1);
@@ -16,23 +25,20 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<DriverItem | null>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<DriverItem | null>(null);
 
 const driverColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "full_name", label: "Nama Pengemudi" },
+  { key: "full_name", label: "Nama" },
   { key: "phone_number", label: "No. Telepon" },
-  { key: "license_number", label: "No. SIM" },
   { key: "license_type", label: "Jenis SIM" },
+  { key: "license_number", label: "No. SIM" },
   { key: "employment_status", label: "Status" },
   { key: "address", label: "Alamat" },
-  { key: "actions", label: "Aksi" }
+  { key: "actions", label: "Aksi" },
 ];
-
 
 onMounted(async () => {
   await fetchDrivers();
@@ -45,11 +51,12 @@ watch(searchQuery, () => {
 const filteredData = computed(() => {
   if (!searchQuery.value) return drivers.value;
   const q = searchQuery.value.toLowerCase();
-  return drivers.value.filter(d =>
-    (d.full_name && d.full_name.toLowerCase().includes(q)) ||
-    (d.license_number && d.license_number.toLowerCase().includes(q)) ||
-    (d.phone_number && d.phone_number.toLowerCase().includes(q)) ||
-    (d.address && d.address.toLowerCase().includes(q))
+  return drivers.value.filter(
+    (d) =>
+      (d.full_name && d.full_name.toLowerCase().includes(q)) ||
+      (d.license_number && d.license_number.toLowerCase().includes(q)) ||
+      (d.phone_number && d.phone_number.toLowerCase().includes(q)) ||
+      (d.address && d.address.toLowerCase().includes(q)),
   );
 });
 
@@ -58,8 +65,12 @@ const paginatedData = computed(() => {
   return filteredData.value.slice(start, start + pageSize.value);
 });
 
-const modalTitle = computed(() => modalMode.value === "edit" ? "Edit Data Driver" : "Tambah Data Driver");
-const modalSubtitle = computed(() => modalMode.value === "edit" ? "Form Ubah Driver" : "Form Tambah Driver");
+const modalTitle = computed(() =>
+  modalMode.value === "edit" ? "Edit Data Driver" : "Tambah Data Driver",
+);
+const modalSubtitle = computed(() =>
+  modalMode.value === "edit" ? "Form Ubah Driver" : "Form Tambah Driver",
+);
 
 const openCreateModal = () => {
   modalMode.value = "create";
@@ -68,33 +79,15 @@ const openCreateModal = () => {
     phone_number: "",
     nik: "",
     license_number: "",
-    license_type: "SIM A",
-    employment_status: "Aktif",
+    license_type: "",
+    employment_status: "",
     birth_place: "",
     birth_date: "",
     employment_start_date: "",
     address: "",
-    description: ""
+    description: "",
   };
   modalOpen.value = true;
-};
-
-const handleView = (row: DriverItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-};
-
-const closeDetailModal = () => {
-  isDetailModalOpen.value = false;
-  detailRecord.value = null;
-};
-
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    const rec = detailRecord.value;
-    closeDetailModal();
-    handleEdit(rec);
-  }
 };
 
 const handleEdit = (row: DriverItem) => {
@@ -102,6 +95,19 @@ const handleEdit = (row: DriverItem) => {
   formData.value = { ...row };
   modalOpen.value = true;
 };
+
+// Universal Async Detail Management (Guarded against race conditions & memory leaks)
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<DriverItem>({
+  fetchDetail: (id) => getDriverById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const handleDelete = (row: DriverItem) => {
   deleteTarget.value = row;
@@ -155,14 +161,19 @@ const handleSave = async () => {
         full_name: formData.value.full_name.trim(),
         phone_number: formData.value.phone_number?.trim() || "+6281234567890",
         nik,
-        license_number: formData.value.license_number?.trim() || `SIM-${Date.now().toString().slice(-6)}`,
-        license_type: formData.value.license_type || "SIM A",
+        license_number:
+          formData.value.license_number?.trim() ||
+          `SIM-${Date.now().toString().slice(-6)}`,
+        license_type: formData.value.license_type?.trim() || "",
         birth_place: formData.value.birth_place?.trim() || "Mataram",
         birth_date: formData.value.birth_date || "1990-01-01",
-        employment_start_date: formData.value.employment_start_date || "2024-01-01",
+        employment_start_date:
+          formData.value.employment_start_date || "2024-01-01",
         employment_status: formData.value.employment_status || "Aktif",
         address: formData.value.address?.trim() || "Kota Bima",
-        description: formData.value.description?.trim() || "Pengemudi kendaraan operasional"
+        description:
+          formData.value.description?.trim() ||
+          "Pengemudi kendaraan operasional",
       });
     } else {
       await updateDriver(formData.value.id, {
@@ -170,7 +181,8 @@ const handleSave = async () => {
         phone_number: formData.value.phone_number?.trim() || "+6281234567890",
         employment_status: formData.value.employment_status || "Aktif",
         address: formData.value.address?.trim() || "Kota Bima",
-        description: formData.value.description?.trim() || "Pengemudi operasional"
+        description:
+          formData.value.description?.trim() || "Pengemudi operasional",
       });
     }
     modalOpen.value = false;
@@ -192,12 +204,22 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     { label: "NIK", value: detailRecord.value.nik || "-" },
     { label: "Nomor SIM", value: detailRecord.value.license_number || "-" },
     { label: "Jenis SIM", value: detailRecord.value.license_type || "-" },
-    { label: "Status Bekerja", value: detailRecord.value.employment_status || "Aktif", isStatus: true },
+    {
+      label: "Status Bekerja",
+      value: detailRecord.value.employment_status || "Aktif",
+      isStatus: true,
+    },
     { label: "Tempat Lahir", value: detailRecord.value.birth_place || "-" },
-    { label: "Tanggal Lahir", value: formatDateDisplay(detailRecord.value.birth_date) },
-    { label: "Mulai Bekerja", value: formatDateDisplay(detailRecord.value.employment_start_date) },
+    {
+      label: "Tanggal Lahir",
+      value: formatDateDisplay(detailRecord.value.birth_date),
+    },
+    {
+      label: "Mulai Bekerja",
+      value: formatDateDisplay(detailRecord.value.employment_start_date),
+    },
     { label: "Alamat", value: detailRecord.value.address || "-" },
-    { label: "Catatan", value: detailRecord.value.description || "-" }
+    { label: "Catatan", value: detailRecord.value.description || "-" },
   ];
 });
 </script>
@@ -238,18 +260,27 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #full_name-data="{ row }">
-            <span class="text-xs text-gray-900 font-semibold">{{ row.full_name }}</span>
+            <span class="text-xs text-gray-600">{{ row.full_name }}</span>
           </template>
 
           <template #license_number-data="{ row }">
-            <BaseBadge variant="mono">
-              {{ row.license_number || '-' }}
-            </BaseBadge>
+            <span class="text-xs text-gray-600">{{
+              row.license_number || "-"
+            }}</span>
           </template>
 
           <template #employment_status-data="{ row }">
-            <BaseBadge :variant="row.employment_status === 'Aktif' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.employment_status || (row.status === 1 ? 'Aktif' : 'Nonaktif') }}
+            <BaseBadge
+              :variant="
+                row.employment_status === 'Aktif' || row.status === 1
+                  ? 'success'
+                  : 'danger'
+              "
+            >
+              {{
+                row.employment_status ||
+                (row.status === 1 ? "Aktif" : "Nonaktif")
+              }}
             </BaseBadge>
           </template>
 
@@ -257,8 +288,16 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="DRIVER" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="DRIVER" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="edit"
+                resource="DRIVER"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="DRIVER"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>
@@ -301,7 +340,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Driver"
-      subtitle="Informasi Driver"
+      subtitle="Informasi Pengemudi"
+      :loading="asyncDetailLoading"
       :record="detailRecord"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
