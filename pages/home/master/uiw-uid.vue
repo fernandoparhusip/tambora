@@ -34,9 +34,9 @@ const isDeleting = ref(false);
 
 const uiwUidColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode", label: "Kode UIW / UID" },
-  { key: "nama", label: "Nama Unit Induk" },
-  { key: "alamat", label: "Alamat Kantor" },
+  { key: "kode", label: "Kode" },
+  { key: "nama", label: "Nama" },
+  { key: "alamat", label: "Alamat" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -68,9 +68,7 @@ const modalTitle = computed(() =>
   modalMode.value === "edit" ? "Edit Data UIW / UID" : "Tambah Data UIW / UID",
 );
 const modalSubtitle = computed(() =>
-  modalMode.value === "edit"
-    ? "Form Ubah UIW / UID"
-    : "Form Tambah UIW / UID",
+  modalMode.value === "edit" ? "Form Ubah UIW / UID" : "Form Tambah UIW / UID",
 );
 
 const openCreateModal = () => {
@@ -83,8 +81,6 @@ const openCreateModal = () => {
   };
   modalOpen.value = true;
 };
-
-
 
 const handleEdit = (row: UiwUidItem) => {
   modalMode.value = "edit";
@@ -162,9 +158,9 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const u = detailRecord.value;
   return [
-    { label: "Kode UIW / UID", value: u.kode },
-    { label: "Nama Unit Induk", value: u.nama },
-    { label: "Alamat Kantor", value: u.alamat || "-" },
+    { label: "Kode", value: u.kode },
+    { label: "Nama", value: u.nama },
+    { label: "Alamat", value: u.alamat || "-" },
     { label: "Keterangan", value: u.keterangan || "-" },
   ];
 });
@@ -175,9 +171,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BasePageHeader />
 
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
-      <div class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0">
+      <div
+        class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
+      >
         <!-- Controls Bar -->
-        <div class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
+        <div
+          class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
+        >
           <div class="flex items-center gap-3">
             <BaseSearchInput v-model="searchQuery" />
           </div>
@@ -199,22 +199,32 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #kode-data="{ row }">
-            <span class="font-semibold text-gray-800 font-mono text-xs">{{ row.kode }}</span>
+            <span class="text-xs text-gray-600">{{ row.kode }}</span>
           </template>
 
           <template #nama-data="{ row }">
-            <span class="font-medium text-gray-900 text-xs">{{ row.nama }}</span>
+            <span class="text-xs text-gray-600">{{ row.nama }}</span>
           </template>
 
           <template #alamat-data="{ row }">
-            <span class="text-xs text-gray-600 line-clamp-1">{{ row.alamat || '-' }}</span>
+            <span class="text-xs text-gray-600 line-clamp-1">{{
+              row.alamat || "-"
+            }}</span>
           </template>
 
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="UIW_UID" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="UIW_UID" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="edit"
+                resource="UIW_UID"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="UIW_UID"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>
