@@ -3,10 +3,8 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, RantingItem } from "~/types";
 import { getRantingFormSections } from "~/schemas/master/ranting.schema";
 import type { DetailDataItem } from "~/types/master.types";
-import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
 import { useRanting } from "~/composables/master/useRanting";
 import { useCabang } from "~/composables/master/useCabang";
-import { formatAppDateTime } from "~/utils/formatDate";
 import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
@@ -40,8 +38,6 @@ const rantingColumns: TableColumn[] = [
   { key: "kode_cabang", label: "Kode Cabang" },
   { key: "kode_ranting", label: "Kode" },
   { key: "nama_ranting", label: "Nama" },
-  { key: "status_ranting", label: "Status Ranting" },
-  { key: "approve_status", label: "Status" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -73,9 +69,7 @@ const filteredData = computed(() => {
     (item) =>
       (item.kode_ranting && item.kode_ranting.toLowerCase().includes(q)) ||
       (item.nama_ranting && item.nama_ranting.toLowerCase().includes(q)) ||
-      (item.kode_cabang && item.kode_cabang.toLowerCase().includes(q)) ||
-      (item.status_ranting && item.status_ranting.toLowerCase().includes(q)) ||
-      (item.approve_status && item.approve_status.toLowerCase().includes(q)),
+      (item.kode_cabang && item.kode_cabang.toLowerCase().includes(q)),
   );
 });
 
@@ -99,8 +93,6 @@ const openCreateModal = () => {
     kode_cabang: "",
     kode_ranting: "",
     nama_ranting: "",
-    status_ranting: "",
-    approve_status: "",
   };
   modalOpen.value = true;
 };
@@ -123,50 +115,6 @@ const {
   fetchDetail: (id) => getRantingById(id),
   getId: (row) => row.id || row.kode_ranting,
   onEdit: (record) => handleEdit(record),
-});
-
-const formattedCreatedDate = computed(() => {
-  if (!detailRecord.value?.created_at) return "-";
-  return formatAppDateTime(detailRecord.value.created_at);
-});
-
-const activityLogs = computed<ActivityLogItem[]>(() => {
-  if (!detailRecord.value) return [];
-  const historyList = (detailRecord.value as any)?.history;
-  if (Array.isArray(historyList) && historyList.length > 0) {
-    return historyList.map((item: any) => {
-      const userName = item.user_name || "Admin";
-      const initial = userName.charAt(0).toUpperCase();
-      const actionText =
-        item.title ||
-        (item.action === "CREATE"
-          ? `Membuat Ranting ${detailRecord.value?.nama_ranting || ""}`.trim()
-          : item.action === "UPDATE"
-            ? `Mengubah Ranting ${detailRecord.value?.nama_ranting || ""}`.trim()
-            : item.action || "Aktivitas Ranting");
-      const dt = formatAppDateTime(item.created_at);
-      return {
-        initial,
-        user: userName,
-        action: actionText,
-        timestamp: dt,
-      };
-    });
-  }
-
-  const creator =
-    (detailRecord.value as any)?.created_by_name ||
-    (detailRecord.value as any)?.created_by ||
-    "Admin";
-  return [
-    {
-      initial: creator.charAt(0).toUpperCase(),
-      user: creator,
-      action:
-        `Membuat Ranting ${detailRecord.value?.nama_ranting || ""}`.trim(),
-      timestamp: formattedCreatedDate.value,
-    },
-  ];
 });
 
 const handleDelete = (row: RantingItem) => {
@@ -201,14 +149,14 @@ const handleSave = async (data: Record<string, any>) => {
       kode_cabang: data.kode_cabang,
       kode_ranting: data.kode_ranting,
       nama_ranting: data.nama_ranting,
-      status_ranting: data.status_ranting || "AKTIF",
-      approve_status: data.approve_status || "APPROVED",
     };
 
     if (modalMode.value === "create") {
       await createRanting(payload);
       modalOpen.value = false;
-      isSuccessModalOpen.value = true;
+      setTimeout(() => {
+        isSuccessModalOpen.value = true;
+      }, 150);
     } else {
       const id = formData.value.id || formData.value.kode_ranting;
       await updateRanting(id, payload);
@@ -222,14 +170,6 @@ const handleSave = async (data: Record<string, any>) => {
   }
 };
 
-const getStatusBadgeVariant = (status?: string): any => {
-  const s = (status || "").toUpperCase();
-  if (s === "APPROVED") return "success";
-  if (s === "REJECTED") return "danger";
-  if (s === "DRAFT") return "warning";
-  return "default";
-};
-
 // Detail Data Items
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
@@ -237,15 +177,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     { label: "Kode Cabang", value: detailRecord.value.kode_cabang },
     { label: "Kode", value: detailRecord.value.kode_ranting },
     { label: "Nama", value: detailRecord.value.nama_ranting },
-    {
-      label: "Status Ranting",
-      value: detailRecord.value.status_ranting || "AKTIF",
-    },
-    {
-      label: "Status",
-      value: detailRecord.value.approve_status || "APPROVED",
-      isStatus: true,
-    },
   ];
 });
 </script>
@@ -303,17 +234,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             }}</span>
           </template>
 
-          <template #status_ranting-data="{ row }">
-            <span class="text-xs font-medium text-gray-600">{{
-              row.status_ranting || "AKTIF"
-            }}</span>
-          </template>
 
-          <template #approve_status-data="{ row }">
-            <BaseBadge :variant="getStatusBadgeVariant(row.approve_status)">
-              {{ row.approve_status || "APPROVED" }}
-            </BaseBadge>
-          </template>
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
@@ -367,15 +288,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Ranting"
       subtitle="Informasi Ranting"
-      :record-id="detailRecord?.id || detailRecord?.kode_ranting"
-      :created-date="formattedCreatedDate"
-      :created-by="
-        (detailRecord as any)?.created_by_name ||
-        (detailRecord as any)?.created_by ||
-        'Admin'
-      "
+      :record="detailRecord"
       :data-items="detailDataItems"
-      :activity-logs="activityLogs"
       :loading="detailLoading || asyncDetailLoading"
       @edit="openEditFromDetail"
       @close="closeDetailModal"

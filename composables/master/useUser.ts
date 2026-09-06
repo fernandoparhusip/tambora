@@ -106,7 +106,6 @@ export const useUser = () => {
   }
 
   const createUser = async (payload: CreateUserRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<UserItem>>('/users', {
@@ -120,13 +119,10 @@ export const useUser = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat user baru.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const updateUser = async (id: string, payload: UpdateUserRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<UserItem>>(`/users/${id}`, {
@@ -140,13 +136,10 @@ export const useUser = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal mengubah data user.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const deleteUser = async (id: string) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<null | { message?: string }>>(`/users/${id}/delete`, {
@@ -157,13 +150,10 @@ export const useUser = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus user.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const updateUserPassword = async (id: string, payload: UpdateUserPasswordRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<null>>(`/users/${id}/password`, {
@@ -174,8 +164,6 @@ export const useUser = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui password user.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 

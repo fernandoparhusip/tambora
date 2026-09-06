@@ -119,7 +119,7 @@ const confirmDelete = async () => {
     isConfirmDialogOpen.value = false
     deleteTarget.value = null
   } catch (err: any) {
-    toast.error(err?.message || 'Gagal menghapus kondisi mesin.', 'Gagal Hapus')
+    // Handled by global toast in useApi
   } finally {
     isDeleting.value = false
   }
@@ -153,7 +153,7 @@ const handleSave = async () => {
       isSuccessModalOpen.value = true
     }, 150)
   } catch (err: any) {
-    toast.error(err?.message || 'Gagal menyimpan kondisi mesin.', 'Terjadi Kesalahan')
+    // Handled by global toast in useApi
   } finally {
     submitting.value = false
   }
@@ -289,6 +289,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Kondisi Mesin"
       subtitle="Informasi Kondisi Mesin"
+      :record="detailRecord"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
       @close="closeDetailModal"

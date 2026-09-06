@@ -254,7 +254,9 @@ const handleSubmit = async () => {
     }
 
     isModalOpen.value = false;
-    isSuccessModalOpen.value = true;
+    setTimeout(() => {
+      isSuccessModalOpen.value = true;
+    }, 150);
   } finally {
     submitting.value = false;
   }
@@ -439,7 +441,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Akses Permission"
       subtitle="Katalog Akses Permission"
-      :record-id="detailRecord?.id"
+      :record="detailRecord"
       :loading="isDetailLoading"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"

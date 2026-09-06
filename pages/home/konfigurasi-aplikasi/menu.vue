@@ -7,8 +7,6 @@ import type {
   UpdateMenuRequest,
 } from "~/types/master.types";
 import type { TableColumn } from "~/types";
-import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
-import { formatAppDateTime } from "~/utils/formatDate";
 import { getMenuFormSections } from "~/schemas/konfigurasi-aplikasi/menu.schema";
 import { useMenu } from "~/composables/konfigurasi-aplikasi/useMenu";
 import { useAsyncDetail } from "~/composables/useAsyncDetail";
@@ -153,7 +151,7 @@ const confirmDelete = async () => {
     deleteTarget.value = null;
     toast.success("Berhasil!", "Menu berhasil dihapus.");
   } catch (err: any) {
-    toast.error("Gagal!", err?.message || "Gagal menghapus menu.");
+    // Handled by global toast in useApi
   } finally {
     isDeleting.value = false;
   }
@@ -199,12 +197,11 @@ const handleSave = async () => {
       await createMenu(payload);
     }
     modalOpen.value = false;
-    isSuccessModalOpen.value = true;
+    setTimeout(() => {
+      isSuccessModalOpen.value = true;
+    }, 150);
   } catch (err: any) {
-    toast.error(
-      "Gagal Menyimpan!",
-      err?.message || "Terjadi kesalahan saat menyimpan data menu.",
-    );
+    // Handled by global toast in useApi
   } finally {
     submitting.value = false;
   }
@@ -220,68 +217,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   ];
 });
 
-const formattedCreatedDate = computed(() => {
-  const dt = detailRecord.value?.created_at;
-  // If dt is invalid or Go zero date (0001-01-01), fallback to history's created_at
-  if (!dt || dt.startsWith("0001-01-01")) {
-    const historyList = (detailRecord.value as any)?.history;
-    if (Array.isArray(historyList) && historyList.length > 0) {
-      const createItem =
-        historyList.find((h: any) => h.action === "CREATE") || historyList[0];
-      if (
-        createItem?.created_at &&
-        !createItem.created_at.startsWith("0001-01-01")
-      ) {
-        return formatAppDateTime(createItem.created_at);
-      }
-    }
-    return "-";
-  }
-  return formatAppDateTime(dt);
-});
-
-const activityLogs = computed<ActivityLogItem[]>(() => {
-  if (!detailRecord.value) return [];
-  const historyList = (detailRecord.value as any)?.history;
-  if (Array.isArray(historyList) && historyList.length > 0) {
-    return historyList.map((item: any) => {
-      const userName =
-        item.user_name ||
-        item.created_by_name ||
-        item.user ||
-        (detailRecord.value as any)?.created_by ||
-        "Admin";
-      const initial = (userName || "A").charAt(0).toUpperCase();
-      const actionText =
-        item.title ||
-        (item.action === "CREATE"
-          ? `Membuat Menu ${detailRecord.value?.nama || ""}`.trim()
-          : item.action === "UPDATE"
-            ? `Mengubah Menu ${detailRecord.value?.nama || ""}`.trim()
-            : item.action || "Aktivitas Menu");
-      const dt = formatAppDateTime(item.created_at || item.updated_at);
-      return {
-        initial,
-        user: userName,
-        action: actionText,
-        timestamp: dt,
-      };
-    });
-  }
-
-  const creator =
-    (detailRecord.value as any)?.created_by_name ||
-    (detailRecord.value as any)?.created_by ||
-    "Admin";
-  return [
-    {
-      initial: creator.charAt(0).toUpperCase(),
-      user: creator,
-      action: `Membuat Menu ${detailRecord.value?.nama || ""}`.trim(),
-      timestamp: formattedCreatedDate.value,
-    },
-  ];
-});
 </script>
 
 <template>
@@ -406,15 +341,8 @@ const activityLogs = computed<ActivityLogItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Menu"
       subtitle="Informasi Menu"
-      :record-id="detailRecord?.id"
+      :record="detailRecord"
       :data-items="detailDataItems"
-      :created-date="formattedCreatedDate"
-      :created-by="
-        (detailRecord as any)?.created_by_name ||
-        (detailRecord as any)?.created_by ||
-        'Admin'
-      "
-      :activity-logs="activityLogs"
       :loading="detailLoading || asyncDetailLoading"
       @close="closeDetailModal"
       @edit="openEditFromDetail()"

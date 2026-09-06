@@ -12,6 +12,7 @@ export const useOrganization = () => {
   const organizations = ref<OrganizationItem[]>([]);
   const currentOrganization = ref<OrganizationItem | null>(null);
   const loading = ref(false);
+  const detailLoading = ref(false);
   const total = ref(0);
   const error = ref<string | null>(null);
 
@@ -41,7 +42,7 @@ export const useOrganization = () => {
   };
 
   const getOrganizationById = async (id: string) => {
-    loading.value = true;
+    detailLoading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<OrganizationItem>>(`/organization/${id}`);
@@ -53,12 +54,11 @@ export const useOrganization = () => {
       error.value = err?.message || "Gagal mengambil detail organisasi.";
       throw err;
     } finally {
-      loading.value = false;
+      detailLoading.value = false;
     }
   };
 
   const createOrganization = async (payload: CreateOrganizationRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<OrganizationItem>>("/organization", {
@@ -70,13 +70,10 @@ export const useOrganization = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal membuat organisasi.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateOrganization = async (id: string, payload: UpdateOrganizationRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<OrganizationItem>>(`/organization/${id}`, {
@@ -88,13 +85,10 @@ export const useOrganization = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal mengubah organisasi.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteOrganization = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<null>>(`/organization/${id}/delete`, {
@@ -105,8 +99,6 @@ export const useOrganization = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal menghapus organisasi.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
@@ -114,6 +106,7 @@ export const useOrganization = () => {
     organizations: computed(() => organizations.value),
     currentOrganization: computed(() => currentOrganization.value),
     loading: computed(() => loading.value),
+    detailLoading: computed(() => detailLoading.value),
     total: computed(() => total.value),
     error: computed(() => error.value),
     fetchOrganizations,

@@ -138,7 +138,7 @@ const confirmDelete = async () => {
     deleteTarget.value = null;
     toast.success("Berhasil!", "Data Unit Layanan berhasil dihapus.");
   } catch (err: any) {
-    toast.error("Gagal!", err?.message || "Gagal menghapus data Unit Layanan.");
+    // Handled by global toast in useApi
   } finally {
     isDeleting.value = false;
   }
@@ -161,9 +161,11 @@ const handleSave = async () => {
       await createUnitLayanan(payload);
     }
     modalOpen.value = false;
-    isSuccessModalOpen.value = true;
+    setTimeout(() => {
+      isSuccessModalOpen.value = true;
+    }, 150);
   } catch (err: any) {
-    toast.error("Gagal Menyimpan!", err?.message || "Terjadi kesalahan saat menyimpan data.");
+    // Handled by global toast in useApi
   } finally {
     submitting.value = false;
   }
@@ -178,18 +180,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     { label: "Induk UPK", value: u.upk_nama || u.upk_id || "-" },
     { label: "Status", value: u.is_active !== false ? "Aktif" : "Non-Aktif" },
   ];
-});
-
-const createdDateFormatted = computed(() => {
-  if (!detailRecord.value?.created_at) return "-";
-  try {
-    return new Date(detailRecord.value.created_at).toLocaleString("id-ID", {
-      dateStyle: "full",
-      timeStyle: "short",
-    });
-  } catch {
-    return detailRecord.value.created_at;
-  }
 });
 </script>
 
@@ -281,9 +271,8 @@ const createdDateFormatted = computed(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Unit Layanan"
       subtitle="Informasi Unit Layanan"
-      :record-id="detailRecord?.id || detailRecord?.kode"
+      :record="detailRecord"
       :data-items="detailDataItems"
-      :created-date="createdDateFormatted"
       :loading="detailLoading || asyncDetailLoading"
       @close="closeDetailModal"
       @edit="openEditFromDetail()"

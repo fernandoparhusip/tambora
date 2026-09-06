@@ -79,7 +79,6 @@ export const useSentral = () => {
   };
 
   const createSentral = async (payload: CreateSentralRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<SentralItem>>("/sentral", {
@@ -91,13 +90,10 @@ export const useSentral = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal membuat sentral pembangkit baru.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateSentral = async (id: string, payload: UpdateSentralRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<SentralItem>>(`/sentral/${id}`, {
@@ -109,13 +105,10 @@ export const useSentral = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal mengubah data sentral.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteSentral = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<null>>(`/sentral/${id}/delete`, {
@@ -126,13 +119,10 @@ export const useSentral = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal menghapus sentral pembangkit.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const approveSentral = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<SentralItem>>(`/sentral/${id}/approve`, {
@@ -143,8 +133,6 @@ export const useSentral = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal menyetujui (approve) sentral.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

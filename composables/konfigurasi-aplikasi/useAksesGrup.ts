@@ -54,7 +54,6 @@ export const useAksesGrup = () => {
   }
 
   const createAksesGrup = async (payload: CreateAksesGrupRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<AksesGrupItem>>('/roles', {
@@ -68,13 +67,10 @@ export const useAksesGrup = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat akses grup baru.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const updateAksesGrup = async (id: string, payload: UpdateAksesGrupRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<AksesGrupItem>>(`/roles/${id}`, {
@@ -88,13 +84,10 @@ export const useAksesGrup = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal mengubah data akses grup.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const deleteAksesGrup = async (id: string) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<null>>(`/roles/${id}/delete`, {
@@ -105,8 +98,6 @@ export const useAksesGrup = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus akses grup.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 

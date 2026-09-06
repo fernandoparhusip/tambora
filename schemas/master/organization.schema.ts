@@ -5,13 +5,22 @@ export interface OrganizationSchemaOptions {
 }
 
 export const getOrganizationFormSections = (
-  options: OrganizationSchemaOptions = {}
+  options: OrganizationSchemaOptions = {},
 ): FormSectionConfig[] => {
   const parentOptions = options.parentOptions || [];
 
   return [
     {
       fields: [
+        {
+          key: "parent_id",
+          label: "Parent Organisasi",
+          type: "searchable-select",
+          placeholder: "Pilih Parent Organisasi",
+          options: parentOptions,
+          required: false,
+          colSpan: 12,
+        },
         {
           key: "kode",
           label: "Kode Organisasi",
@@ -29,47 +38,31 @@ export const getOrganizationFormSections = (
           colSpan: 6,
         },
         {
-          key: "parent_id",
-          label: "Parent Organisasi",
-          type: "searchable-select",
-          placeholder: "Pilih Parent Organisasi",
-          options: parentOptions,
-          required: false,
-          colSpan: 12,
-        },
-        {
           key: "alamat",
           label: "Alamat",
           type: "textarea",
           placeholder: "Alamat...",
-          required: false,
+          required: true,
           colSpan: 12,
           rows: 3,
-        },
-        {
-          key: "latitude",
-          label: "Latitude",
-          type: "number",
-          placeholder: "Contoh: -8.4526",
-          required: false,
-          colSpan: 6,
-        },
-        {
-          key: "longitude",
-          label: "Longitude",
-          type: "number",
-          placeholder: "Contoh: 117.4285",
-          required: false,
-          colSpan: 6,
         },
         {
           key: "keterangan",
           label: "Keterangan",
           type: "textarea",
           placeholder: "Keterangan...",
-          required: false,
+          required: true,
           colSpan: 12,
           rows: 2,
+        },
+        {
+          key: "coordinates",
+          label: "",
+          type: "coordinate-picker",
+          latKey: "latitude",
+          lngKey: "longitude",
+          required: true,
+          colSpan: 12,
         },
       ],
     },

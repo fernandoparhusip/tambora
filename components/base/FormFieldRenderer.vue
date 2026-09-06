@@ -348,13 +348,13 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
   <div class="w-full">
     <!-- Label -->
     <label
-      v-if="field.label && field.type !== 'coordinate-picker'"
+      v-if="field.label"
       :for="field.key"
       class="block text-xs font-semibold text-[#4D5E80] mb-1.5 select-none"
     >
       {{ field.label }}
       <span
-        v-if="field.required !== false && field.required !== undefined"
+        v-if="field.required"
         class="text-red-500 font-semibold ml-0.5"
         >*</span
       >
@@ -845,6 +845,11 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
             class="block text-xs font-semibold text-[#4D5E80] mb-1.5 select-none"
           >
             Latitude
+            <span
+              v-if="field.required"
+              class="text-red-500 font-semibold ml-0.5"
+              >*</span
+            >
           </label>
           <input
             :id="`${field.key}-lat`"
@@ -871,6 +876,11 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
             class="block text-xs font-semibold text-[#4D5E80] mb-1.5 select-none"
           >
             Longitude
+            <span
+              v-if="field.required"
+              class="text-red-500 font-semibold ml-0.5"
+              >*</span
+            >
           </label>
           <input
             :id="`${field.key}-lng`"

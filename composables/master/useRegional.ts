@@ -92,7 +92,6 @@ export const useRegional = () => {
   };
 
   const createRegional = async (payload: CreateRegionalRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<RegionalItem>>("/regional", {
@@ -104,13 +103,10 @@ export const useRegional = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal membuat regional.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateRegional = async (id: string, payload: UpdateRegionalRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<RegionalItem>>(`/regional/${id}`, {
@@ -122,13 +118,10 @@ export const useRegional = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal mengubah data regional.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteRegional = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<null>>(`/regional/${id}/delete`, {
@@ -139,8 +132,6 @@ export const useRegional = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal menghapus regional.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

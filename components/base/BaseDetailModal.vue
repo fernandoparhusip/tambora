@@ -19,6 +19,7 @@ export interface ActivityLogItem {
 interface Props {
   title?: string;
   subtitle?: string;
+  record?: any;
   recordId?: string;
   createdDate?: string;
   createdBy?: string;
@@ -32,6 +33,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   title: "Detail Data",
   subtitle: "Form View Detail Data",
+  record: null,
   recordId: "-",
   createdDate: "-",
   createdBy: "Admin",
@@ -47,26 +49,100 @@ const emit = defineEmits<{
 
 const isOpen = defineModel<boolean>("isOpen", { default: false });
 
+const effectiveRecordId = computed(() => {
+  if (props.recordId && props.recordId !== "-") {
+    return props.recordId;
+  }
+  const r = props.record;
+  if (!r) return "-";
+  return (
+    r.id ||
+    r.user?.id ||
+    r.kode ||
+    r.code ||
+    r.kode_regional ||
+    r.kode_cabang ||
+    r.kode_ranting ||
+    r.kode_sentral ||
+    "-"
+  );
+});
+
+const effectiveCreatedDate = computed(() => {
+  if (props.createdDate && props.createdDate !== "-") {
+    return props.createdDate;
+  }
+  const r = props.record;
+  if (!r) return "-";
+  const dt = r.created_at || r.user?.created_at;
+  if (dt && !dt.startsWith("0001-01-01")) {
+    return formatAppDateTime(dt);
+  }
+  // Check history fallback
+  const historyList = props.history?.length ? props.history : (r.history || []);
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    const createItem =
+      historyList.find((h: any) => h.action === "CREATE") || historyList[0];
+    if (
+      createItem?.created_at &&
+      !createItem.created_at.startsWith("0001-01-01")
+    ) {
+      return formatAppDateTime(createItem.created_at);
+    }
+  }
+  return "-";
+});
+
+const effectiveCreatedBy = computed(() => {
+  if (props.createdBy && props.createdBy !== "Admin") {
+    return props.createdBy;
+  }
+  const r = props.record;
+  if (!r) return "Admin";
+  return (
+    r.created_by_name ||
+    r.created_by ||
+    r.user?.created_by_name ||
+    r.user?.created_by ||
+    r.history?.[0]?.user_name ||
+    r.history?.[0]?.user ||
+    "Admin"
+  );
+});
+
 const activityLogsList = computed<ActivityLogItem[]>(() => {
   if (props.activityLogs && props.activityLogs.length > 0) {
     return props.activityLogs;
   }
-  if (
-    props.history &&
-    Array.isArray(props.history) &&
-    props.history.length > 0
-  ) {
-    return props.history.map((item: any) => {
-      const userName = item.user_name || item.user || "Admin";
+  const historyList =
+    props.history && props.history.length > 0
+      ? props.history
+      : props.record?.history && Array.isArray(props.record.history)
+        ? props.record.history
+        : [];
+
+  const cleanModuleTitle = props.title?.replace(/^Detail\s+/i, "") || "Data";
+
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    return historyList.map((item: any) => {
+      const userName =
+        item.user_name ||
+        item.created_by_name ||
+        item.user ||
+        effectiveCreatedBy.value ||
+        "Admin";
       const initial = (userName || "A").charAt(0).toUpperCase();
       const actionText =
         item.title ||
         (item.action === "CREATE"
-          ? `Membuat ${props.title?.replace(/^Detail\s+/i, "") || "Data"}`
+          ? `Membuat ${cleanModuleTitle}`
           : item.action === "UPDATE"
-            ? `Mengubah ${props.title?.replace(/^Detail\s+/i, "") || "Data"}`
+            ? `Mengubah ${cleanModuleTitle}`
             : item.action || "Aktivitas");
-      const dt = item.created_at ? formatAppDateTime(item.created_at) : "-";
+      const dt =
+        item.created_at || item.updated_at
+          ? formatAppDateTime(item.created_at || item.updated_at)
+          : "-";
       return {
         initial,
         user: userName,
@@ -75,17 +151,18 @@ const activityLogsList = computed<ActivityLogItem[]>(() => {
       };
     });
   }
+
   if (
-    (props.createdBy && props.createdBy !== "Admin") ||
-    (props.createdDate && props.createdDate !== "-")
+    (effectiveCreatedBy.value && effectiveCreatedBy.value !== "Admin") ||
+    (effectiveCreatedDate.value && effectiveCreatedDate.value !== "-")
   ) {
-    const user = props.createdBy || "Admin";
+    const user = effectiveCreatedBy.value || "Admin";
     return [
       {
         initial: user.charAt(0).toUpperCase(),
         user,
-        action: `Membuat ${props.title?.replace(/^Detail\s+/i, "") || "Data"}`,
-        timestamp: props.createdDate || "-",
+        action: `Membuat ${cleanModuleTitle}`,
+        timestamp: effectiveCreatedDate.value || "-",
       },
     ];
   }
@@ -211,7 +288,7 @@ const handleEdit = () => {
                 <h4 class="text-base font-bold text-[#2671D9]">Published</h4>
               </div>
               <p class="text-xs font-mono text-gray-400 pl-3.5">
-                {{ recordId || "-" }}
+                {{ effectiveRecordId || "-" }}
               </p>
             </div>
 
@@ -238,7 +315,7 @@ const handleEdit = () => {
                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <span>{{ createdDate || "-" }}</span>
+                  <span>{{ effectiveCreatedDate || "-" }}</span>
                 </div>
                 <div
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50/80 border border-blue-100 text-[#2671D9] text-xs font-medium"
@@ -257,7 +334,7 @@ const handleEdit = () => {
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
                   </svg>
-                  <span>{{ createdBy || "-" }}</span>
+                  <span>{{ effectiveCreatedBy || "-" }}</span>
                 </div>
               </div>
             </div>

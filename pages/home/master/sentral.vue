@@ -165,7 +165,7 @@ const confirmDelete = async () => {
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (err: any) {
-    toast.error(err?.detail || err?.message || "Gagal menghapus sentral.", "Gagal Hapus");
+    // Handled by global toast in useApi
   } finally {
     isDeleting.value = false;
   }
@@ -185,7 +185,7 @@ const confirmApprove = async () => {
     isApproveDialogOpen.value = false;
     approveTarget.value = null;
   } catch (err: any) {
-    toast.error(err?.detail || err?.message || "Gagal menyetujui sentral.", "Gagal Approval");
+    // Handled by global toast in useApi
   } finally {
     isApproving.value = false;
   }
@@ -213,7 +213,9 @@ const handleSave = async (data: Record<string, any>) => {
     if (modalMode.value === "create") {
       await createSentral(payload);
       modalOpen.value = false;
-      isSuccessModalOpen.value = true;
+      setTimeout(() => {
+        isSuccessModalOpen.value = true;
+      }, 150);
     } else {
       const id = formData.value.id || formData.value.kode_sentral;
       await updateSentral(id, payload);
@@ -221,7 +223,7 @@ const handleSave = async (data: Record<string, any>) => {
       toast.success("Data sentral berhasil diperbarui.", "Sukses");
     }
   } catch (err: any) {
-    toast.error(err?.detail || err?.message || "Gagal menyimpan data sentral.", "Terjadi Kesalahan");
+    // Handled by global toast in useApi
   } finally {
     submitting.value = false;
   }
@@ -420,7 +422,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Sentral"
       subtitle="Informasi Sentral"
-      :record-id="detailRecord?.id || detailRecord?.kode_sentral"
+      :record="detailRecord"
       :data-items="detailDataItems"
       :loading="detailLoading || asyncDetailLoading"
       @close="closeDetailModal"

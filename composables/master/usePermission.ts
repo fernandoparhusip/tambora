@@ -57,7 +57,6 @@ export const usePermission = () => {
   }
 
   const createPermission = async (payload: CreatePermissionRequest) => {
-    loading.value = true
     error.value = null
     try {
       let res: any
@@ -79,13 +78,10 @@ export const usePermission = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat permission.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const updatePermission = async (id: string, payload: UpdatePermissionRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<PermissionItem>>(`/permissions/${id}`, {
@@ -99,13 +95,10 @@ export const usePermission = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui permission.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const deletePermission = async (id: string) => {
-    loading.value = true
     error.value = null
     try {
       let res: any
@@ -123,8 +116,6 @@ export const usePermission = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus permission.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 

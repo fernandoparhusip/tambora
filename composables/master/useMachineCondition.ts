@@ -58,7 +58,6 @@ export const useMachineCondition = () => {
   };
 
   const createMachineCondition = async (payload: CreateMachineConditionRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<MachineConditionItem>>("/machine-conditions", {
@@ -70,13 +69,10 @@ export const useMachineCondition = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal membuat kondisi mesin.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateMachineCondition = async (id: string, payload: UpdateMachineConditionRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<MachineConditionItem>>(`/machine-conditions/${id}`, {
@@ -88,13 +84,10 @@ export const useMachineCondition = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal mengubah kondisi mesin.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteMachineCondition = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<null>>(`/machine-conditions/${id}/delete`, {
@@ -105,8 +98,6 @@ export const useMachineCondition = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal menghapus kondisi mesin.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

@@ -147,7 +147,33 @@ flowchart TD
 
 ---
 
-## 7. Core Architectural Principles
+## 7. Single Source of Truth (SSOT) Detail Modal & Strict Form Validation Engine
+
+```mermaid
+flowchart TD
+    subgraph SSOT_DETAIL["1. Unified Detail Modal Architecture (BaseDetailModal)"]
+        PAGE["Modul View (Master / Konfigurasi)"] -->|":record='detailRecord'"| MODAL["BaseDetailModal"]
+        MODAL --> EXTRACT_ID["Ekstraksi Published ID (id / kode / code / user.id)"]
+        MODAL --> GUARD_DATE["Filter Zero Date (0001-01-01) & Format Waktu Lokal (WIB/WITA/WIT)"]
+        MODAL --> EXTRACT_USER["Ekstraksi Pembuat (created_by_name / user.name)"]
+        MODAL --> MAP_HISTORY["Pemetaan Riwayat Aktivitas (history CREATE, UPDATE, dsb)"]
+        PAGE -->|":data-items='detailDataItems'"| CUSTOM_FIELDS["Field Spesifik Entitas"]
+    end
+
+    subgraph FORM_VALIDATION["2. Declarative Form Engine & Strict Validation"]
+        SCHEMA["Form Schema (schemas/*/*.schema.ts)"] --> FORM_MODAL["BaseFormModal (isFormValid computed)"]
+        FORM_MODAL --> CHECK_REQ{"Field required: true?"}
+        CHECK_REQ -->|"coordinate-picker"| VAL_COORDS["Wajib terisi Latitude (latKey) & Longitude (lngKey)"]
+        CHECK_REQ -->|"multi-select"| VAL_ARRAY["Wajib bukan array kosong ([])"]
+        CHECK_REQ -->|"text / select / textarea"| VAL_SCALAR["Wajib bukan string kosong / null / undefined"]
+        FORM_MODAL -->|"isFormValid === true"| BTN_SAVE["Tombol SIMPAN Aktif"]
+        FORM_MODAL -->|"isFormValid === false"| BTN_DISABLED["Tombol SIMPAN Nonaktif"]
+    end
+```
+
+---
+
+## 8. Core Architectural Principles
 1. **Separation of Concerns**:
    - **`/components/base`**: Komponen murni generik, tidak boleh memiliki keterikatan bisnis (hanya menerima props/emits/slots).
    - **`/composables`**: State reaktif, business logic, dan orkestrasi data fetching (`useApi`, `useIdleTimer`, `useAppToast`, `useFormDraft`, `useApiCache`, composable CRUD).
@@ -158,6 +184,7 @@ flowchart TD
    - Wajib menggunakan composable terpusat `useApi()` atau bawaan Nuxt (`$fetch` / `useFetch`). Dilarang memakai `axios`.
    - Menggunakan dynamic Nitro reverse proxy (`/api/v1/**`) di `nuxt.config.ts` untuk menangani routing backend dan bypass CORS.
    - Error handling terpusat otomatis memicu notifikasi Toast dan penanganan silent refresh / auto-logout saat 401 Unauthorized.
+   - State loading mutasi (`create`, `update`, `delete`) diisolasi pada form drawer (`submitting.value`) tanpa mengganggu `loading.value` tabel latar belakang.
 3. **Quality & Maintainability**:
    - Code Duplication dijaga di bawah 3% sesuai aturan SonarQube.
    - Semua fungsi `utils`, `composables`, dan `stores` wajib memiliki unit test di folder `test/` (Target Coverage > 80%).

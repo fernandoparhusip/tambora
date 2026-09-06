@@ -270,11 +270,28 @@ const isFormValid = computed(() => {
         field.required !== false &&
         field.required !== undefined
       ) {
+        if (field.type === "coordinate-picker") {
+          const latKey = field.latKey || "latitude";
+          const lngKey = field.lngKey || "longitude";
+          const latVal = formData.value?.[latKey];
+          const lngVal = formData.value?.[lngKey];
+          if (latVal === undefined || latVal === null || latVal === "") {
+            return false;
+          }
+          if (lngVal === undefined || lngVal === null || lngVal === "") {
+            return false;
+          }
+          continue;
+        }
+
         const val = formData.value?.[field.key];
         if (val === undefined || val === null || val === "") {
           return false;
         }
         if (typeof val === "string" && val.trim() === "") {
+          return false;
+        }
+        if (Array.isArray(val) && val.length === 0) {
           return false;
         }
       }

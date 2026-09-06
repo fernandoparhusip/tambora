@@ -283,8 +283,8 @@ export interface CreateOrganizationRequest {
   nama: string;
   alamat?: string;
   keterangan?: string;
-  latitude?: string;
-  longitude?: string;
+  latitude?: string | number;
+  longitude?: string | number;
   parent_id?: string;
 }
 
@@ -293,8 +293,8 @@ export interface UpdateOrganizationRequest {
   nama?: string;
   alamat?: string;
   keterangan?: string;
-  latitude?: string;
-  longitude?: string;
+  latitude?: string | number;
+  longitude?: string | number;
   parent_id?: string;
 }
 

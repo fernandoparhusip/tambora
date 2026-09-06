@@ -42,8 +42,8 @@ export interface SystemSummary {
   * `MenuItemDTO` (Master Menu): UUID, Nama, URL Route, Icon, Order, Parent ID, Status (1/0), dan Description (`/api/v1/menu`).
 * **Master Hierarki Unit PLN**:
   * `RegionalDTO`: Kode Regional, Nama Regional, Latitude, Longitude (`/api/v1/regional`).
-  * `CabangItem`: Kode Wilayah, Kode Cabang, Nama Cabang, Approve Status, Keterangan (`/api/v1/cabang`).
-  * `RantingItem`: Kode Cabang, Kode Ranting, Nama Ranting, Status Ranting (Aktif/Tidak Aktif), Approve Status (Approved/Draft/Rejected), Keterangan (`/api/v1/ranting`).
+  * `CabangItem`: Kode Wilayah, Kode Cabang, Nama Cabang, Keterangan (`/api/v1/cabang`).
+  * `RantingItem`: Kode Cabang, Kode Ranting, Nama Ranting, Keterangan (`/api/v1/ranting`).
   * `UiwUidDTO`: Kode, Nama, Alamat, Keterangan (`/api/v1/uiw-uid`).
   * `UikDTO`: Kode, Nama (`/api/v1/uik`).
   * `Up2dDTO`: UIW/UID ID, Kode, Nama, Alamat, Keterangan (`/api/v1/up2d`).
@@ -54,7 +54,7 @@ export interface SystemSummary {
   * `UserItem` (`CreateUserRequest` & `UpdateUserRequest`): 20-field schema (`access_level`, `address`, `akses_grup`, `approval_code`, `description`, `email`, `full_name`, `is_pengelola`, `is_sso`, `jabatan`, `jenis_pengguna`, `main_application`, `nip`, `organization`, `organization_id`, `password`, `permission_overrides`, `pernr`, `phone_number`, `role_assignments`, `status_karyawan`).
   * `PermissionItem`: Auto-generated `permission_key` (`{ResourceCode}.{ActionCode}`), resource ID, action ID, dan deskripsi.
   * `DriverDTO`: Master pengemudi operasional PLN.
-  * `OrganizationDTO`: Struktur hierarki unit/induk/wilayah (*parent-child*).
+  * `OrganizationDTO`: Struktur hierarki unit/induk/wilayah (*parent-child*), Latitude, Longitude, Alamat, Keterangan (`/api/v1/organization`).
   * `SystemDTO`: Master sistem ketenagalistrikan (Kode, Nama, Tipe Sistem, UPK ID, Unit Layanan IDs, Deskripsi, Latitude, Longitude) (`/api/v1/system`).
   * `AssetDTO` & `MachineConditionDTO`: Inventaris mesin pembangkit dan status kesiapan.
 

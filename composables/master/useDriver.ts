@@ -64,7 +64,6 @@ export const useDriver = () => {
   }
 
   const createDriver = async (payload: CreateDriverRequest) => {
-    loading.value = true
     error.value = null
     try {
       const body: CreateDriverRequest = {
@@ -83,13 +82,10 @@ export const useDriver = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat data pengemudi.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const updateDriver = async (id: string, payload: UpdateDriverRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<DriverItem>>(`/drivers/${id}`, {
@@ -103,13 +99,10 @@ export const useDriver = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal mengubah data pengemudi.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const deleteDriver = async (id: string) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<null>>(`/drivers/${id}/delete`, {
@@ -120,8 +113,6 @@ export const useDriver = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus pengemudi.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
