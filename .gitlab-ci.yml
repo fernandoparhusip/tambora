@@ -153,11 +153,15 @@ container-security-scan:
     name: aquasec/trivy:latest
     entrypoint: [""]
   variables:
+    GIT_STRATEGY: none
     TRIVY_NO_PROGRESS: "true"
     TRIVY_SEVERITY: "HIGH,CRITICAL"
+    TRIVY_AUTH_URL: "$CI_REGISTRY"
+    TRIVY_USERNAME: "$CI_REGISTRY_USER"
+    TRIVY_PASSWORD: "$CI_REGISTRY_PASSWORD"
   script:
     - echo "Scanning Docker image for HIGH and CRITICAL vulnerabilities..."
-    - trivy image --exit-code 0 --format table "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - trivy image --exit-code 0 --severity "$TRIVY_SEVERITY" --format table "$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
   allow_failure: true
   needs:
     - job: docker-build
