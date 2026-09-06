@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
+import { Key, RotateCcw } from "@lucide/vue";
 
 import type { DetailDataItem } from "~/types/master.types";
 import type { RoleItem, TableColumn, PermissionItem } from "~/types";
+import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
 import { useAksesGrup } from "~/composables/konfigurasi-aplikasi/useAksesGrup";
 import { usePermission } from "~/composables/master/usePermission";
 import { useAsyncDetail } from "~/composables/useAsyncDetail";
@@ -423,6 +425,50 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   ];
 });
 
+const activityLogs = computed<ActivityLogItem[]>(() => {
+  if (!detailRecord.value) return [];
+
+  const historyList = (detailRecord.value as any)?.history;
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    return historyList.map((item: any) => {
+      const userName =
+        item.user_name ||
+        item.created_by_name ||
+        item.updated_by_name ||
+        (detailRecord.value as any)?.created_by_name ||
+        "Super Administrator";
+      const initial = (userName || "S").charAt(0).toUpperCase();
+      const actionText =
+        item.title ||
+        (item.action === "CREATE"
+          ? `Membuat Akses Grup ${detailRecord.value?.name || ""}`.trim()
+          : item.action === "UPDATE"
+            ? `Mengubah Akses Grup ${detailRecord.value?.name || ""}`.trim()
+            : item.action || "Aktivitas Akses Grup");
+      const dt = formatAppDateTime(item.created_at || item.updated_at);
+      return {
+        initial,
+        user: userName,
+        action: actionText,
+        timestamp: dt,
+      };
+    });
+  }
+
+  const creator =
+    (detailRecord.value as any)?.created_by_name ||
+    (detailRecord.value as any)?.created_by ||
+    "Super Administrator";
+  return [
+    {
+      initial: creator.charAt(0).toUpperCase(),
+      user: creator,
+      action: `Membuat Akses Grup ${detailRecord.value?.name || ""}`.trim(),
+      timestamp: formattedCreatedDate.value,
+    },
+  ];
+});
+
 // Detail Modal Permissions & Search Helpers
 const permissionSearch = ref("");
 
@@ -774,6 +820,7 @@ function getPermissionTooltipContent(permKey: string): string {
         (detailRecord as any)?.created_by ||
         'Admin'
       "
+      :activity-logs="activityLogs"
       :data-items="detailDataItems"
       :loading="detailLoading || asyncDetailLoading"
       @close="closeDetailModal"

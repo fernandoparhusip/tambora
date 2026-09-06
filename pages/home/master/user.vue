@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import type {
-  DetailDataItem,
-  CreateUserRequest,
-} from "~/types/master.types";
+import type { DetailDataItem, CreateUserRequest } from "~/types/master.types";
 import type { TableColumn } from "~/types";
+import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
+import { formatAppDateTime } from "~/utils/formatDate";
 import {
   getUserFormSections,
   userValidationSchema,
@@ -65,7 +64,7 @@ const roleOptions = computed(() =>
     const code = r.code || r.Code || r.role_code || r.RoleCode || r.id;
     const name = r.name || r.Name || r.role_name || r.nama || code;
     return {
-      label: name && name !== code ? `${name} (${code})` : (name || code),
+      label: name && name !== code ? `${name} (${code})` : name || code,
       value: code,
     };
   }),
@@ -90,7 +89,7 @@ const scopeOptions = computed(() => {
 const permissionOptions = computed(() =>
   permissions.value.map((p: any) => {
     const key = p.permission_key || p.Key || p.id;
-    const desc = p.description || p.Description || p.name || '';
+    const desc = p.description || p.Description || p.name || "";
     return {
       label: desc ? `${key} - ${desc}` : key,
       value: key,
@@ -218,61 +217,128 @@ const closeUserDetailModal = () => {
 const detailModalTitle = computed(() => "Detail Pengguna");
 const detailModalSubtitle = computed(() => "Informasi Pengguna");
 
-const detailDataItems = computed<DetailDataItem[]>(() => {
+const currentUserData = computed(() => {
+  if (!detailRecord.value) return null;
+  return detailRecord.value.user || detailRecord.value;
+});
+
+const formattedCreatedDate = computed(() => {
+  const u = currentUserData.value;
+  const dt = u?.created_at;
+  if (!dt || dt.startsWith("0001-01-01")) {
+    const historyList = (detailRecord.value as any)?.history || u?.history;
+    if (Array.isArray(historyList) && historyList.length > 0) {
+      const createItem =
+        historyList.find((h: any) => h.action === "CREATE") || historyList[0];
+      if (
+        createItem?.created_at &&
+        !createItem.created_at.startsWith("0001-01-01")
+      ) {
+        return formatAppDateTime(createItem.created_at);
+      }
+    }
+    return "-";
+  }
+  return formatAppDateTime(dt);
+});
+
+const activityLogs = computed<ActivityLogItem[]>(() => {
   if (!detailRecord.value) return [];
+  const u = currentUserData.value;
+  const historyList = (detailRecord.value as any)?.history || u?.history || [];
+
+  if (Array.isArray(historyList) && historyList.length > 0) {
+    return historyList.map((item: any) => {
+      const userName =
+        item.user_name ||
+        item.created_by_name ||
+        item.user ||
+        u?.full_name ||
+        u?.nama ||
+        "Admin";
+      const initial = (userName || "A").charAt(0).toUpperCase();
+      const actionText =
+        item.title ||
+        (item.action === "CREATE"
+          ? `Membuat Pengguna ${u?.full_name || u?.nama || ""}`.trim()
+          : item.action === "UPDATE"
+            ? `Mengubah Pengguna ${u?.full_name || u?.nama || ""}`.trim()
+            : item.action || "Aktivitas Pengguna");
+      const dt = formatAppDateTime(item.created_at || item.updated_at);
+      return {
+        initial,
+        user: userName,
+        action: actionText,
+        timestamp: dt,
+      };
+    });
+  }
+
+  const creator =
+    (detailRecord.value as any)?.created_by_name ||
+    u?.created_by_name ||
+    u?.created_by ||
+    "Admin";
+  return [
+    {
+      initial: creator.charAt(0).toUpperCase(),
+      user: creator,
+      action: `Membuat Pengguna ${u?.full_name || u?.nama || ""}`.trim(),
+      timestamp: formattedCreatedDate.value,
+    },
+  ];
+});
+
+const detailDataItems = computed<DetailDataItem[]>(() => {
+  if (!currentUserData.value) return [];
+  const u = currentUserData.value;
   const items: DetailDataItem[] = [
     {
-      label: "Nama Lengkap",
-      value: detailRecord.value.nama || detailRecord.value.full_name,
+      label: "Nama",
+      value: u.nama || u.full_name || u.name || "-",
     },
-    { label: "Email", value: detailRecord.value.email || "-" },
-    { label: "Username", value: detailRecord.value.username || "-" },
-    { label: "NIP", value: detailRecord.value.nip || "-" },
+    { label: "Email", value: u.email || "-" },
+    { label: "Username", value: u.username || "-" },
+    { label: "NIP", value: u.nip || "-" },
     {
-      label: "No. Pekerja (PERNR)",
-      value: detailRecord.value.pernr || detailRecord.value.prnr || "-",
+      label: "PerNR",
+      value: u.pernr || u.prnr || u.perNr || "-",
     },
     {
       label: "Organisasi",
-      value:
-        detailRecord.value.organisasi ||
-        detailRecord.value.organization ||
-        "-",
+      value: u.organisasi || u.organization || u.organization_name || "-",
     },
     {
       label: "Jabatan",
-      value: detailRecord.value.jabatan || "Manager Operasi",
+      value: u.jabatan || "-",
     },
     {
       label: "Role Akses",
       value:
         detailRoles.value.length > 0
           ? detailRoles.value
-              .map((r: any) => r.role_name || r.role_code)
+              .map((r: any) => r.role_name || r.name || r.role_code)
               .join(", ")
-          : detailRecord.value.aksesLevel ||
-            detailRecord.value.role_assignments?.[0]?.role_code ||
+          : u.aksesLevel ||
+            u.akses_grup ||
+            u.role_assignments?.[0]?.role_code ||
             "-",
     },
     {
       label: "Status Karyawan",
       value:
-        detailRecord.value.statusKaryawan ||
-        (detailRecord.value.status === 1 || detailRecord.value.status === "1"
-          ? "Aktif"
-          : "Nonaktif"),
+        u.status_karyawan ||
+        u.statusKaryawan ||
+        (u.status === 1 || u.status === "1" ? "Aktif" : "Nonaktif"),
       isStatus: true,
     },
     {
       label: "Alamat",
-      value: detailRecord.value.address || detailRecord.value.alamat || "-",
+      value: u.address || u.alamat || "-",
     },
     {
       label: "No. Telp",
-      value:
-        detailRecord.value.phone_number ||
-        detailRecord.value.noTelp ||
-        "-",
+      value: u.phone_number || u.noTelp || u.phone || "-",
     },
   ];
   return items;
@@ -306,54 +372,61 @@ const getPermissionTooltipContent = (p: any) => {
 
 const handleEdit = async (row: any) => {
   modalMode.value = "edit";
+  const userObj = row?.user || row;
   let matchedRole = "ORG_ADMIN";
-  if (row.role_assignments && row.role_assignments.length > 0) {
-    matchedRole = row.role_assignments[0].role_code;
-  } else if (row.aksesLevel) {
-    matchedRole = row.aksesLevel;
-  } else if (row.role) {
-    matchedRole = row.role;
+  if (detailRoles.value && detailRoles.value.length > 0) {
+    matchedRole =
+      detailRoles.value[0].role_code ||
+      detailRoles.value[0].role_name ||
+      matchedRole;
+  } else if (userObj.role_assignments && userObj.role_assignments.length > 0) {
+    matchedRole = userObj.role_assignments[0].role_code;
+  } else if (userObj.aksesLevel) {
+    matchedRole = userObj.aksesLevel;
+  } else if (userObj.role) {
+    matchedRole = userObj.role;
   }
 
   // Prepopulate permissions
   const selectedPermissions: string[] = [];
-  if (Array.isArray(row.permission_overrides)) {
-    row.permission_overrides.forEach((o: any) => {
+  if (Array.isArray(userObj.permission_overrides)) {
+    userObj.permission_overrides.forEach((o: any) => {
       if (o.is_granted && o.permission_key) {
         selectedPermissions.push(o.permission_key);
       }
     });
-  } else if (Array.isArray(row.permissions)) {
-    row.permissions.forEach((p: any) => {
+  } else if (Array.isArray(userObj.permissions)) {
+    userObj.permissions.forEach((p: any) => {
       const key = typeof p === "string" ? p : p.permission_key || p.Key || p.id;
       if (key) selectedPermissions.push(key);
     });
   }
 
   formData.value = {
-    ...row,
-    id: row.id,
-    nama: row.nama || row.full_name,
-    username: row.username || "",
-    email: row.email || "",
-    organisasi: row.organisasi || row.organization || "",
-    nip: row.nip || "",
-    perNr: row.perNr || row.prnr || "",
+    ...userObj,
+    id: userObj.id || row.id,
+    nama: userObj.nama || userObj.full_name,
+    username: userObj.username || "",
+    email: userObj.email || "",
+    organisasi: userObj.organisasi || userObj.organization || "",
+    nip: userObj.nip || "",
+    perNr: userObj.perNr || userObj.prnr || userObj.pernr || "",
     statusKaryawan:
-      row.status === 0 ||
-      row.status === "0" ||
-      row.statusKaryawan === "Nonaktif"
+      userObj.status === 0 ||
+      userObj.status === "0" ||
+      userObj.status_karyawan === "Nonaktif" ||
+      userObj.statusKaryawan === "Nonaktif"
         ? "Nonaktif"
         : "Aktif",
     aksesLevel: matchedRole,
-    scopeLevel: row.access_level || "CABANG",
+    scopeLevel: userObj.access_level || "CABANG",
     permissions: selectedPermissions,
-    tipe: row.is_sso ? "SSO PLN" : row.tipe || "SSO PLN",
-    akunPengelola: Boolean(row.is_pengelola || row.akunPengelola),
-    pengelola: row.pengelola || "Sewa",
-    jabatan: row.jabatan || "Staff",
-    noTelp: row.phone_number || row.noTelp || "",
-    alamat: row.address || row.alamat || "",
+    tipe: userObj.is_sso ? "SSO PLN" : userObj.tipe || "SSO PLN",
+    akunPengelola: Boolean(userObj.is_pengelola || userObj.akunPengelola),
+    pengelola: userObj.pengelola || "Sewa",
+    jabatan: userObj.jabatan || "Staff",
+    noTelp: userObj.phone_number || userObj.noTelp || "",
+    alamat: userObj.address || userObj.alamat || "",
   };
   clearErrors();
   modalOpen.value = true;
@@ -424,11 +497,8 @@ const handleSave = async (data?: Record<string, any>) => {
       currentData.organization_id ||
       "90000000-0000-0000-0000-000000000001";
     const orgName =
-      matchedOrg?.nama ||
-      currentData.organisasi ||
-      "PLN Unit Induk Distribusi";
-    const isSso =
-      currentData.tipe === "SSO PLN" || currentData.is_sso === true;
+      matchedOrg?.nama || currentData.organisasi || "PLN Unit Induk Distribusi";
+    const isSso = currentData.tipe === "SSO PLN" || currentData.is_sso === true;
     const isPengelola = Boolean(
       currentData.akunPengelola || currentData.is_pengelola,
     );
@@ -440,12 +510,8 @@ const handleSave = async (data?: Record<string, any>) => {
     const jabatan = currentData.jabatan || "Manager Operasi";
     const nip = currentData.nip || "";
     const pernr =
-      currentData.perNr ||
-      currentData.pernr ||
-      currentData.prnr ||
-      "";
-    const phoneNumber =
-      currentData.noTelp || currentData.phone_number || "";
+      currentData.perNr || currentData.pernr || currentData.prnr || "";
+    const phoneNumber = currentData.noTelp || currentData.phone_number || "";
     const password = currentData.password || "Password123!";
 
     // Build permission overrides from multi-select array
@@ -471,9 +537,9 @@ const handleSave = async (data?: Record<string, any>) => {
       approval_code: currentData.approval_code || "APP-001",
       description: `User ${roleCode} unit ${orgName}`,
       email: currentData.email,
-      username: currentData.username || currentData.email?.split("@")[0] || "user_pln",
-      full_name:
-        currentData.nama || currentData.full_name || "Pegawai PLN",
+      username:
+        currentData.username || currentData.email?.split("@")[0] || "user_pln",
+      full_name: currentData.nama || currentData.full_name || "Pegawai PLN",
       is_pengelola: isPengelola,
       is_sso: isSso,
       jabatan: jabatan,
@@ -555,8 +621,16 @@ const handleSave = async (data?: Record<string, any>) => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="USER" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="USER" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="edit"
+                resource="USER"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="USER"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>
@@ -602,16 +676,15 @@ const handleSave = async (data?: Record<string, any>) => {
       v-model:is-open="isDetailModalOpen"
       :title="detailModalTitle"
       :subtitle="detailModalSubtitle"
-      :record-id="detailRecord?.id"
+      :record-id="currentUserData?.id || detailRecord?.id"
       :loading="isDetailLoading"
-      :created-date="
-        detailRecord?.created_at
-          ? new Date(detailRecord.created_at).toLocaleString('id-ID', {
-              dateStyle: 'full',
-              timeStyle: 'short',
-            })
-          : 'Tidak tersedia'
+      :created-date="formattedCreatedDate"
+      :created-by="
+        currentUserData?.created_by_name ||
+        currentUserData?.created_by ||
+        'Admin'
       "
+      :activity-logs="activityLogs"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
       @close="closeUserDetailModal"
@@ -620,7 +693,9 @@ const handleSave = async (data?: Record<string, any>) => {
         <div class="mt-4 pt-4 border-t border-gray-100 space-y-4">
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+              <span
+                class="text-xs font-bold text-gray-700 flex items-center gap-1.5"
+              >
                 <KeyRound class="w-4 h-4 text-emerald-600" />
                 Akses Permission
               </span>
@@ -645,9 +720,24 @@ const handleSave = async (data?: Record<string, any>) => {
               v-if="isDetailLoading"
               class="flex items-center justify-center py-4 text-xs text-gray-400 gap-2"
             >
-              <svg class="animate-spin h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              <svg
+                class="animate-spin h-4 w-4 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
               </svg>
               <span>Memuat relasi hak akses user...</span>
             </div>

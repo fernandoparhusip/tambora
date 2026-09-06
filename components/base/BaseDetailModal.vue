@@ -51,7 +51,11 @@ const activityLogsList = computed<ActivityLogItem[]>(() => {
   if (props.activityLogs && props.activityLogs.length > 0) {
     return props.activityLogs;
   }
-  if (props.history && Array.isArray(props.history) && props.history.length > 0) {
+  if (
+    props.history &&
+    Array.isArray(props.history) &&
+    props.history.length > 0
+  ) {
     return props.history.map((item: any) => {
       const userName = item.user_name || item.user || "Admin";
       const initial = (userName || "A").charAt(0).toUpperCase();
@@ -207,7 +211,7 @@ const handleEdit = () => {
                 <h4 class="text-base font-bold text-[#2671D9]">Published</h4>
               </div>
               <p class="text-xs font-mono text-gray-400 pl-3.5">
-                {{ recordId || "0da6128901-12315217hcabi-1267hxacbakjn" }}
+                {{ recordId || "-" }}
               </p>
             </div>
 
@@ -234,9 +238,7 @@ const handleEdit = () => {
                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <span>{{
-                    createdDate || "Selasa, 18 November 2025 13:20"
-                  }}</span>
+                  <span>{{ createdDate || "-" }}</span>
                 </div>
                 <div
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50/80 border border-blue-100 text-[#2671D9] text-xs font-medium"
@@ -255,7 +257,7 @@ const handleEdit = () => {
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
                   </svg>
-                  <span>{{ createdBy || "Admin" }}</span>
+                  <span>{{ createdBy || "-" }}</span>
                 </div>
               </div>
             </div>
@@ -330,9 +332,21 @@ const handleEdit = () => {
             </template>
 
             <template v-else-if="activityLogsList.length === 0">
-              <div class="flex flex-col items-center justify-center py-8 text-gray-400 text-xs text-center">
-                <svg class="w-7 h-7 mb-2 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div
+                class="flex flex-col items-center justify-center py-8 text-gray-400 text-xs text-center"
+              >
+                <svg
+                  class="w-7 h-7 mb-2 text-gray-300"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 <span>Belum ada riwayat status</span>
               </div>
@@ -348,10 +362,12 @@ const handleEdit = () => {
                 <div
                   class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0"
                 >
-                  {{ log.initial || "A" }}
+                  {{ log.initial || "-" }}
                 </div>
                 <div>
-                  <h5 class="text-xs font-bold text-gray-800">{{ log.user }}</h5>
+                  <h5 class="text-xs font-bold text-gray-800">
+                    {{ log.user }}
+                  </h5>
                   <p class="text-[11px] text-blue-600 font-medium mt-0.5">
                     {{ log.action }}
                   </p>

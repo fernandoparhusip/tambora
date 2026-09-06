@@ -4,9 +4,19 @@ Semua perubahan penting pada proyek ini didokumentasikan di berkas ini.
 Format penulisan mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/),
 dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.7.1] - 2026-09-06
+
+### Sinkronisasi Riwayat Modal Detail, Guard Zero Date & Profil Pengguna
+
+- **guard-zero-date:** Filter tanggal nol Go (`0001-01-01` / tahun < 1970) pada [`utils/formatDate.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/utils/formatDate.ts) dengan fallback `"-"`. Format waktu lokal dengan zona WIB, WITA, WIT.
+- **sinkronisasi-riwayat-modal-detail:** Binding array `history` backend (`CREATE` & `UPDATE`) ke riwayat aktivitas modal detail pada [`pages/home/konfigurasi-aplikasi/menu.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/menu.vue) dan [`pages/home/konfigurasi-aplikasi/akses-grup.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/akses-grup.vue).
+- **pembongkaran-data-pengguna:** Ekstraksi objek `detailRecord.value.user` pada [`pages/home/master/user.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/user.vue) untuk field profil, Published ID, riwayat aktivitas, dan payload edit data.
+- **perbaikan-komponen-ikon-akses-grup:** Import komponen `Key` dan `RotateCcw` pada [`pages/home/konfigurasi-aplikasi/akses-grup.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/akses-grup.vue).
+- **pembersihan-fallback-modal-detail:** Ganti fallback tanggal hardcoded pada [`components/base/BaseDetailModal.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseDetailModal.vue) menjadi `"-"`.
+
 ## [0.7.0] - 2026-09-05
 
-### 🛡️ Pemantau Sesi Inaktivitas, Form Draft, Desain Kartu Hak Akses, Paritas Cabang/Ranting, Master Sistem & Pembersihan Copywriting
+### Pemantau Sesi Inaktivitas, Form Draft, Desain Kartu Hak Akses, Paritas Cabang/Ranting, Master Sistem & Pembersihan Copywriting
 
 - **keselarasan-master-ranting-dan-cabang:** Memulihkan status approval (`approve_status`) pada Master Ranting ([`schemas/master/ranting.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/ranting.schema.ts), [`pages/home/master/ranting.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/ranting.vue)):
   - Memisahkan secara tegas antara "Status Ranting" (AKTIF / TIDAK AKTIF) dan "Status" approval (APPROVED / DRAFT / REJECTED).
@@ -18,7 +28,7 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
   - Menghubungkan riwayat aktivitas dinamis langsung ke komponen `<BaseDetailModal />`.
   - Mengganti seluruh pemanggilan notifikasi native `alert()` browser dengan notifikasi toast elegan via `useAppToast()`.
   - Mengintegrasikan pemilih koordinat peta OpenLayers (`coordinate-picker` / `BaseMap`) dengan dukungan nilai desimal presisi (`step="any"`).
-- **pembersihan-copywriting-dan-buzzwords:** Menghapus seluruh AI buzzwords (*enterprise*, *seamless*, *match sempurna*) dari kode dan berkas dokumentasi:
+- **pembersihan-copywriting-dan-buzzwords:** Menghapus seluruh AI buzzwords (_enterprise_, _seamless_, _match sempurna_) dari kode dan berkas dokumentasi:
   - Menyeragamkan seluruh subtitle modal detail menjadi format bersih `"Informasi [Nama Modul]"` di 16 halaman.
   - Menyeragamkan seluruh subtitle form drawer menjadi `"Form Tambah [Modul]"` dan `"Form Ubah [Modul]"`.
   - Menyederhanakan label dan placeholder schema yang bertele-tele di seluruh berkas `schemas/master/`.
@@ -27,13 +37,13 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
   - Mengganti tampilan tabel matriks lama menjadi kartu interaktif dengan switch On/Off.
   - Menambahkan toggle "Aktifkan Semua Hak Akses" untuk memilih atau membatalkan seluruh izin sekaligus.
   - Menambahkan filter berdasarkan modul dan pencarian langsung pada daftar hak akses.
-  - Menyelaraskan format label "Daftar Hak Akses" dengan field form lainnya serta menetapkan field Deskripsi sebagai wajib diisi (*required*).
+  - Menyelaraskan format label "Daftar Hak Akses" dengan field form lainnya serta menetapkan field Deskripsi sebagai wajib diisi (_required_).
 - **perbaikan-tooltip:** Menyesuaikan ukuran font tooltip PrimeVue menjadi 12px dan memastikan teks tampil penuh dalam satu baris tanpa terpotong ([`assets/css/primevue-overrides.css`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/assets/css/primevue-overrides.css)).
 - **pemantau-inaktivitas-sesi:** Pembaruan logika pengecekan inaktivitas sesi pada [`composables/useIdleTimer.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/useIdleTimer.ts) menggunakan selisih waktu sistem (`Date.now()`):
   - Hitung mundur tetap akurat dan tidak tereset otomatis saat pengguna berpindah tab atau layar terkunci.
   - Menampilkan dialog peringatan sesi 2 menit sebelum sesi otomatis dikeluarkan.
   - Menyediakan fungsi bantu pengujian cepat via konsol browser (`window.__testIdleWarning()` dan `window.__testIdleExpired()`).
-- **urutan-tampilan-modal-z-index:** Penyesuaian urutan tumpukan modal (*stacking context*) agar dialog peringatan sesi ([`BaseIdleWarningModal.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseIdleWarningModal.vue)) dan konfirmasi ([`BaseConfirmDialog.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseConfirmDialog.vue)) selalu berada di lapisan teratas tanpa tertutup oleh drawer form.
+- **urutan-tampilan-modal-z-index:** Penyesuaian urutan tumpukan modal (_stacking context_) agar dialog peringatan sesi ([`BaseIdleWarningModal.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseIdleWarningModal.vue)) dan konfirmasi ([`BaseConfirmDialog.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseConfirmDialog.vue)) selalu berada di lapisan teratas tanpa tertutup oleh drawer form.
 - **penyimpanan-draf-otomatis-form:** Peningkatan mekanisme auto-save draf formulir pada [`BaseFormModal.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseFormModal.vue) dan [`composables/useFormDraft.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/useFormDraft.ts):
   - Deteksi otomatis primary key record data untuk mencegah tabrakan draf antar entitas yang berbeda.
   - Banner pemulihan draf hanya muncul jika data benar-benar berubah, lengkap dengan tombol pulihkan atau buang draf.
@@ -46,10 +56,9 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 - **pengaman-rute-cold-start:** Menyempurnakan [`middleware/auth.global.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/middleware/auth.global.ts) saat reload halaman agar profil pengguna dimuat terlebih dahulu sebelum rute divalidasi.
 - **penyempurnaan-modul-konfigurasi:** Penyelarasan skema dan composable pada modul Master Menu ([`menu.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/menu.vue)) dan Akses Level ([`akses-level.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/akses-level.vue)) sesuai endpoint API terbaru.
 
-
 ## [0.6.0] - 2026-09-02
 
-### 🏢 8 Modul Baru Swagger OpenAPI, Standarisasi Form Pengguna, Matrix Hak Akses Tablet & Dynamic RBAC
+### 8 Modul Baru Swagger OpenAPI, Standarisasi Form Pengguna, Matrix Hak Akses Tablet & Dynamic RBAC
 
 - **standarisasi-form-pengguna:** Mentransformasi modul Master Pengguna ([`pages/home/master/user.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/user.vue)) menjadi single-page drawer `BaseFormModal` terpadu tanpa tab manual, tersusun rapi dalam 4 seksi logis:
   1. **Identitas Akun:** `tipe` (radio SSO/Non-SSO), `nama`, `email`, `nip`, `password` (otomatis disembunyikan jika SSO).
@@ -81,7 +90,7 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 
 ## [0.5.0] - 2026-09-01
 
-### ⚙️ Modul Konfigurasi Aplikasi, User 20-Field Payload, Rich Permission Tooltip & BaseTable Sticky Fix
+### Modul Konfigurasi Aplikasi, User 20-Field Payload, Rich Permission Tooltip & BaseTable Sticky Fix
 
 - **modul-konfigurasi-aplikasi:** Membangun modul khusus `konfigurasi-aplikasi` yang terpisah rapi dari Master Data:
   - **Halaman:** [`pages/home/konfigurasi-aplikasi/akses-level.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/akses-level.vue) (migrasi dari Scope) dan [`pages/home/konfigurasi-aplikasi/akses-grup.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/akses-grup.vue) (migrasi dari Role).
@@ -94,17 +103,17 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 - **auto-key-dan-payload-izin:** Memperbarui form Permission untuk mengirimkan struktur 4-field Go (`permission_key`, `resource_id`, `action_id`, `description`) dengan auto-generate disabled `permission_key` berdasarkan resource dan action yang dipilih.
 - **pengujian-unit:** Memperluas cakupan pengujian Vitest menjadi **112 passed tests pada 18 test suites (100% hijau)**.
 
-### 🔄 Muat Ulang Tabel Terpusat, Ikon Lucide & Penyelarasan Menu Navigasi
+### Muat Ulang Tabel Terpusat, Ikon Lucide & Penyelarasan Menu Navigasi
 
 - **judul-navigasi:** Menyelaraskan judul item menu pada [`config/navigation.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/config/navigation.ts) (`Role & Hak Akses` -> `Role`, `Katalog Hak Akses (Permission)` -> `Akses Permission`) dengan pemformatan TypeScript standar.
-- **muat-ulang-tabel-terpusat:** Menambahkan tombol interaktif `[ 🔄 Muat Ulang ]` pada empty state [`components/base/BaseTable.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseTable.vue) yang memancarkan event `@reload` ke seluruh 15 halaman Master Data dan Transaksi.
+- **muat-ulang-tabel-terpusat:** Menambahkan tombol interaktif `[ Muat Ulang ]` pada empty state [`components/base/BaseTable.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseTable.vue) yang memancarkan event `@reload` ke seluruh 15 halaman Master Data dan Transaksi.
 - **komponen-ikon-lucide:** Menstandarisasi empty state tabel menggunakan komponen resmi `<Database />` dan `<RotateCw />` dari `@lucide/vue`.
 - **isolasi-loading-detail:** Memisahkan state `detailLoading` dari list `loading` pada [`composables/master/useUser.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/master/useUser.ts) dan [`composables/master/usePermission.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/master/usePermission.ts) agar tabel utama tidak berkedip saat modal detail dibuka.
 - **pengambilan-detail-izin:** Mengintegrasikan `getPermissionById(row.id)` (`GET /api/v1/permissions/:id`) pada aksi lihat detail di [`pages/home/master/permission.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/permission.vue).
 - **perbaikan-ikatan-tipe:** Memperbaiki binding prop `:items="tabOptions"` pada `<BaseTabFilter>` di [`pages/home/transaksi/pagu.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/transaksi/pagu.vue).
 - **pengujian-unit:** Mempertahankan **105 passed tests (100% hijau)** pada 17 test suites Vitest.
 
-### 👥 Multi-Select Izin Pengguna, Styling Kontrol Form & Fix Single-Root Nuxt
+### Multi-Select Izin Pengguna, Styling Kontrol Form & Fix Single-Root Nuxt
 
 - **multi-select-izin-pengguna:** Mengganti `aksesGrup` lama dengan multi-select dinamis `permissions` pada [`schemas/master/user.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/user.schema.ts) dan [`pages/home/master/user.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/user.vue).
 - **sinkronisasi-combo-izin:** Mengintegrasikan `fetchPermissionsCombo` pada `composables/master/usePermission.ts` (`POST /api/v1/permissions/combo`) dengan fallback ke `getUserById` (`GET /api/v1/users/:id`), menyinkronkan izin aktif pengguna saat edit.
@@ -118,7 +127,7 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 
 ## [0.4.0] - 2026-08-31
 
-### 🛡️ Keamanan Sistem, Metadata Perangkat, Pagu Bertab & Kebijakan Strict POST
+### Keamanan Sistem, Metadata Perangkat, Pagu Bertab & Kebijakan Strict POST
 
 - **metadata-perangkat:** Membangun utilitas [`utils/deviceMeta.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/utils/deviceMeta.ts) yang menghasilkan `X-Device-ID` persisten (UUID pada localStorage), `X-Device-Name`, `X-Browser`, dan `X-OS` yang diinjeksikan pada request login (`POST /api/v1/auth/login`) untuk kebutuhan audit trail backend dan kepatuhan SOC.
 - **standarisasi-strict-post:** Mengganti seluruh metode HTTP `PUT` dan `DELETE` di semua composables (`useUser`, `useOrganization`, `useOperasiHarian`, `usePemakaianBahanBakar`, `usePermission`) menjadi `POST /{resource}/{id}` (Update) dan `POST /{resource}/{id}/delete` (Delete) sesuai kebijakan keamanan API backend.
@@ -128,7 +137,7 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 - **perbaikan-buang-draf:** Meningkatkan `confirmDiscardChanges()` pada [`components/base/BaseFormModal.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseFormModal.vue) agar membersihkan draf dari penyimpanan dan membatalkan debounce aktif saat memilih "Buang & Tutup".
 - **tumpukan-modal-z-index:** Memperbaiki penataan z-index pada `BaseIdleWarningModal.vue` dengan kontainer `z-[100]` dan backdrop `fixed inset-0 z-[99]` untuk menjamin penutupan penuh di atas header dan tabel sticky.
 
-### 📶 Ketangguhan Jaringan & Optimasi Bandwidth Rendah (Edisi Sumbawa)
+### Ketangguhan Jaringan & Optimasi Bandwidth Rendah (Edisi Sumbawa)
 
 - **draf-otomatis-form:** Membangun composable `composables/useFormDraft.ts` dengan debounce simpan otomatis (500ms) ke penyimpanan browser, banner pemulihan draf dengan penanda waktu di `BaseFormModal.vue`, dan pembersihan otomatis setelah data berhasil disimpan.
 - **draf-halaman-transaksi:** Mengintegrasikan `draft-key` unik pada seluruh 7 halaman Transaksi (`operasi-harian`, `pemakaian-bahan-bakar`, `pembebanan`, `pagu`, `pagu-bidang`, `prognosa`, `nko`).
@@ -143,11 +152,11 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 
 ## [0.3.0] - 2026-08-28
 
-### 📶 Ketahanan Jaringan & Deteksi Offline
+### Ketahanan Jaringan & Deteksi Offline
 
 - **status-jaringan:** Mengintegrasikan `composables/useNetworkStatus.ts` yang memantau event online/offline browser dan memberikan notifikasi Toast halus serta indikator header tanpa banner antarmuka yang mengganggu.
 
-### 🎨 Antarmuka Modern & Rangkaian Animasi GSAP
+### Antarmuka Modern & Rangkaian Animasi GSAP
 
 - **ikon-menu-sidebar:** Pemuatan otomatis ikon menu SVG dinamis menggunakan `import.meta.glob('@/assets/icon/menu/*.svg')` pada `AppSidebar.vue`.
 - **pemisah-baris-tabel:** Menambahkan garis pemisah bawah (`border-b border-gray-100`) antar baris data `tbody` pada `BaseTable.vue` untuk kenyamanan visual pembacaan data.
@@ -158,30 +167,30 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 - **tombol-taktil:** Menambahkan umpan balik penekanan pegas elastis (`active:scale-[0.90]` & `active:scale-[0.96]`) pada `BaseActionButton.vue` dan `BaseExportButton.vue`.
 - **animasi-modal:** Menambahkan efek `backdrop-blur-xs` dan transisi spring zoom-in pada `BaseFormModal.vue`, `BaseDetailModal.vue`, dan `BaseConfirmDialog.vue`.
 
-### 🧭 Kompresi Modular AppSidebar & Navigasi Terpusat
+### Kompresi Modular AppSidebar & Navigasi Terpusat
 
 - **konfigurasi-navigasi:** Mengekstraksi struktur pohon navigasi 16 modul ke dalam file terpusat berorientasi tipe [`config/navigation.ts`](file:///c:/Users/USER/Documents/GitHub/tambora-frontend/config/navigation.ts), memperkecil ukuran `AppSidebar.vue` hingga ~40% dengan tetap mendukung akordion Level 3.
 - **judul-halaman-dinamis:** Memusatkan resolusi judul halaman dan breadcrumb di seluruh 16 halaman ke dalam `config/navigation.ts`, memungkinkan penggunaan `<BasePageHeader />` secara otomatis dan tersinkronisasi.
 - **pembersihan-impor-otomatis:** Menghapus seluruh impor manual komponen pada 16 halaman dan komponen dasar untuk memanfaatkan kapabilitas auto-import Nuxt 4 secara optimal.
 - **garis-pandu-menu-aktif:** Menghubungkan indikator aktif dan hover antar menu menjadi satu garis biru solid yang berkesinambungan sesuai desain Figma.
-- **animasi-masuk-submenu:** Menambahkan animasi masuk bertahap (*cascade*) saat submenu diperluas.
+- **animasi-masuk-submenu:** Menambahkan animasi masuk bertahap (_cascade_) saat submenu diperluas.
 - **auto-scroll-navigasi:** Menambahkan fitur gulir otomatis halus ke posisi menu yang sedang aktif (misalnya NKO / Prognosa).
 
-### 🛡️ Perlindungan Formulir, Standarisasi & Sistem Toast
+### Perlindungan Formulir, Standarisasi & Sistem Toast
 
 - **keselarasan-swagger:** Menyelesaikan 100% audit Swagger OpenAPI (58 endpoints). Mengintegrasikan tombol aksi CRUD lengkap (`view`, `edit`, `delete`) dan `BaseDetailModal` pada `role.vue`, `scope.vue`, `machine-condition.vue`, dan `permission.vue`.
 - **penjaga-formulir:** Mengintegrasikan Unsaved Changes Guard pada `BaseFormModal.vue` dengan tata letak kartu dan backdrop layar penuh `<Teleport to="body">` untuk mencegah kehilangan data melalui dialog konfirmasi ("Lanjut Mengisi" vs "Buang & Tutup").
 - **standarisasi-modal:** Menstandarisasi 100% modal formulir Master dan Transaksi menjadi Right Drawer seragam (`variant="drawer"`), meniadakan popup dialog yang tidak seragam.
 - **sistem-toast:** Membangun composable global `composables/useAppToast.ts` dan kontainer `components/base/BaseToastContainer.vue` dengan bilah kemajuan waktu hitung mundur animasi.
 
-### 🔒 Modernisasi Autentikasi & Keamanan Sesi
+### Modernisasi Autentikasi & Keamanan Sesi
 
 - **store-autentikasi:** Merefaktor Pinia store dengan siklus hidup cookie shift kerja 24 jam, `refreshSession()`, mutex single-flight pada error 401, dan sinkronisasi lintas-tab `BroadcastChannel('tambora_auth_channel')` pada `stores/auth.ts`.
 - **guard-autentikasi:** Memperbarui `middleware/auth.global.ts` dengan dukungan pelestarian query parameter `redirect` dan navigasi otomatis ke rute tujuan setelah login berhasil.
 - **batas-waktu-inaktif:** Menyediakan `components/base/BaseIdleWarningModal.vue` dan `composables/useIdleTimer.ts` untuk deteksi inaktivasi 28 menit disertai modal hitung mundur 2 menit.
 - **interseptor-api:** Meningkatkan `composables/useApi.ts` dengan antrean refresh mutex tunggal untuk mencegah race condition pada respons 401 secara bersamaan.
 
-### ⚡ Integrasi Transaksi (7 Modul Aktif)
+### Integrasi Transaksi (7 Modul Aktif)
 
 - **skema-transaksi:** Menstandarisasi mesin skema form khusus untuk seluruh 7 modul Transaksi di `schemas/transaksi/` dengan barrel export pada `schemas/index.ts`.
 - **transaksi-operasi-harian:** Mengintegrasikan CRUD `/api/v1/operasi-harian` mencakup parameter daya (DMN, DMP, Terpasang, Aktual), produksi energi, pemakaian bahan bakar, dan ekspor Excel di `pages/home/transaksi/operasi-harian.vue`.
@@ -201,7 +210,7 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 
 ## [0.2.0] - 2026-08-27
 
-### 🚀 Fitur & Modernisasi Arsitektur
+### Fitur & Modernisasi Arsitektur
 
 - **mesin-formulir:** Mengimplementasikan visibilitas kondisional reaktif (`hidden: (formData) => boolean`) dan status fungsional `disabled` pada `BaseFormModal.vue` dan `FormFieldRenderer.vue` dengan pembersihan otomatis payload field yang disembunyikan.
 - **skema-data:** Menstandarisasi seluruh 8 modul Master (User, Driver, Organization, System, Role, Scope, Machine Condition, Asset) ke dalam berkas konfigurasi `schemas/master/`.
@@ -210,7 +219,7 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 - **ekspor-data:** Membangun utilitas `utils/exportExcel.ts` dengan dukungan UTF-8 BOM untuk kompatibilitas Microsoft Excel menggantikan alert dummy pada `BaseExportButton`.
 - **modularisasi-tipe:** Memecah direktori `types/` ke dalam berkas domain yang terisolasi (`form.types.ts`, `table.types.ts`, `auth.types.ts`, `master.types.ts`, `operasi.types.ts`) dengan re-export terpadu pada `types/index.ts`.
 
-### 🏛️ Integrasi Master Data
+### Integrasi Master Data
 
 - **master-organisasi:** Integrasi CRUD `/api/v1/organization` dengan hierarki induk-anak, koordinat geografis (lat/lng), drawer form, dan modal detail.
 - **master-kondisi-mesin:** Integrasi CRUD `/api/v1/machine-conditions` dengan deskripsi operasional, switch status aktif, dan modal terpusat.
@@ -222,7 +231,7 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 - **master-izin:** Tampilan katalog hak akses dinamis dengan badge aksi dan penyaringan resource.
 - **menu-sidebar:** Menambahkan 4 tautan navigasi Master baru dan menstrukturkan menu ke dalam hierarki bisnis yang logis.
 
-### 🎨 Antarmuka & Sistem Komponen Reusable
+### Antarmuka & Sistem Komponen Reusable
 
 - **base-select:** Membangun komponen `BaseSelect` modern dengan filter pencarian real-time, transisi halus, tanda centang aktif, dan tinggi `h-12` khas desain PLN.
 - **base-action-button:** Membangun komponen `BaseActionButton` yang menstandarisasi tombol Lihat (Sky), Edit (Amber), dan Hapus (Red) dengan animasi mikro.
@@ -237,7 +246,7 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 
 ## [0.1.0] - 2026-08-26
 
-### 🔐 Autentikasi & Proxy Jaringan
+### Autentikasi & Proxy Jaringan
 
 - **autentikasi:** Integrasi endpoint API login riil (`POST /auth/login`).
 - **reverse-proxy:** Mengonfigurasi Nitro route proxy dinamis untuk bypass CORS otomatis pada lingkungan dev maupun production.

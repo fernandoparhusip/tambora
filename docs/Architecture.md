@@ -7,7 +7,7 @@
 - **GIS / Mapping**: OpenLayers (`ol` v10) + MapTiler Positron Vector/Raster Tiles
 - **Data Visualization**: Apache ECharts (`echarts` + `vue-echarts`)
 - **Form & Validation**: Schema-Driven Declarative Form Engine (`schemas/master/`, `schemas/transaksi/`, `schemas/konfigurasi-aplikasi/`)
-- **Testing**: Vitest + @vue/test-utils + Happy-DOM (Coverage: @vitest/coverage-v8) — **122/122 Tests Passing (100% Green)**
+- **Testing**: Vitest + @vue/test-utils + Happy-DOM (Coverage: @vitest/coverage-v8) — **148/148 Tests Passing (100% Green)**
 - **Code Quality**: Strict ESLint + SonarQube Quality Gate Grade A
 
 ---
@@ -117,7 +117,7 @@ flowchart TD
     subgraph RETRY_SYSTEM["3. Smart Network Retry (useApi)"]
         API_ERR["Server Gateway Timeout / RTO (408, 500-504)"] --> RETRY_CHECK{"Retry Count < 2?"}
         RETRY_CHECK -->|"Yes"| BACKOFF["Wait 1000ms & Retry Request"]
-        RETRY_CHECK -->|"No"| TOAST_ERR["Display Elegant Error Toast"]
+        RETRY_CHECK -->|"No"| TOAST_ERR["Display Error Toast"]
     end
 ```
 
