@@ -37,9 +37,9 @@ const isDeleting = ref(false);
 
 const upkColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode", label: "Kode UPK" },
-  { key: "nama", label: "Nama UPK" },
-  { key: "uik_nama", label: "Induk UIK" },
+  { key: "uik_nama", label: "UIK" },
+  { key: "kode", label: "Kode" },
+  { key: "nama", label: "Nama" },
   { key: "is_active", label: "Status" },
   { key: "actions", label: "Aksi" },
 ];
@@ -81,9 +81,7 @@ const modalTitle = computed(() =>
   modalMode.value === "edit" ? "Edit Data UPK" : "Tambah Data UPK",
 );
 const modalSubtitle = computed(() =>
-  modalMode.value === "edit"
-    ? "Form Ubah UPK"
-    : "Form Tambah UPK",
+  modalMode.value === "edit" ? "Form Ubah UPK" : "Form Tambah UPK",
 );
 
 const openCreateModal = () => {
@@ -92,12 +90,10 @@ const openCreateModal = () => {
     kode: "",
     nama: "",
     uik_id: "",
-    is_active: true,
+    is_active: null,
   };
   modalOpen.value = true;
 };
-
-
 
 const handleEdit = (row: UpkItem) => {
   modalMode.value = "edit";
@@ -152,7 +148,8 @@ const handleSave = async () => {
       kode: data.kode,
       nama: data.nama,
       uik_id: data.uik_id || undefined,
-      is_active: data.is_active !== undefined ? Boolean(data.is_active) : undefined,
+      is_active:
+        data.is_active !== undefined ? Boolean(data.is_active) : undefined,
     };
 
     if (modalMode.value === "edit" && data.id) {
@@ -175,9 +172,9 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const u = detailRecord.value;
   return [
-    { label: "Kode UPK", value: u.kode },
-    { label: "Nama UPK", value: u.nama },
-    { label: "Induk UIK", value: u.uik_nama || u.uik_id || "-" },
+    { label: "UIK", value: u.uik_nama || u.uik_id || "-" },
+    { label: "Kode", value: u.kode },
+    { label: "Nama", value: u.nama },
     { label: "Status", value: u.is_active !== false ? "Aktif" : "Non-Aktif" },
   ];
 });
@@ -188,9 +185,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BasePageHeader />
 
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
-      <div class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0">
+      <div
+        class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
+      >
         <!-- Controls Bar -->
-        <div class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
+        <div
+          class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
+        >
           <div class="flex items-center gap-3">
             <BaseSearchInput v-model="searchQuery" />
           </div>
@@ -211,35 +212,50 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             </span>
           </template>
 
+          <template #uik_nama-data="{ row }">
+            <span
+              v-if="row.uik_nama || row.uik_id"
+              class="text-xs text-gray-600"
+            >
+              {{ row.uik_nama || row.uik_id }}
+            </span>
+            <span v-else class="text-xs text-gray-600">-</span>
+          </template>
+
           <template #kode-data="{ row }">
-            <span class="font-semibold text-gray-800 font-mono text-xs">{{ row.kode }}</span>
+            <span class="text-xs text-gray-600">{{ row.kode }}</span>
           </template>
 
           <template #nama-data="{ row }">
-            <span class="font-medium text-gray-900 text-xs">{{ row.nama }}</span>
-          </template>
-
-          <template #uik_nama-data="{ row }">
-            <span v-if="row.uik_nama || row.uik_id" class="text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-              {{ row.uik_nama || row.uik_id }}
-            </span>
-            <span v-else class="text-xs text-gray-400 italic">-</span>
+            <span class="text-xs text-gray-600">{{ row.nama }}</span>
           </template>
 
           <template #is_active-data="{ row }">
             <span
               class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-              :class="row.is_active !== false ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'"
+              :class="
+                row.is_active !== false
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+              "
             >
-              {{ row.is_active !== false ? 'Aktif' : 'Non-Aktif' }}
+              {{ row.is_active !== false ? "Aktif" : "Non-Aktif" }}
             </span>
           </template>
 
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="UPK" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="UPK" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="edit"
+                resource="UPK"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="UPK"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>

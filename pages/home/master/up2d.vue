@@ -37,10 +37,10 @@ const isDeleting = ref(false);
 
 const up2dColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode", label: "Kode UP2D" },
-  { key: "nama", label: "Nama UP2D" },
-  { key: "uiw_uid_nama", label: "Induk UIW/UID" },
-  { key: "alamat", label: "Alamat Kantor" },
+  { key: "uiw_uid_nama", label: "UIW/UID" },
+  { key: "kode", label: "Kode" },
+  { key: "nama", label: "Nama" },
+  { key: "alamat", label: "Alamat" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -75,9 +75,7 @@ const modalTitle = computed(() =>
   modalMode.value === "edit" ? "Edit Data UP2D" : "Tambah Data UP2D",
 );
 const modalSubtitle = computed(() =>
-  modalMode.value === "edit"
-    ? "Form Ubah UP2D"
-    : "Form Tambah UP2D",
+  modalMode.value === "edit" ? "Form Ubah UP2D" : "Form Tambah UP2D",
 );
 
 const openCreateModal = () => {
@@ -91,8 +89,6 @@ const openCreateModal = () => {
   };
   modalOpen.value = true;
 };
-
-
 
 const handleEdit = (row: Up2dItem) => {
   modalMode.value = "edit";
@@ -172,10 +168,10 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const u = detailRecord.value;
   return [
-    { label: "Kode UP2D", value: u.kode },
-    { label: "Nama UP2D", value: u.nama },
-    { label: "Induk UIW / UID", value: u.uiw_uid_nama || u.uiw_uid_id || "-" },
-    { label: "Alamat Kantor", value: u.alamat || "-" },
+    { label: "UIW / UID", value: u.uiw_uid_nama || u.uiw_uid_id || "-" },
+    { label: "Kode", value: u.kode },
+    { label: "Nama", value: u.nama },
+    { label: "Alamat", value: u.alamat || "-" },
     { label: "Keterangan", value: u.keterangan || "-" },
   ];
 });
@@ -186,9 +182,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BasePageHeader />
 
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
-      <div class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0">
+      <div
+        class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
+      >
         <!-- Controls Bar -->
-        <div class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
+        <div
+          class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
+        >
           <div class="flex items-center gap-3">
             <BaseSearchInput v-model="searchQuery" />
           </div>
@@ -209,30 +209,43 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             </span>
           </template>
 
+          <template #uiw_uid_nama-data="{ row }">
+            <span
+              v-if="row.uiw_uid_nama || row.uiw_uid_id"
+              class="text-xs text-gray-600"
+            >
+              {{ row.uiw_uid_nama || row.uiw_uid_id }}
+            </span>
+            <span v-else class="text-xs text-gray-600">-</span>
+          </template>
+
           <template #kode-data="{ row }">
-            <span class="font-semibold text-gray-800 font-mono text-xs">{{ row.kode }}</span>
+            <span class="text-xs text-gray-600">{{ row.kode }}</span>
           </template>
 
           <template #nama-data="{ row }">
-            <span class="font-medium text-gray-900 text-xs">{{ row.nama }}</span>
-          </template>
-
-          <template #uiw_uid_nama-data="{ row }">
-            <span v-if="row.uiw_uid_nama || row.uiw_uid_id" class="text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-              {{ row.uiw_uid_nama || row.uiw_uid_id }}
-            </span>
-            <span v-else class="text-xs text-gray-400 italic">-</span>
+            <span class="text-xs text-gray-600">{{ row.nama }}</span>
           </template>
 
           <template #alamat-data="{ row }">
-            <span class="text-xs text-gray-600 line-clamp-1">{{ row.alamat || '-' }}</span>
+            <span class="text-xs text-gray-600 line-clamp-1">{{
+              row.alamat || "-"
+            }}</span>
           </template>
 
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="UP2D" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="UP2D" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="edit"
+                resource="UP2D"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="UP2D"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>

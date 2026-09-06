@@ -34,8 +34,8 @@ const isDeleting = ref(false);
 
 const uikColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode", label: "Kode UIK" },
-  { key: "nama", label: "Nama Unit Induk Pembangkitan" },
+  { key: "kode", label: "Kode" },
+  { key: "nama", label: "Nama" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -66,9 +66,7 @@ const modalTitle = computed(() =>
   modalMode.value === "edit" ? "Edit Data UIK" : "Tambah Data UIK",
 );
 const modalSubtitle = computed(() =>
-  modalMode.value === "edit"
-    ? "Form Ubah UIK"
-    : "Form Tambah UIK",
+  modalMode.value === "edit" ? "Form Ubah UIK" : "Form Tambah UIK",
 );
 
 const openCreateModal = () => {
@@ -79,8 +77,6 @@ const openCreateModal = () => {
   };
   modalOpen.value = true;
 };
-
-
 
 const handleEdit = (row: UikItem) => {
   modalMode.value = "edit";
@@ -154,8 +150,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const u = detailRecord.value;
   return [
-    { label: "Kode UIK", value: u.kode },
-    { label: "Nama Unit Induk Pembangkitan", value: u.nama },
+    { label: "Kode", value: u.kode },
+    { label: "Nama", value: u.nama },
   ];
 });
 </script>
@@ -165,9 +161,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <BasePageHeader />
 
     <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0 overflow-hidden">
-      <div class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0">
+      <div
+        class="flex-1 flex flex-col bg-white rounded-lg border border-gray-100 p-4 sm:p-5 shadow-2xs overflow-hidden min-h-0"
+      >
         <!-- Controls Bar -->
-        <div class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
+        <div
+          class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4"
+        >
           <div class="flex items-center gap-3">
             <BaseSearchInput v-model="searchQuery" />
           </div>
@@ -189,18 +189,26 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #kode-data="{ row }">
-            <span class="font-semibold text-gray-800 font-mono text-xs">{{ row.kode }}</span>
+            <span class="text-xs text-gray-600">{{ row.kode }}</span>
           </template>
 
           <template #nama-data="{ row }">
-            <span class="font-medium text-gray-900 text-xs">{{ row.nama }}</span>
+            <span class="text-xs text-gray-600">{{ row.nama }}</span>
           </template>
 
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="UIK" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="UIK" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="edit"
+                resource="UIK"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="UIK"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>

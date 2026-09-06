@@ -5,18 +5,18 @@ export const uikFormSections: FormSectionConfig[] = [
     fields: [
       {
         key: "kode",
-        label: "Kode UIK",
+        label: "Kode",
         type: "text",
         placeholder: "Contoh: UIK-SUL",
-        colSpan: 6,
+        colSpan: 12,
         required: true,
       },
       {
         key: "nama",
-        label: "Nama Unit Induk Pembangkitan",
+        label: "Nama",
         type: "text",
         placeholder: "Contoh: UIK Sulawesi",
-        colSpan: 6,
+        colSpan: 12,
         required: true,
       },
     ],
