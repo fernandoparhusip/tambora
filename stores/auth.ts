@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { useCookie, navigateTo } from '#app'
 import { useToast } from 'primevue/usetoast'
 import { menuItems } from '~/config/navigation'
+import { resetIdleState } from '~/composables/useIdleTimer'
 
 export interface PermissionOverride {
   permission_key: string
@@ -788,6 +789,9 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
     }
+
+    // Reset idle timer & expired modal state completely when clearing local state
+    resetIdleState(true)
   }
 
   const logout = async (redirectPath?: string) => {

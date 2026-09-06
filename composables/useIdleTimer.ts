@@ -23,6 +23,31 @@ let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let countdownInterval: ReturnType<typeof setInterval> | null = null;
 let expiredCountdownInterval: ReturnType<typeof setInterval> | null = null;
 
+/**
+ * Global reset for all idle timer states and background intervals.
+ * Safe to be called from auth store, login handlers, and 401 interceptors.
+ */
+export const resetIdleState = (_force = true) => {
+  showWarning.value = false;
+  showExpired.value = false;
+  remainingSeconds.value = 120;
+  expiredRemainingSeconds.value = 10;
+  lastActivityTime = Date.now();
+
+  if (idleTimer) {
+    clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  if (expiredCountdownInterval) {
+    clearInterval(expiredCountdownInterval);
+    expiredCountdownInterval = null;
+  }
+};
+
 export const useIdleTimer = (options: IdleTimerOptions = {}) => {
   const authStore = useAuthStore();
 
@@ -98,6 +123,8 @@ export const useIdleTimer = (options: IdleTimerOptions = {}) => {
     if (force) {
       showWarning.value = false;
       showExpired.value = false;
+      remainingSeconds.value = COUNTDOWN_SECONDS;
+      expiredRemainingSeconds.value = 10;
     }
 
     if (authStore.isLoggedIn) {
@@ -187,7 +214,8 @@ export const useIdleTimer = (options: IdleTimerOptions = {}) => {
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     heartbeatInterval = setInterval(checkIdleStatus, 2000);
 
-    resetIdleTimer();
+    // Always guarantee a fresh clean idle state when registering listeners
+    resetIdleTimer(true);
 
     // Dev helper for instant manual testing in browser console
     if (import.meta.client) {
@@ -196,6 +224,9 @@ export const useIdleTimer = (options: IdleTimerOptions = {}) => {
       };
       (window as any).__testIdleExpired = () => {
         triggerExpiredWarning();
+      };
+      (window as any).__testResetIdle = () => {
+        resetIdleState(true);
       };
     }
   };
@@ -228,6 +259,7 @@ export const useIdleTimer = (options: IdleTimerOptions = {}) => {
     triggerExpiredWarning,
     confirmExpiredLogout,
     resetIdleTimer,
+    resetIdleState,
     registerListeners,
     removeListeners,
   };

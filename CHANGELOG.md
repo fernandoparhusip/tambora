@@ -4,6 +4,15 @@ Semua perubahan penting pada proyek ini didokumentasikan di berkas ini.
 Format penulisan mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/),
 dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.7.2] - 2026-09-06
+
+### Penanganan Sesi Login saat Akun Ditabrak & Penyelarasan ID Combobox Master
+
+- **penanganan-sesi-login-dan-reset-timer:** Menambahkan fungsi global `resetIdleState(force = true)` pada [`composables/useIdleTimer.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/useIdleTimer.ts) untuk membersihkan modal timer, mematikan seluruh interval latar belakang, dan mereset waktu inaktivitas ke kondisi awal.
+- **sinkronisasi-siklus-login-dan-logout:** Mengintegrasikan pemanggilan `resetIdleState(true)` pada saat `login()` berhasil ([`composables/useAuth.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/useAuth.ts)), penghapusan sesi lokal `clearLocalState()` ([`stores/auth.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/stores/auth.ts)), serta saat menerima status `401 Unauthorized` pada interceptor [`composables/useApi.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/useApi.ts).
+- **notifikasi-sesi-ditabrak-perangkat-lain:** Menambahkan notifikasi toast khusus saat terjadi sesi ganda/ditabrak (*concurrent session*): *"Sesi Anda telah berakhir atau akun sedang digunakan di perangkat/peramban lain. Silakan login kembali."* tanpa memicu modal hitung mundur inaktivitas palsu.
+- **penyelarasan-id-combobox-master:** Menyelaraskan seluruh combobox relasional pada modul Master Data (Cabang, Ranting, Sentral, Pengguna, Permission) agar mengirimkan ID entitas (UUID) dan bukan kode/nama, dengan tetap mempertahankan nama parameter API asli backend dan menjaga label tabel/detail tetap deskriptif (*human-readable*).
+
 ## [0.7.1] - 2026-09-06
 
 ### Sinkronisasi Riwayat Modal Detail, Guard Zero Date & Profil Pengguna

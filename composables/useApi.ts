@@ -1,6 +1,7 @@
 import { useAuthStore } from "~/stores/auth";
 import { useAppToast, type ToastType } from "~/composables/useAppToast";
 import { parseApiError } from "~/utils/apiError";
+import { resetIdleState } from "~/composables/useIdleTimer";
 
 // Shared mutex lock for concurrent 401 refresh requests
 let refreshPromise: Promise<boolean> | null = null;
@@ -55,6 +56,24 @@ export const useApi = () => {
       if (context.response?.status === 401 && !isAuthEndpoint) {
         const redirectPath =
           typeof window !== "undefined" ? window.location.pathname : "/home";
+        resetIdleState(true);
+
+        const notifyConcurrentSession = () => {
+          if (import.meta.client) {
+            try {
+              const { addToast } = useAppToast();
+              addToast(
+                "warning",
+                "Sesi Anda telah berakhir atau akun sedang digunakan di perangkat/peramban lain. Silakan login kembali.",
+                "Sesi Berakhir",
+                5000,
+              );
+            } catch {
+              // Ignore toast error
+            }
+          }
+        };
+
         if (authStore.refreshToken) {
           try {
             if (!refreshPromise) {
@@ -67,12 +86,15 @@ export const useApi = () => {
             if (isRefreshed) {
               return;
             } else {
+              notifyConcurrentSession();
               await authStore.logout(redirectPath);
             }
           } catch {
+            notifyConcurrentSession();
             await authStore.logout(redirectPath);
           }
         } else {
+          notifyConcurrentSession();
           await authStore.logout(redirectPath);
         }
       }
