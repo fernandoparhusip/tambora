@@ -40,7 +40,7 @@ export function getOrCreateDeviceId(): string {
 }
 
 export function detectOS(userAgent?: string): string {
-  const ua = userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : '')
+  const ua = userAgent ?? (typeof navigator !== 'undefined' ? navigator.userAgent : '')
   if (!ua) return 'Unknown OS'
 
   if (/Windows NT 10.0/i.test(ua)) return 'Windows 10/11'
@@ -58,7 +58,7 @@ export function detectOS(userAgent?: string): string {
 }
 
 export function detectBrowser(userAgent?: string): string {
-  const ua = userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : '')
+  const ua = userAgent ?? (typeof navigator !== 'undefined' ? navigator.userAgent : '')
   if (!ua) return 'Unknown Browser'
 
   if (/Edg\//i.test(ua)) return 'Edge'
