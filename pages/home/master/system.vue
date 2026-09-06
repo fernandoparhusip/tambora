@@ -16,7 +16,8 @@ const {
   deleteSystem,
 } = useSystem();
 
-const { organizations, fetchOrganizations } = useOrganization();
+const { upks, fetchUpks } = useUpk();
+const { unitLayanans, fetchUnitLayanans } = useUnitLayanan();
 const toast = useAppToast();
 
 const searchQuery = ref("");
@@ -43,19 +44,29 @@ const systemColumns: TableColumn[] = [
   { key: "actions", label: "Aksi" },
 ];
 
-const orgOptions = computed(() =>
-  organizations.value.map((o: any) => ({
-    label: `${o.nama} (${o.kode})`,
-    value: o.id,
+const upkOptions = computed(() =>
+  upks.value.map((u) => ({
+    label: u.nama ? `${u.kode} - ${u.nama}` : u.kode,
+    value: u.id,
+  })),
+);
+
+const unitLayananOptions = computed(() =>
+  unitLayanans.value.map((ul) => ({
+    label: ul.nama ? `${ul.kode} - ${ul.nama}` : ul.kode,
+    value: ul.id,
   })),
 );
 
 const formSections = computed<FormSectionConfig[]>(() =>
-  getSystemFormSections({ orgOptions: orgOptions.value }),
+  getSystemFormSections({
+    upkOptions: upkOptions.value,
+    unitLayananOptions: unitLayananOptions.value,
+  }),
 );
 
 onMounted(async () => {
-  await Promise.allSettled([fetchSystems(), fetchOrganizations()]);
+  await Promise.allSettled([fetchSystems(), fetchUpks(), fetchUnitLayanans()]);
 });
 
 watch(searchQuery, () => {
@@ -94,6 +105,7 @@ const openCreateModal = () => {
     system_type: "",
     upk_id: "",
     service_unit_ids: [],
+    regional_id: "",
     latitude: "",
     longitude: "",
     description: "",
@@ -101,14 +113,41 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-const handleEdit = (row: SystemItem) => {
+const handleEdit = async (row: SystemItem) => {
   modalMode.value = "edit";
+  const extractIds = (item: any) => {
+    if (
+      Array.isArray(item.service_unit_ids) &&
+      item.service_unit_ids.length > 0
+    ) {
+      return item.service_unit_ids.map((id: any) => String(id));
+    }
+    if (Array.isArray(item.service_units) && item.service_units.length > 0) {
+      return item.service_units.map((su: any) => String(su.id || su));
+    }
+    return [];
+  };
+
   formData.value = {
     ...row,
     upk_id: row.upk_id || "",
-    service_unit_ids: row.service_unit_ids || [],
+    service_unit_ids: extractIds(row),
   };
   modalOpen.value = true;
+
+  if (row.id) {
+    try {
+      const detail = await getSystemById(row.id);
+      if (detail && modalOpen.value && formData.value.id === row.id) {
+        const fetchedIds = extractIds(detail);
+        if (fetchedIds.length > 0) {
+          formData.value.service_unit_ids = fetchedIds;
+        }
+      }
+    } catch {
+      // Ignored
+    }
+  }
 };
 
 // Universal Async Detail Management
@@ -170,32 +209,30 @@ const handleSave = async (data?: Record<string, any>) => {
         ? Number(currentData.longitude)
         : undefined;
 
+    const payload = {
+      code: currentData.code.toUpperCase().replace(/\s+/g, "-"),
+      name: currentData.name,
+      system_type: currentData.system_type || "BESAR",
+      latitude: lat,
+      longitude: lng,
+      description: currentData.description || "",
+      upk_id: currentData.upk_id || undefined,
+      service_unit_ids: Array.isArray(currentData.service_unit_ids)
+        ? currentData.service_unit_ids
+        : currentData.service_unit_ids
+          ? [currentData.service_unit_ids]
+          : [],
+      regional_id: currentData.regional_id || undefined,
+    };
+
     if (modalMode.value === "create") {
-      await createSystem({
-        code: currentData.code.toUpperCase().replace(/\s+/g, "-"),
-        name: currentData.name,
-        system_type: currentData.system_type || "BESAR",
-        latitude: lat,
-        longitude: lng,
-        description: currentData.description || "",
-        upk_id: currentData.upk_id || undefined,
-        service_unit_ids: currentData.service_unit_ids || undefined,
-      });
+      await createSystem(payload);
       modalOpen.value = false;
       setTimeout(() => {
         isSuccessModalOpen.value = true;
       }, 150);
     } else {
-      await updateSystem(currentData.id || formData.value.id, {
-        code: currentData.code.toUpperCase().replace(/\s+/g, "-"),
-        name: currentData.name,
-        system_type: currentData.system_type || "BESAR",
-        latitude: lat,
-        longitude: lng,
-        description: currentData.description || "",
-        upk_id: currentData.upk_id || undefined,
-        service_unit_ids: currentData.service_unit_ids || undefined,
-      });
+      await updateSystem(currentData.id || formData.value.id, payload);
       modalOpen.value = false;
       toast.success("Data sistem berhasil diperbarui.", "Sukses");
     }
@@ -208,9 +245,24 @@ const handleSave = async (data?: Record<string, any>) => {
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
-  const upk = organizations.value.find(
-    (o) => o.id === detailRecord.value?.upk_id,
-  );
+  const upk = upks.value.find((u) => u.id === detailRecord.value?.upk_id);
+  let unitLayananLabel = "-";
+  if (
+    Array.isArray(detailRecord.value.service_units) &&
+    detailRecord.value.service_units.length > 0
+  ) {
+    unitLayananLabel = detailRecord.value.service_units
+      .map((su: any) => su.nama || su.kode)
+      .join(", ");
+  } else {
+    const selectedUnits = unitLayanans.value
+      .filter((ul) => detailRecord.value?.service_unit_ids?.includes(ul.id))
+      .map((ul) => (ul.nama ? `${ul.kode} - ${ul.nama}` : ul.kode));
+    if (selectedUnits.length > 0) {
+      unitLayananLabel = selectedUnits.join(", ");
+    }
+  }
+
   return [
     { label: "Kode Sistem", value: detailRecord.value.code },
     { label: "Nama Sistem", value: detailRecord.value.name },
@@ -222,8 +274,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           : "Sistem Kecil (Isolated)",
     },
     {
-      label: "Unit Pelaksana (UPK)",
-      value: upk ? `${upk.nama} (${upk.kode})` : "-",
+      label: "UPK",
+      value: detailRecord.value.upk_nama || (upk ? upk.nama : "-"),
+    },
+    {
+      label: "Unit Layanan",
+      value: unitLayananLabel,
     },
     {
       label: "Latitude",

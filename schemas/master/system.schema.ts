@@ -1,13 +1,15 @@
 import type { FormSectionConfig } from "~/types";
 
 export interface SystemSchemaOptions {
-  orgOptions?: { label: string; value: any }[];
+  upkOptions?: { label: string; value: any }[];
+  unitLayananOptions?: { label: string; value: any }[];
 }
 
 export const getSystemFormSections = (
   options: SystemSchemaOptions = {},
 ): FormSectionConfig[] => {
-  const orgOptions = options.orgOptions || [];
+  const upkOptions = options.upkOptions || [];
+  const unitLayananOptions = options.unitLayananOptions || [];
 
   return [
     {
@@ -18,7 +20,7 @@ export const getSystemFormSections = (
           type: "text",
           placeholder: "Contoh: SYS-LBK, SYS-SBW, SYS-BIMA",
           required: true,
-          colSpan: 6,
+          colSpan: 12,
         },
         {
           key: "name",
@@ -26,7 +28,7 @@ export const getSystemFormSections = (
           type: "text",
           placeholder: "Contoh: Sistem Tambora - Sumbawa",
           required: true,
-          colSpan: 6,
+          colSpan: 12,
         },
         {
           key: "system_type",
@@ -38,14 +40,14 @@ export const getSystemFormSections = (
             { label: "SISTEM KECIL (Isolated / Kepulauan)", value: "KECIL" },
           ],
           required: true,
-          colSpan: 6,
+          colSpan: 12,
         },
         {
           key: "upk_id",
           label: "UPK",
           type: "searchable-select",
           placeholder: "Pilih UPK",
-          options: orgOptions,
+          options: upkOptions,
           required: false,
           colSpan: 6,
         },
@@ -54,9 +56,9 @@ export const getSystemFormSections = (
           label: "Unit Layanan",
           type: "searchable-multi-select",
           placeholder: "Pilih Unit Layanan",
-          options: orgOptions,
+          options: unitLayananOptions,
           required: false,
-          colSpan: 12,
+          colSpan: 6,
         },
         {
           key: "description",

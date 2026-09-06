@@ -6,7 +6,9 @@ import type { DetailDataItem } from "~/types/master.types";
 import { useSentral } from "~/composables/master/useSentral";
 import { useAsyncDetail } from "~/composables/useAsyncDetail";
 import { useRegional } from "~/composables/master/useRegional";
+import { useCabang } from "~/composables/master/useCabang";
 import { useRanting } from "~/composables/master/useRanting";
+import { useSystem } from "~/composables/master/useSystem";
 import { useRbac } from "~/composables/useRbac";
 
 const {
@@ -21,7 +23,9 @@ const {
   approveSentral,
 } = useSentral();
 const { regionalList, fetchRegional } = useRegional();
+const { cabangList, fetchCabang } = useCabang();
 const { rantingList, fetchRanting } = useRanting();
+const { systems, fetchSystems } = useSystem();
 const { can, isSuperAdmin } = useRbac();
 const toast = useAppToast();
 
@@ -45,10 +49,10 @@ const isApproving = ref(false);
 
 const sentralColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode_sentral", label: "Kode Sentral" },
-  { key: "nama_sentral", label: "Nama Sentral" },
   { key: "kode_wilayah", label: "Regional" },
-  { key: "kode_jenis_pembangkit", label: "Jenis" },
+  { key: "kode_sentral", label: "Kode" },
+  { key: "nama_sentral", label: "Nama" },
+  { key: "kode_jenis_pembangkit", label: "Jenis Pembangkit" },
   { key: "daya_terpasang", label: "Daya Terpasang" },
   { key: "kondisi", label: "Kondisi" },
   { key: "approve_status", label: "Status" },
@@ -58,14 +62,57 @@ const sentralColumns: TableColumn[] = [
 const regionalOptions = computed(() =>
   regionalList.value.map((r) => ({
     label: `${r.kode_regional} - ${r.nama_regional}`,
-    value: r.id,
+    value: r.kode_regional || r.id,
   })),
 );
 
-const rantingOptions = computed(() =>
-  rantingList.value.map((rt) => ({
-    label: `${rt.kode_ranting} - ${rt.nama_ranting}`,
-    value: rt.id,
+const rantingOptions = computed(() => {
+  const selectedWilayah = formData.value?.kode_wilayah;
+  if (!selectedWilayah) return [];
+
+  // Match regional in regionalList to cover both ID and code formats
+  const matchedReg = regionalList.value.find(
+    (r) => r.kode_regional === selectedWilayah || r.id === selectedWilayah,
+  );
+  const possibleWilayahKeys = new Set<string>([selectedWilayah]);
+  if (matchedReg) {
+    if (matchedReg.kode_regional)
+      possibleWilayahKeys.add(matchedReg.kode_regional);
+    if (matchedReg.id) possibleWilayahKeys.add(matchedReg.id);
+  }
+
+  // Find all cabang under this regional
+  const matchingCabangCodes = new Set<string>();
+  cabangList.value.forEach((c) => {
+    if (
+      possibleWilayahKeys.has(c.kode_wilayah) ||
+      (c.kode_regional && possibleWilayahKeys.has(c.kode_regional)) ||
+      possibleWilayahKeys.has(c.id)
+    ) {
+      if (c.kode_cabang) matchingCabangCodes.add(c.kode_cabang);
+      if (c.id) matchingCabangCodes.add(c.id);
+    }
+  });
+
+  // Filter ranting belonging to any matching cabang
+  return rantingList.value
+    .filter((rt) => {
+      return (
+        matchingCabangCodes.has(rt.kode_cabang) ||
+        ((rt as any).kode_wilayah &&
+          possibleWilayahKeys.has((rt as any).kode_wilayah))
+      );
+    })
+    .map((rt) => ({
+      label: `${rt.kode_ranting} - ${rt.nama_ranting}`,
+      value: rt.kode_ranting || rt.id,
+    }));
+});
+
+const systemOptions = computed(() =>
+  systems.value.map((s) => ({
+    label: `${s.code} - ${s.name}`,
+    value: s.code,
   })),
 );
 
@@ -73,11 +120,34 @@ const formSections = computed(() =>
   getSentralFormSections({
     regionalOptions: regionalOptions.value,
     rantingOptions: rantingOptions.value,
+    systemOptions: systemOptions.value,
+    hasSelectedRegional: !!formData.value?.kode_wilayah,
   }),
 );
 
+// Auto-reset ranting when regional changes
+watch(
+  () => formData.value?.kode_wilayah,
+  (newVal, oldVal) => {
+    if (
+      modalOpen.value &&
+      oldVal !== undefined &&
+      oldVal !== "" &&
+      newVal !== oldVal
+    ) {
+      formData.value.kode_ranting = "";
+    }
+  },
+);
+
 onMounted(async () => {
-  await Promise.allSettled([fetchSentral(), fetchRegional(), fetchRanting()]);
+  await Promise.allSettled([
+    fetchSentral(),
+    fetchRegional({ limit: 100 }),
+    fetchCabang({ limit: 200 }),
+    fetchRanting({ limit: 200 }),
+    fetchSystems(),
+  ]);
 });
 
 watch(searchQuery, () => {
@@ -91,7 +161,8 @@ const filteredData = computed(() => {
     (item) =>
       (item.kode_sentral && item.kode_sentral.toLowerCase().includes(q)) ||
       (item.nama_sentral && item.nama_sentral.toLowerCase().includes(q)) ||
-      (item.kode_jenis_pembangkit && item.kode_jenis_pembangkit.toLowerCase().includes(q)) ||
+      (item.kode_jenis_pembangkit &&
+        item.kode_jenis_pembangkit.toLowerCase().includes(q)) ||
       (item.kondisi && item.kondisi.toLowerCase().includes(q)),
   );
 });
@@ -105,27 +176,50 @@ const modalTitle = computed(() =>
   modalMode.value === "create" ? "Tambah Data Sentral" : "Ubah Data Sentral",
 );
 const modalSubtitle = computed(() =>
-  modalMode.value === "create"
-    ? "Form Tambah Sentral"
-    : "Form Ubah Sentral",
+  modalMode.value === "create" ? "Form Tambah Sentral" : "Form Ubah Sentral",
 );
 
 const openCreateModal = () => {
   modalMode.value = "create";
   formData.value = {
-    kode_wilayah: "",
+    alamat: "",
+    approve_status: "",
+    color: "",
+    daya_mampu: null,
+    daya_terpasang: null,
+    deskripsi: "",
+    jenis_bahan_bakar: "",
+    kecamatan: "",
+    kelurahan: "",
+    keterangan: "",
+    kode_jenis_pembangkit: "",
     kode_ranting: "",
     kode_sentral: "",
+    kode_singkatan_sentral: "",
+    kode_sistem: "",
+    kode_status_milik: "",
+    kode_wilayah: "",
+    kondisi: "",
+    kota_kabupaten: "",
+    latitude: "",
+    longitude: "",
+    manager: "",
+    manager_phone: "",
+    nama_pulau: "",
     nama_sentral: "",
-    kode_jenis_pembangkit: "PLTD",
-    jenis_bahan_bakar: "HSD",
-    daya_terpasang: null,
-    daya_mampu: null,
+    nilai_asset_awal: null,
+    pemegang_saham: "",
+    pengelola: "",
+    penghargaan: "",
+    photo: "",
+    provinsi: "",
+    radius: null,
+    sejarah: "",
+    status_milik: "",
+    status_milik_detail: "",
     tahun_operasi: null,
-    kondisi: "SIAP_OPERASI",
-    latitude: 1.44,
-    longitude: 125.18,
-    approve_status: "DRAFT",
+    wakil_manager: "",
+    wakil_manager_phone: "",
   };
   modalOpen.value = true;
 };
@@ -133,21 +227,24 @@ const openCreateModal = () => {
 const handleEdit = (row: SentralItem) => {
   modalMode.value = "edit";
   const matchedReg = regionalList.value.find(
-    (r) =>
-      r.id === row.kode_wilayah ||
-      r.kode_regional === row.kode_wilayah,
+    (r) => r.id === row.kode_wilayah || r.kode_regional === row.kode_wilayah,
   );
   const matchedRanting = rantingList.value.find(
-    (rt) =>
-      rt.id === row.kode_ranting ||
-      rt.kode_ranting === row.kode_ranting,
+    (rt) => rt.id === row.kode_ranting || rt.kode_ranting === row.kode_ranting,
   );
   formData.value = {
     ...row,
     kode_wilayah:
-      matchedReg?.id || row.kode_wilayah || "",
+      matchedReg?.kode_regional || matchedReg?.id || row.kode_wilayah || "",
     kode_ranting:
-      matchedRanting?.id || row.kode_ranting || "",
+      matchedRanting?.kode_ranting ||
+      matchedRanting?.id ||
+      row.kode_ranting ||
+      "",
+    color: row.color || "",
+    radius: row.radius ?? null,
+    latitude: row.latitude ?? "",
+    longitude: row.longitude ?? "",
   };
   modalOpen.value = true;
 };
@@ -174,8 +271,13 @@ const confirmDelete = async () => {
   if (!deleteTarget.value) return;
   isDeleting.value = true;
   try {
-    await deleteSentral(deleteTarget.value.id || deleteTarget.value.kode_sentral);
-    toast.success(`Sentral '${deleteTarget.value.nama_sentral}' berhasil dihapus.`, "Sukses");
+    await deleteSentral(
+      deleteTarget.value.id || deleteTarget.value.kode_sentral,
+    );
+    toast.success(
+      `Sentral '${deleteTarget.value.nama_sentral}' berhasil dihapus.`,
+      "Sukses",
+    );
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (err: any) {
@@ -194,8 +296,13 @@ const confirmApprove = async () => {
   if (!approveTarget.value) return;
   isApproving.value = true;
   try {
-    await approveSentral(approveTarget.value.id || approveTarget.value.kode_sentral);
-    toast.success(`Sentral '${approveTarget.value.nama_sentral}' berhasil disetujui (APPROVED).`, "Sukses");
+    await approveSentral(
+      approveTarget.value.id || approveTarget.value.kode_sentral,
+    );
+    toast.success(
+      `Sentral '${approveTarget.value.nama_sentral}' berhasil disetujui (APPROVED).`,
+      "Sukses",
+    );
     isApproveDialogOpen.value = false;
     approveTarget.value = null;
   } catch (err: any) {
@@ -206,46 +313,108 @@ const confirmApprove = async () => {
 };
 
 const handleSave = async (data: Record<string, any>) => {
+  const currentData = data || formData.value;
+  if (!currentData.kode_sentral || !currentData.nama_sentral) {
+    toast.warning("Kode Sentral dan Nama Sentral wajib diisi.", "Peringatan");
+    return;
+  }
+
   submitting.value = true;
   try {
     const matchedReg = regionalList.value.find(
       (r) =>
-        r.id === data.kode_wilayah ||
-        r.kode_regional === data.kode_wilayah,
+        r.id === currentData.kode_wilayah ||
+        r.kode_regional === currentData.kode_wilayah,
     );
-    const regId = matchedReg?.id || data.kode_wilayah;
+    const regId =
+      matchedReg?.kode_regional ||
+      matchedReg?.id ||
+      currentData.kode_wilayah ||
+      "";
+
     const matchedRanting = rantingList.value.find(
       (rt) =>
-        rt.id === data.kode_ranting ||
-        rt.kode_ranting === data.kode_ranting,
+        rt.id === currentData.kode_ranting ||
+        rt.kode_ranting === currentData.kode_ranting,
     );
-    const rantingId = matchedRanting?.id || data.kode_ranting;
+    const rantingId =
+      matchedRanting?.kode_ranting ||
+      matchedRanting?.id ||
+      currentData.kode_ranting ||
+      "";
 
-    const payload = {
-      kode_wilayah: regId,
+    const payload: Record<string, any> = {
+      alamat: currentData.alamat || "",
+      approve_status: currentData.approve_status || "DRAFT",
+      color: currentData.color || "#FF5733",
+      daya_mampu:
+        currentData.daya_mampu != null && currentData.daya_mampu !== ""
+          ? Number(currentData.daya_mampu)
+          : undefined,
+      daya_terpasang:
+        currentData.daya_terpasang != null && currentData.daya_terpasang !== ""
+          ? Number(currentData.daya_terpasang)
+          : undefined,
+      deskripsi: currentData.deskripsi || "",
+      jenis_bahan_bakar: currentData.jenis_bahan_bakar || "",
+      kecamatan: currentData.kecamatan || "",
+      kelurahan: currentData.kelurahan || "",
+      keterangan: currentData.keterangan || "",
+      kode_jenis_pembangkit: currentData.kode_jenis_pembangkit || "",
       kode_ranting: rantingId,
-      kode_sentral: data.kode_sentral,
-      nama_sentral: data.nama_sentral,
-      kode_jenis_pembangkit: data.kode_jenis_pembangkit,
-      jenis_bahan_bakar: data.jenis_bahan_bakar,
-      daya_terpasang: data.daya_terpasang ? Number(data.daya_terpasang) : undefined,
-      daya_mampu: data.daya_mampu ? Number(data.daya_mampu) : undefined,
-      tahun_operasi: data.tahun_operasi ? Number(data.tahun_operasi) : undefined,
-      kondisi: data.kondisi,
-      latitude: data.latitude ? Number(data.latitude) : undefined,
-      longitude: data.longitude ? Number(data.longitude) : undefined,
-      approve_status: data.approve_status || "DRAFT",
+      kode_sentral: currentData.kode_sentral,
+      kode_singkatan_sentral: currentData.kode_singkatan_sentral || "",
+      kode_sistem: currentData.kode_sistem || "",
+      kode_status_milik: currentData.kode_status_milik || "",
+      kode_wilayah: regId,
+      kondisi: currentData.kondisi || "SIAP_OPERASI",
+      kota_kabupaten: currentData.kota_kabupaten || "",
+      latitude:
+        currentData.latitude != null && currentData.latitude !== ""
+          ? Number(currentData.latitude)
+          : undefined,
+      longitude:
+        currentData.longitude != null && currentData.longitude !== ""
+          ? Number(currentData.longitude)
+          : undefined,
+      manager: currentData.manager || "",
+      manager_phone: currentData.manager_phone || "",
+      nama_pulau: currentData.nama_pulau || "",
+      nama_sentral: currentData.nama_sentral,
+      nilai_asset_awal:
+        currentData.nilai_asset_awal != null &&
+        currentData.nilai_asset_awal !== ""
+          ? Number(currentData.nilai_asset_awal)
+          : undefined,
+      pemegang_saham: currentData.pemegang_saham || "",
+      pengelola: currentData.pengelola || "",
+      penghargaan: currentData.penghargaan || "",
+      photo: currentData.photo || "",
+      provinsi: currentData.provinsi || "",
+      radius:
+        currentData.radius != null && currentData.radius !== ""
+          ? Number(currentData.radius)
+          : undefined,
+      sejarah: currentData.sejarah || "",
+      status_milik: currentData.status_milik || "",
+      status_milik_detail: currentData.status_milik_detail || "",
+      tahun_operasi:
+        currentData.tahun_operasi != null && currentData.tahun_operasi !== ""
+          ? Number(currentData.tahun_operasi)
+          : undefined,
+      wakil_manager: currentData.wakil_manager || "",
+      wakil_manager_phone: currentData.wakil_manager_phone || "",
     };
 
     if (modalMode.value === "create") {
-      await createSentral(payload);
+      await createSentral(payload as any);
       modalOpen.value = false;
       setTimeout(() => {
         isSuccessModalOpen.value = true;
       }, 150);
     } else {
       const id = formData.value.id || formData.value.kode_sentral;
-      await updateSentral(id, payload);
+      await updateSentral(id, payload as any);
       modalOpen.value = false;
       toast.success("Data sentral berhasil diperbarui.", "Sukses");
     }
@@ -264,61 +433,118 @@ const getStatusBadgeVariant = (status?: string): any => {
   return "default";
 };
 
-const getKondisiBadgeVariant = (kondisi?: string): any => {
-  const k = (kondisi || "").toUpperCase();
-  if (k.includes("SIAP") || k.includes("OPERASI")) return "success";
-  if (k.includes("GANGGUAN") || k.includes("RUSAK")) return "danger";
-  if (k.includes("PEMELIHARAAN") || k.includes("HAR")) return "warning";
-  return "info";
-};
-
 const canApprove = computed(() => {
-  return can("SENTRAL.APPROVE") || (can("SENTRAL.CREATE") && (isSuperAdmin.value || can("REGIONAL.CREATE")));
+  return (
+    can("SENTRAL.APPROVE") ||
+    (can("SENTRAL.CREATE") && (isSuperAdmin.value || can("REGIONAL.CREATE")))
+  );
 });
 
 // Detail Data Items
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
+  const rec = detailRecord.value;
+  const reg = regionalList.value.find(
+    (r) => r.id === rec.kode_wilayah || r.kode_regional === rec.kode_wilayah,
+  );
+  const rnt = rantingList.value.find(
+    (rt) => rt.id === rec.kode_ranting || rt.kode_ranting === rec.kode_ranting,
+  );
+
   return [
-    { label: "Kode Sentral", value: detailRecord.value.kode_sentral },
-    { label: "Nama Sentral", value: detailRecord.value.nama_sentral },
-    {
-      label: "Regional",
-      value:
-        regionalList.value.find(
-          (r) => r.id === detailRecord.value?.kode_wilayah,
-        )?.nama_regional ||
-        detailRecord.value.kode_wilayah ||
-        "-",
-    },
+    { label: "Kode", value: rec.kode_sentral },
+    { label: "Nama", value: rec.nama_sentral },
+    { label: "Singkatan Sentral", value: rec.kode_singkatan_sentral || "-" },
+    { label: "Regional", value: reg?.nama_regional || rec.kode_wilayah || "-" },
     {
       label: "Ranting",
-      value:
-        rantingList.value.find(
-          (rt) => rt.id === detailRecord.value?.kode_ranting,
-        )?.nama_ranting ||
-        detailRecord.value.nama_ranting ||
-        detailRecord.value.kode_ranting ||
-        "-",
+      value: rnt?.nama_ranting || rec.nama_ranting || rec.kode_ranting || "-",
     },
-    { label: "Jenis Pembangkit", value: detailRecord.value.kode_jenis_pembangkit || "-" },
-    { label: "Jenis Bahan Bakar", value: detailRecord.value.jenis_bahan_bakar || "-" },
-    { label: "Daya Terpasang", value: detailRecord.value.daya_terpasang ? `${detailRecord.value.daya_terpasang.toLocaleString("id-ID")} kW` : "-" },
-    { label: "Daya Mampu", value: detailRecord.value.daya_mampu ? `${detailRecord.value.daya_mampu.toLocaleString("id-ID")} kW` : "-" },
-    { label: "Tahun Operasi", value: detailRecord.value.tahun_operasi || "-" },
+    { label: "Sistem", value: rec.kode_sistem || "-" },
+    { label: "Jenis Pembangkit", value: rec.kode_jenis_pembangkit || "-" },
+    { label: "Bahan Bakar Utama", value: rec.jenis_bahan_bakar || "-" },
+    {
+      label: "Daya Terpasang",
+      value:
+        rec.daya_terpasang != null
+          ? `${Number(rec.daya_terpasang).toLocaleString("id-ID")} kW`
+          : "-",
+    },
+    {
+      label: "Daya Mampu",
+      value:
+        rec.daya_mampu != null
+          ? `${Number(rec.daya_mampu).toLocaleString("id-ID")} kW`
+          : "-",
+    },
     {
       label: "Kondisi Operasi",
-      value: detailRecord.value.kondisi || "SIAP_OPERASI",
+      value: rec.kondisi || "SIAP_OPERASI",
       isStatus: true,
     },
-    { label: "Latitude", value: detailRecord.value.latitude ?? "-" },
-    { label: "Longitude", value: detailRecord.value.longitude ?? "-" },
+    {
+      label: "Tahun Operasi",
+      value: rec.tahun_operasi != null ? String(rec.tahun_operasi) : "-",
+    },
     {
       label: "Status Approval",
-      value: detailRecord.value.approve_status || "DRAFT",
+      value: rec.approve_status || "DRAFT",
       isStatus: true,
     },
-    { label: "ID Record", value: detailRecord.value.id || detailRecord.value.kode_sentral },
+    {
+      label: "Status Kepemilikan",
+      value: rec.status_milik
+        ? `${rec.status_milik} (${rec.kode_status_milik || "-"})`
+        : rec.kode_status_milik || "-",
+    },
+    { label: "Detail Status Milik", value: rec.status_milik_detail || "-" },
+    { label: "Pengelola", value: rec.pengelola || "-" },
+    { label: "Pemegang Saham", value: rec.pemegang_saham || "-" },
+    {
+      label: "Nilai Aset Awal",
+      value:
+        rec.nilai_asset_awal != null
+          ? `Rp ${Number(rec.nilai_asset_awal).toLocaleString("id-ID")}`
+          : "-",
+    },
+    { label: "Provinsi", value: rec.provinsi || "-" },
+    { label: "Kota / Kabupaten", value: rec.kota_kabupaten || "-" },
+    { label: "Kecamatan", value: rec.kecamatan || "-" },
+    { label: "Kelurahan", value: rec.kelurahan || "-" },
+    { label: "Alamat", value: rec.alamat || "-" },
+    { label: "Nama Pulau", value: rec.nama_pulau || "-" },
+    {
+      label: "Radius Area",
+      value: rec.radius != null ? `${rec.radius} meter` : "-",
+    },
+    {
+      label: "Latitude",
+      value: rec.latitude != null ? String(rec.latitude) : "-",
+    },
+    {
+      label: "Longitude",
+      value: rec.longitude != null ? String(rec.longitude) : "-",
+    },
+    {
+      label: "Manager",
+      value: rec.manager
+        ? rec.manager_phone
+          ? `${rec.manager} (${rec.manager_phone})`
+          : rec.manager
+        : "-",
+    },
+    {
+      label: "Wakil Manager",
+      value: rec.wakil_manager
+        ? rec.wakil_manager_phone
+          ? `${rec.wakil_manager} (${rec.wakil_manager_phone})`
+          : rec.wakil_manager
+        : "-",
+    },
+    { label: "Sejarah", value: rec.sejarah || "-" },
+    { label: "Penghargaan", value: rec.penghargaan || "-" },
+    { label: "Deskripsi", value: rec.deskripsi || "-" },
+    { label: "Keterangan", value: rec.keterangan || "-" },
   ];
 });
 </script>
@@ -341,10 +567,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton
-            resource="SENTRAL"
-            @click="openCreateModal"
-          />
+          <BaseCreateButton resource="SENTRAL" @click="openCreateModal" />
         </div>
 
         <!-- Table Container -->
@@ -362,47 +585,58 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #kode_sentral-data="{ row }">
-            <span class="text-xs font-mono font-bold text-primary-700">{{ row.kode_sentral }}</span>
+            <span class="text-xs text-gray-600">{{ row.kode_sentral }}</span>
           </template>
 
           <template #nama_sentral-data="{ row }">
-            <span class="text-xs font-semibold text-gray-800">{{ row.nama_sentral }}</span>
+            <span class="text-xs text-gray-600">{{ row.nama_sentral }}</span>
           </template>
 
           <template #kode_wilayah-data="{ row }">
             <span class="text-xs text-gray-600">{{
-              regionalList.find((r) => r.id === row.kode_wilayah)?.nama_regional ||
+              regionalList.find((r) => r.id === row.kode_wilayah)
+                ?.nama_regional ||
               row.kode_wilayah ||
-              '-'
+              "-"
             }}</span>
           </template>
 
           <template #kode_jenis_pembangkit-data="{ row }">
-            <span class="text-xs font-medium text-gray-700">{{ row.kode_jenis_pembangkit || '-' }}</span>
+            <span class="text-xs text-gray-600">{{
+              row.kode_jenis_pembangkit || "-"
+            }}</span>
           </template>
 
           <template #daya_terpasang-data="{ row }">
-            <span class="text-xs font-mono font-medium text-gray-800">
-              {{ row.daya_terpasang ? `${row.daya_terpasang.toLocaleString('id-ID')} kW` : '-' }}
+            <span class="text-xs text-gray-600">
+              {{
+                row.daya_terpasang
+                  ? `${row.daya_terpasang.toLocaleString("id-ID")} kW`
+                  : "-"
+              }}
             </span>
           </template>
 
           <template #kondisi-data="{ row }">
-            <BaseBadge :variant="getKondisiBadgeVariant(row.kondisi)">
-              {{ row.kondisi || 'SIAP_OPERASI' }}
-            </BaseBadge>
+            <span class="text-xs text-gray-600">
+              {{ row.kondisi || "SIAP_OPERASI" }}
+            </span>
           </template>
 
           <template #approve_status-data="{ row }">
             <BaseBadge :variant="getStatusBadgeVariant(row.approve_status)">
-              {{ row.approve_status || 'DRAFT' }}
+              {{ row.approve_status || "DRAFT" }}
             </BaseBadge>
           </template>
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" title="Lihat Detail" @click="handleView(row)" />
+              <BaseActionButton
+                type="view"
+                title="Lihat Detail"
+                @click="handleView(row)"
+              />
               <BaseActionButton
                 type="edit"
                 resource="SENTRAL"

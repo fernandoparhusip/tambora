@@ -3,41 +3,26 @@ import type { FormSectionConfig } from "~/types";
 export interface SentralSchemaOptions {
   regionalOptions?: { label: string; value: any }[];
   rantingOptions?: { label: string; value: any }[];
+  systemOptions?: { label: string; value: any }[];
+  hasSelectedRegional?: boolean;
 }
 
 export const getSentralFormSections = (
-  options: SentralSchemaOptions = {}
+  options: SentralSchemaOptions = {},
 ): FormSectionConfig[] => {
   const regionalOptions = options.regionalOptions || [];
   const rantingOptions = options.rantingOptions || [];
+  const systemOptions = options.systemOptions || [];
 
   return [
     {
-      title: "Informasi Wilayah & Identitas Sentral",
+      title: "1. Identitas & Wilayah Pembangkit",
       fields: [
-        {
-          key: "kode_wilayah",
-          label: "Regional",
-          type: "select",
-          placeholder: "Pilih Regional",
-          options: regionalOptions,
-          required: false,
-          colSpan: 6,
-        },
-        {
-          key: "kode_ranting",
-          label: "Ranting",
-          type: "select",
-          placeholder: "Pilih Ranting",
-          options: rantingOptions,
-          required: false,
-          colSpan: 6,
-        },
         {
           key: "kode_sentral",
           label: "Kode Sentral",
           type: "text",
-          placeholder: "Contoh: 11001",
+          placeholder: "Contoh: PLTD-BTG",
           required: true,
           colSpan: 6,
         },
@@ -45,7 +30,7 @@ export const getSentralFormSections = (
           key: "nama_sentral",
           label: "Nama Sentral",
           type: "text",
-          placeholder: "Contoh: Sentral Bitung",
+          placeholder: "Contoh: PLTD Bitung",
           required: true,
           colSpan: 6,
         },
@@ -55,7 +40,7 @@ export const getSentralFormSections = (
           type: "text",
           placeholder: "Contoh: BTG",
           required: false,
-          colSpan: 4,
+          colSpan: 6,
         },
         {
           key: "kode_jenis_pembangkit",
@@ -76,7 +61,7 @@ export const getSentralFormSections = (
             { label: "PLTGU (Gas & Uap)", value: "PLTGU" },
           ],
           required: false,
-          colSpan: 4,
+          colSpan: 6,
         },
         {
           key: "jenis_bahan_bakar",
@@ -95,12 +80,44 @@ export const getSentralFormSections = (
             { label: "Geothermal", value: "Geothermal" },
           ],
           required: false,
-          colSpan: 4,
+          colSpan: 6,
+        },
+        {
+          key: "kode_wilayah",
+          label: "Regional / Wilayah",
+          type: "select",
+          placeholder: "Pilih Regional",
+          options: regionalOptions,
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "kode_ranting",
+          label: "Ranting",
+          type: "select",
+          placeholder: options.hasSelectedRegional
+            ? rantingOptions.length > 0
+              ? "Pilih Ranting"
+              : "Tidak Ada Ranting di Regional Ini"
+            : "Pilih Regional Terlebih Dahulu",
+          options: rantingOptions,
+          disabled: (form: Record<string, any>) => !form.kode_wilayah,
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "kode_sistem",
+          label: "Sistem Kelistrikan",
+          type: systemOptions.length > 0 ? "select" : "text",
+          placeholder: "Pilih / Input Sistem",
+          options: systemOptions.length > 0 ? systemOptions : undefined,
+          required: false,
+          colSpan: 6,
         },
       ],
     },
     {
-      title: "Kapasitas & Kondisi Operasi",
+      title: "2. Kapasitas & Kondisi Operasi",
       fields: [
         {
           key: "daya_terpasang",
@@ -119,14 +136,6 @@ export const getSentralFormSections = (
           colSpan: 6,
         },
         {
-          key: "tahun_operasi",
-          label: "Tahun Operasi",
-          type: "number",
-          placeholder: "Contoh: 2018",
-          required: false,
-          colSpan: 6,
-        },
-        {
           key: "kondisi",
           label: "Kondisi Operasi",
           type: "select",
@@ -141,24 +150,11 @@ export const getSentralFormSections = (
           required: false,
           colSpan: 6,
         },
-      ],
-    },
-    {
-      title: "Koordinat Lokasi & Status",
-      fields: [
         {
-          key: "latitude",
-          label: "Latitude",
+          key: "tahun_operasi",
+          label: "Tahun Operasi",
           type: "number",
-          placeholder: "Contoh: 1.4400",
-          required: false,
-          colSpan: 6,
-        },
-        {
-          key: "longitude",
-          label: "Longitude",
-          type: "number",
-          placeholder: "Contoh: 125.1800",
+          placeholder: "Contoh: 2015",
           required: false,
           colSpan: 6,
         },
@@ -173,11 +169,242 @@ export const getSentralFormSections = (
             { label: "REJECTED", value: "REJECTED" },
           ],
           required: false,
+          colSpan: 6,
+        },
+        {
+          key: "color",
+          label: "Warna Marker Peta",
+          type: "color",
+          placeholder: "#FF5733",
+          required: false,
+          colSpan: 6,
+        },
+      ],
+    },
+    {
+      title: "3. Kepemilikan & Pengelolaan Aset",
+      fields: [
+        {
+          key: "status_milik",
+          label: "Status Milik",
+          type: "select",
+          placeholder: "Pilih Status Milik",
+          options: [
+            { label: "PLN", value: "PLN" },
+            { label: "SEWA", value: "SEWA" },
+            { label: "IPP", value: "IPP" },
+            { label: "KERJASAMA", value: "KERJASAMA" },
+          ],
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "kode_status_milik",
+          label: "Kode Status Milik",
+          type: "select",
+          placeholder: "Pilih Kode Status Milik",
+          options: [
+            { label: "Milik Sendiri", value: "MILIK_SENDIRI" },
+            { label: "Sewa", value: "SEWA" },
+            { label: "IPP", value: "IPP" },
+            { label: "Kerjasama", value: "KERJASAMA" },
+          ],
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "status_milik_detail",
+          label: "Detail Status Milik",
+          type: "text",
+          placeholder: "Contoh: Aset Tetap PLN",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "pengelola",
+          label: "Pengelola",
+          type: "text",
+          placeholder: "Contoh: PLN Indonesia Power",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "pemegang_saham",
+          label: "Pemegang Saham",
+          type: "text",
+          placeholder: "Contoh: PT PLN (Persero)",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "nilai_asset_awal",
+          label: "Nilai Aset Awal (Rp)",
+          type: "number",
+          placeholder: "Contoh: 50000000000",
+          required: false,
+          colSpan: 6,
+        },
+      ],
+    },
+    {
+      title: "4. Lokasi & Geografis",
+      fields: [
+        {
+          key: "provinsi",
+          label: "Provinsi",
+          type: "text",
+          placeholder: "Contoh: Sulawesi Utara",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "kota_kabupaten",
+          label: "Kota / Kabupaten",
+          type: "text",
+          placeholder: "Contoh: Kota Bitung",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "kecamatan",
+          label: "Kecamatan",
+          type: "text",
+          placeholder: "Contoh: Madidir",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "kelurahan",
+          label: "Kelurahan",
+          type: "text",
+          placeholder: "Contoh: Pakadoodan",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "nama_pulau",
+          label: "Nama Pulau",
+          type: "text",
+          placeholder: "Contoh: Sulawesi",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "radius",
+          label: "Radius Area (Meter)",
+          type: "number",
+          placeholder: "Contoh: 500",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "alamat",
+          label: "Alamat Lengkap",
+          type: "textarea",
+          placeholder: "Contoh: Jl. Pelabuhan Samudera Bitung",
+          required: false,
           colSpan: 12,
+          rows: 2,
+        },
+        {
+          key: "coordinates",
+          label: "",
+          type: "coordinate-picker",
+          latKey: "latitude",
+          lngKey: "longitude",
+          required: false,
+          colSpan: 12,
+        },
+      ],
+    },
+    {
+      title: "5. Manajemen & Kontak Person",
+      fields: [
+        {
+          key: "manager",
+          label: "Nama Manager",
+          type: "text",
+          placeholder: "Contoh: Budi Santoso",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "manager_phone",
+          label: "No. Telepon / HP Manager",
+          type: "phone",
+          placeholder: "Contoh: 81234567890",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "wakil_manager",
+          label: "Nama Wakil Manager",
+          type: "text",
+          placeholder: "Contoh: Ahmad Fauzi",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "wakil_manager_phone",
+          label: "No. Telepon / HP Wakil Manager",
+          type: "phone",
+          placeholder: "Contoh: 81298765432",
+          required: false,
+          colSpan: 6,
+        },
+      ],
+    },
+    {
+      title: "6. Informasi Tambahan & Riwayat",
+      fields: [
+        {
+          key: "photo",
+          label: "URL Foto Sentral",
+          type: "text",
+          placeholder: "Contoh: https://example.com/photo-bitung.jpg",
+          required: false,
+          colSpan: 12,
+        },
+        {
+          key: "sejarah",
+          label: "Sejarah Operasi",
+          type: "textarea",
+          placeholder: "Contoh: Beroperasi sejak tahun 2015 untuk suplai Pelabuhan Bitung",
+          required: false,
+          colSpan: 12,
+          rows: 2,
+        },
+        {
+          key: "penghargaan",
+          label: "Penghargaan",
+          type: "textarea",
+          placeholder: "Contoh: Zero Accident Award 2023",
+          required: false,
+          colSpan: 12,
+          rows: 2,
+        },
+        {
+          key: "deskripsi",
+          label: "Deskripsi Sentral",
+          type: "textarea",
+          placeholder: "Contoh: Pembangkit Listrik Tenaga Diesel Bitung",
+          required: false,
+          colSpan: 12,
+          rows: 2,
+        },
+        {
+          key: "keterangan",
+          label: "Keterangan",
+          type: "textarea",
+          placeholder: "Contoh: Unit pembangkit utama Bitung",
+          required: false,
+          colSpan: 12,
+          rows: 2,
         },
       ],
     },
   ];
 };
 
-export const sentralFormSections: FormSectionConfig[] = getSentralFormSections();
+export const sentralFormSections: FormSectionConfig[] =
+  getSentralFormSections();
