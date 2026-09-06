@@ -20,7 +20,7 @@ Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terha
 ### 3.1. Dashboard Operasi Pembangkit
 - **Header & Metric Summary**: Menampilkan status sistem (Normal/Siaga/Darurat), DMN, DMP, Beban Sistem, Unit Max, dan Cadangan Total/Putar.
 - **GIS Map Monitoring (`BaseMap`)**: Visualisasi lokasi sentral pembangkit berbasis OpenLayers v10 + MapTiler Positron dengan marker status (Operasi, Gangguan, Pemeliharaan/Standby) dan popup detail.
-- **Beban & Grafik (`BaseChart`)**: Visualisasi kurva beban real-time bertenaga Apache ECharts.
+- **Beban & Grafik (`BaseChart`)**: Visualisasi kurva beban real-time menggunakan Apache ECharts.
 
 ### 3.2. Tata Kelola Modul Konfigurasi Aplikasi & Master Data
 - **Konfigurasi Aplikasi**:

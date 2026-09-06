@@ -29,8 +29,8 @@
 ### 3.1. `BaseTable` & Data Grid
 - **Responsive Scrolling**: Tabel padat menggunakan pembungkus `overflow-x-auto` dengan lebar kolom yang proporsional agar label teks tidak terlipat. Untuk formulir Akses Grup, daftar izin menggunakan tata letak kartu 2 kolom (`grid-cols-2`) dengan switch On/Off, master toggle, dan filter modul.
 - **Column Customizer**: Toggle visibilitas kolom (`enableColumnToggle`) dengan penyimpanan otomatis ke `localStorage`.
-- **Row Animations**: Baris tabel dirender dengan animasi berjenjang untuk tampilan yang mulus dan nyaman dilihat.
-- **Empty & Reload State**: Dilengkapi ilustrasi data kosong dan tombol `[ 🔄 Muat Ulang ]` untuk refresh data instan.
+- **Row Animations**: Baris tabel menggunakan staggered animation.
+- **Empty & Reload State**: Dilengkapi ilustrasi data kosong dan tombol `[ Muat Ulang ]` untuk refresh data instan.
 
 ### 3.2. `BaseFormModal` & Drawer Engine
 - **Responsive Drawer Width**: Modal drawer form menggunakan kelas responsif berjenjang:
@@ -56,8 +56,9 @@
 - **LIFO ESC Management**: Penggunaan `useModalEsc()` menjamin penekanan tombol `Esc` hanya menutup modal paling atas tanpa sengaja menutup modal di belakangnya.
 
 ### 3.5. Interactive GIS Coordinate Picker & Timezones
-- **Dua Arah (Two-Way Sync)**: Komponen `coordinate-picker` menghubungkan input numerik Latitude & Longitude dengan penanda pin interaktif OpenLayers (`BaseMap`). Mengklik peta otomatis mengisi koordinat, dan mengetik angka otomatis menggeser pin peta secara *live*.
-- **Otomatis Zona Waktu**: [`utils/formatDate.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/utils/formatDate.ts) mendeteksi zona waktu perangkat (`WIB`, `WITA`, `WIT`) secara dinamis untuk menyajikan data tanggal pembuatan dan riwayat log modal detail.
+- **Two-Way Sync**: Sinkronisasi input numerik Latitude/Longitude dengan pin peta OpenLayers (`BaseMap`).
+- **Zona Waktu & Guard Zero-Date**: Deteksi zona waktu (`WIB`, `WITA`, `WIT`) di `utils/formatDate.ts` dan filter zero date Go (`0001-01-01` / tahun < 1970) ke `"-"`.
+- **Riwayat Modal Detail**: Binding array `history` backend (`CREATE` & `UPDATE`) ke panel status modal detail.
 
 ### 3.6. Standar Tampilan Tooltip
 - **PrimeVue Tooltip**: Dikonfigurasi melalui `assets/css/primevue-overrides.css` dengan font `12px`, padding compact `4px 8px`, serta `white-space: nowrap` dan `width: max-content` agar teks tooltip tampil penuh dan rapi dalam satu baris.

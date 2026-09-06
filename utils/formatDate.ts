@@ -55,11 +55,13 @@ export function formatAppDateTime(
   if (!dateInput) return '-';
 
   try {
+    if (typeof dateInput === 'string' && dateInput.startsWith('0001-01-01')) return '-';
+
     const date = typeof dateInput === 'string' || typeof dateInput === 'number'
       ? new Date(dateInput)
       : dateInput;
 
-    if (isNaN(date.getTime())) return String(dateInput);
+    if (isNaN(date.getTime()) || date.getFullYear() < 1970) return '-';
 
     const {
       includeTime = true,
