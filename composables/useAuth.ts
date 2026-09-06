@@ -1,6 +1,7 @@
 import { useAuthStore } from '~/stores/auth';
 import { parseApiError } from '~/utils/apiError'
 import { getDeviceMetaHeaders } from '~/utils/deviceMeta'
+import { resetIdleState } from '~/composables/useIdleTimer'
 import { ref } from 'vue'
 
 export interface LoginPayload {
@@ -106,6 +107,9 @@ export const useAuth = () => {
           token,
           refreshToken
         )
+        // Reset idle timer & expired modal state completely for the new session
+        resetIdleState(true)
+
         // Fetch latest permissions, scopes & user profile from backend
         try {
           await authStore.fetchUserMe()

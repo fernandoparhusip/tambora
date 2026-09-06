@@ -57,12 +57,14 @@ flowchart TD
         CHECK_DELTA -->|"Yes (Inaktif >= 13m)"| WARNING_MODAL["BaseIdleWarningModal (z-[999990]): Grace Period 2 Menit"]
         WARNING_MODAL -->|"Klik Lanjutkan Sesi"| KEEP_ALIVE["Reset Timer & Silent Refresh Token"]
         WARNING_MODAL -->|"Countdown 0 / Klik Keluar"| LOGOUT_TRIGGER["Panggil authStore.logout"]
+        LOGIN_RESET["Login / Logout / 401"] -->|"resetIdleState(true)"| CLEAR_ALL["Hentikan Seluruh Interval & Bersihkan State Modal"]
     end
 
     subgraph API_SYSTEM["2. Silent Refresh Interceptor (useApi)"]
         API_REQ["API Request"] -->|"Status 401 Unauthorized"| REFRESH_QUEUE["Single-Flight Mutex /auth/refresh"]
         REFRESH_QUEUE -->|"Sukses"| RETRY["Update Token & Resume Requests"]
-        REFRESH_QUEUE -->|"Gagal / Refresh Expired"| FORCE_LOGOUT["Hapus Session & Redirect Login"]
+        REFRESH_QUEUE -->|"Gagal / Ditabrak Perangkat Lain"| CONCURRENT_NOTIF["Toast Sesi Ditabrak & Force Logout"]
+        CONCURRENT_NOTIF --> FORCE_LOGOUT["Hapus Session & Redirect Login"]
     end
 
     subgraph SYNC_SYSTEM["3. Cross-Tab Sync (BroadcastChannel)"]
