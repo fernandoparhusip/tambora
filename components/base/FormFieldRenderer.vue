@@ -266,6 +266,35 @@ const onTimeSelect = (
   value.value = `${hours}:${minutes}`;
 };
 
+// PrimeVue ColorPicker helpers
+const colorPickerValue = computed({
+  get: () => {
+    if (!value.value) return "FF5733";
+    const str = String(value.value).replace(/^#/, "");
+    return str || "FF5733";
+  },
+  set: (val: string) => {
+    if (!val) {
+      value.value = "";
+      return;
+    }
+    const clean = String(val).replace(/^#/, "");
+    value.value = `#${clean.toUpperCase()}`;
+  },
+});
+
+const rawHexValue = computed(() => {
+  if (!value.value) return "";
+  return String(value.value).replace(/^#/, "").toUpperCase();
+});
+
+const onHexInput = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const hex = target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
+  target.value = hex.toUpperCase();
+  value.value = hex ? `#${hex.toUpperCase()}` : "";
+};
+
 // Coordinate Picker (Two-Way BaseMap Integration)
 const latKey = computed(() => props.field.latKey || "latitude");
 const lngKey = computed(() => props.field.lngKey || "longitude");
@@ -353,9 +382,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
       class="block text-xs font-semibold text-[#4D5E80] mb-1.5 select-none"
     >
       {{ field.label }}
-      <span
-        v-if="field.required"
-        class="text-red-500 font-semibold ml-0.5"
+      <span v-if="field.required" class="text-red-500 font-semibold ml-0.5"
         >*</span
       >
     </label>
@@ -914,6 +941,37 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
           marker-color="#2563EB"
           :marker-radius="8"
           @map-click="onPickerMapClick"
+        />
+      </div>
+    </div>
+
+    <!-- Color Picker Field (PrimeVue ColorPicker + Hex Input) -->
+    <div
+      v-else-if="field.type === 'color'"
+      class="relative flex items-center gap-2.5"
+    >
+      <div class="shrink-0 flex items-center">
+        <ColorPicker
+          :id="field.key"
+          v-model="colorPickerValue"
+          format="hex"
+          :disabled="isDisabled"
+          class="shadow-2xs rounded-lg overflow-hidden"
+        />
+      </div>
+      <div class="relative flex-1 flex items-center">
+        <span
+          class="absolute left-3 text-xs text-gray-400 font-mono font-bold pointer-events-none select-none"
+          >#</span
+        >
+        <input
+          :value="rawHexValue"
+          type="text"
+          maxlength="6"
+          :placeholder="field.placeholder?.replace(/^#/, '') || 'FF5733'"
+          :disabled="isDisabled"
+          class="w-full h-10 pl-7 pr-3.5 text-xs bg-white text-gray-700 border border-gray-200/80 rounded-lg shadow-2xs font-mono font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase placeholder-gray-300 transition-all"
+          @input="onHexInput"
         />
       </div>
     </div>

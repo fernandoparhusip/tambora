@@ -326,13 +326,24 @@ export interface UpdateMachineConditionRequest {
 }
 
 /** Master System DTOs */
+export interface SystemServiceUnit {
+  id: string;
+  kode?: string;
+  nama?: string;
+}
+
 export interface SystemItem {
   id: string;
   code: string;
   name: string;
   system_type: "BESAR" | "KECIL" | string;
   upk_id?: string;
+  upk_kode?: string;
+  upk_nama?: string;
+  label?: string;
+  service_units?: SystemServiceUnit[];
   service_unit_ids?: string[];
+  regional_id?: string;
   latitude?: number;
   longitude?: number;
   description?: string;
@@ -345,6 +356,7 @@ export interface CreateSystemRequest {
   system_type: string;
   upk_id?: string;
   service_unit_ids?: string[];
+  regional_id?: string;
   latitude?: number;
   longitude?: number;
   description?: string;
@@ -356,6 +368,7 @@ export interface UpdateSystemRequest {
   system_type?: string;
   upk_id?: string;
   service_unit_ids?: string[];
+  regional_id?: string;
   latitude?: number;
   longitude?: number;
   description?: string;
@@ -678,6 +691,7 @@ export interface SentralItem {
   kode_sistem?: string;
   pengelola?: string;
   status_milik?: string;
+  kode_status_milik?: string;
   status_milik_detail?: string;
   pemegang_saham?: string;
   nilai_asset_awal?: number;
@@ -699,71 +713,85 @@ export interface SentralItem {
 }
 
 export interface CreateSentralRequest {
-  kode_wilayah?: string;
-  kode_ranting?: string;
-  kode_sentral: string;
-  nama_sentral: string;
-  kode_singkatan_sentral?: string;
-  kode_jenis_pembangkit?: string;
-  jenis_bahan_bakar?: string;
-  daya_terpasang?: number;
-  daya_mampu?: number;
-  kondisi?: string;
-  latitude?: number;
-  longitude?: number;
-  radius?: number;
+  alamat?: string;
+  approve_status?: string;
   color?: string;
-  provinsi?: string;
-  kota_kabupaten?: string;
+  daya_mampu?: number;
+  daya_terpasang?: number;
+  deskripsi?: string;
+  jenis_bahan_bakar?: string;
   kecamatan?: string;
   kelurahan?: string;
-  alamat?: string;
-  nama_pulau?: string;
-  kode_sistem?: string;
-  pengelola?: string;
-  status_milik?: string;
-  status_milik_detail?: string;
-  pemegang_saham?: string;
-  nilai_asset_awal?: number;
-  tahun_operasi?: number;
-  sejarah?: string;
-  penghargaan?: string;
-  deskripsi?: string;
   keterangan?: string;
+  kode_jenis_pembangkit?: string;
+  kode_ranting?: string;
+  kode_sentral: string;
+  kode_singkatan_sentral?: string;
+  kode_sistem?: string;
+  kode_status_milik?: string;
+  kode_wilayah?: string;
+  kondisi?: string;
+  kota_kabupaten?: string;
+  latitude?: number;
+  longitude?: number;
   manager?: string;
   manager_phone?: string;
+  nama_pulau?: string;
+  nama_sentral: string;
+  nilai_asset_awal?: number;
+  pemegang_saham?: string;
+  pengelola?: string;
+  penghargaan?: string;
+  photo?: string;
+  provinsi?: string;
+  radius?: number;
+  sejarah?: string;
+  status_milik?: string;
+  status_milik_detail?: string;
+  tahun_operasi?: number;
   wakil_manager?: string;
   wakil_manager_phone?: string;
-  approve_status?: string;
-  photo?: string;
 }
 
 export interface UpdateSentralRequest {
-  kode_wilayah?: string;
-  kode_ranting?: string;
-  kode_sentral?: string;
-  nama_sentral?: string;
-  kode_singkatan_sentral?: string;
-  kode_jenis_pembangkit?: string;
-  jenis_bahan_bakar?: string;
-  daya_terpasang?: number;
-  daya_mampu?: number;
-  kondisi?: string;
-  latitude?: number;
-  longitude?: number;
-  radius?: number;
+  alamat?: string;
+  approve_status?: string;
   color?: string;
-  provinsi?: string;
-  kota_kabupaten?: string;
+  daya_mampu?: number;
+  daya_terpasang?: number;
+  deskripsi?: string;
+  jenis_bahan_bakar?: string;
   kecamatan?: string;
   kelurahan?: string;
-  alamat?: string;
-  pengelola?: string;
-  status_milik?: string;
+  keterangan?: string;
+  kode_jenis_pembangkit?: string;
+  kode_ranting?: string;
+  kode_sentral?: string;
+  kode_singkatan_sentral?: string;
+  kode_sistem?: string;
+  kode_status_milik?: string;
+  kode_wilayah?: string;
+  kondisi?: string;
+  kota_kabupaten?: string;
+  latitude?: number;
+  longitude?: number;
   manager?: string;
   manager_phone?: string;
+  nama_pulau?: string;
+  nama_sentral?: string;
+  nilai_asset_awal?: number;
+  pemegang_saham?: string;
+  pengelola?: string;
+  penghargaan?: string;
+  photo?: string;
+  provinsi?: string;
+  radius?: number;
+  sejarah?: string;
+  status_milik?: string;
+  status_milik_detail?: string;
   tahun_operasi?: number;
-  approve_status?: string;
+  wakil_manager?: string;
+  wakil_manager_phone?: string;
 }
 
 /** Master Menu DTOs */

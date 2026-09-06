@@ -25,6 +25,7 @@ export interface FormFieldConfig {
     | 'textarea'
     | 'email'
     | 'password'
+    | 'color'
     | 'switch'
     | 'coordinate-picker';
   latKey?: string;
