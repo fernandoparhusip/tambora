@@ -69,7 +69,6 @@ export const useUp2d = () => {
   };
 
   const createUp2d = async (payload: CreateUp2dRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<Up2dItem>>('/up2d', {
@@ -81,13 +80,10 @@ export const useUp2d = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat UP2D baru.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateUp2d = async (id: string, payload: UpdateUp2dRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<Up2dItem>>(`/up2d/${id}`, {
@@ -99,13 +95,10 @@ export const useUp2d = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui UP2D.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteUp2d = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<any>>(`/up2d/${id}/delete`, {
@@ -116,8 +109,6 @@ export const useUp2d = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus UP2D.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

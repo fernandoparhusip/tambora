@@ -370,6 +370,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Aset Mesin"
       subtitle="Informasi Aset Mesin"
+      :record="detailRecord"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
       @close="closeDetailModal"

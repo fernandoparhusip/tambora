@@ -195,7 +195,7 @@ export const menuItems: MenuItem[] = [
       },
       {
         key: "organization",
-        label: "Organisasi (Legacy)",
+        label: "Organisasi",
         pageTitle: "Master Organisasi",
         path: "/home/master/organization",
         permission: "ORGANIZATION.VIEW",

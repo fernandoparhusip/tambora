@@ -69,7 +69,6 @@ export const useUiwUid = () => {
   };
 
   const createUiwUid = async (payload: CreateUiwUidRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<UiwUidItem>>('/uiw-uid', {
@@ -81,13 +80,10 @@ export const useUiwUid = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat UIW / UID baru.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateUiwUid = async (id: string, payload: UpdateUiwUidRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<UiwUidItem>>(`/uiw-uid/${id}`, {
@@ -99,13 +95,10 @@ export const useUiwUid = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui UIW / UID.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteUiwUid = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<any>>(`/uiw-uid/${id}/delete`, {
@@ -116,8 +109,6 @@ export const useUiwUid = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus UIW / UID.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

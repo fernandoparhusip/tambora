@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type {
-  DetailDataItem,
-  ActivityLogItem,
-} from "~/components/base/BaseDetailModal.vue";
+import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
 import type { ScopeItem, TableColumn } from "~/types";
-import { formatAppDateTime } from "~/utils/formatDate";
 import { getAksesLevelFormSections } from "~/schemas/konfigurasi-aplikasi/akses-level.schema";
 import { useAksesLevel } from "~/composables/konfigurasi-aplikasi/useAksesLevel";
 
@@ -204,10 +200,7 @@ const handleSave = async () => {
       isSuccessModalOpen.value = true;
     }, 150);
   } catch (err: any) {
-    toast.error(
-      err?.message || "Gagal menyimpan data akses level.",
-      "Terjadi Kesalahan",
-    );
+    // Handled by global toast in useApi
   } finally {
     isSubmitting.value = false;
   }
@@ -230,62 +223,13 @@ const confirmDelete = async () => {
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (err: any) {
-    toast.error(err?.message || "Gagal menghapus akses level.", "Gagal Hapus");
+    // Handled by global toast in useApi
   } finally {
     isDeleting.value = false;
   }
 };
 
 // Detail Data Items
-const formattedCreatedDate = computed(() => {
-  if (!detailRecord.value?.created_at) return "-";
-  return formatAppDateTime(detailRecord.value.created_at);
-});
-
-const activityLogs = computed<ActivityLogItem[]>(() => {
-  if (!detailRecord.value) return [];
-
-  const historyList = (detailRecord.value as any)?.history;
-  if (Array.isArray(historyList) && historyList.length > 0) {
-    return historyList.map((item: any) => {
-      const userName =
-        item.user_name ||
-        item.updated_by_name ||
-        item.created_by_name ||
-        (detailRecord.value as any)?.created_by_name ||
-        "Super Administrator";
-      const initial = userName.charAt(0).toUpperCase();
-      const actionText =
-        item.title ||
-        (item.action === "CREATE"
-          ? `Membuat Akses Level ${detailRecord.value?.name || ""}`
-          : item.action === "UPDATE"
-            ? `Mengubah Akses Level ${detailRecord.value?.name || ""}`
-            : item.action || "Aktivitas Akses Level");
-      const dt = formatAppDateTime(item.created_at || item.updated_at);
-      return {
-        initial,
-        user: userName,
-        action: actionText,
-        timestamp: dt,
-      };
-    });
-  }
-
-  const creator =
-    (detailRecord.value as any)?.created_by_name ||
-    (detailRecord.value as any)?.created_by ||
-    "Admin";
-  return [
-    {
-      initial: creator.charAt(0).toUpperCase(),
-      user: creator,
-      action: `Membuat Akses Level ${detailRecord.value?.name || ""}`.trim(),
-      timestamp: formattedCreatedDate.value,
-    },
-  ];
-});
-
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   return [
@@ -406,15 +350,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Akses Level"
       subtitle="Informasi Akses Level"
-      :record-id="detailRecord?.id"
-      :created-date="formattedCreatedDate"
-      :created-by="
-        (detailRecord as any)?.created_by_name ||
-        (detailRecord as any)?.created_by ||
-        'Admin'
-      "
+      :record="detailRecord"
       :data-items="detailDataItems"
-      :activity-logs="activityLogs"
       :loading="detailLoading"
       @close="closeDetailModal"
       @edit="openEditFromDetail()"

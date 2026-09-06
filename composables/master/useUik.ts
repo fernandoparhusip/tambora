@@ -59,7 +59,6 @@ export const useUik = () => {
   };
 
   const createUik = async (payload: CreateUikRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<UikItem>>('/uik', {
@@ -71,13 +70,10 @@ export const useUik = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat UIK baru.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateUik = async (id: string, payload: UpdateUikRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<UikItem>>(`/uik/${id}`, {
@@ -89,13 +85,10 @@ export const useUik = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui UIK.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteUik = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<any>>(`/uik/${id}/delete`, {
@@ -106,8 +99,6 @@ export const useUik = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus UIK.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

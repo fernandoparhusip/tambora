@@ -37,31 +37,6 @@ export const getRantingFormSections = (
           required: true,
           colSpan: 12,
         },
-        {
-          key: "status_ranting",
-          label: "Status Ranting",
-          type: "select",
-          placeholder: "Pilih Status Ranting",
-          options: [
-            { label: "AKTIF", value: "AKTIF" },
-            { label: "TIDAK AKTIF", value: "TIDAK AKTIF" },
-          ],
-          required: false,
-          colSpan: 12,
-        },
-        {
-          key: "approve_status",
-          label: "Status",
-          type: "select",
-          placeholder: "Pilih Status Approval",
-          options: [
-            { label: "APPROVED", value: "APPROVED" },
-            { label: "DRAFT", value: "DRAFT" },
-            { label: "REJECTED", value: "REJECTED" },
-          ],
-          required: false,
-          colSpan: 12,
-        },
       ],
     },
   ];

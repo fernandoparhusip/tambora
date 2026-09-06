@@ -302,6 +302,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Driver"
       subtitle="Informasi Driver"
+      :record="detailRecord"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
       @close="closeDetailModal"

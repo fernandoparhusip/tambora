@@ -3,10 +3,8 @@ import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, CabangItem } from "~/types";
 import { getCabangFormSections } from "~/schemas/master/cabang.schema";
 import type { DetailDataItem } from "~/types/master.types";
-import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
 import { useCabang } from "~/composables/master/useCabang";
 import { useRegional } from "~/composables/master/useRegional";
-import { formatAppDateTime } from "~/utils/formatDate";
 import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
@@ -40,7 +38,6 @@ const cabangColumns: TableColumn[] = [
   { key: "kode_wilayah", label: "Kode Regional" },
   { key: "kode_cabang", label: "Kode" },
   { key: "nama_cabang", label: "Nama" },
-  { key: "approve_status", label: "Status" },
   { key: "actions", label: "Aksi" },
 ];
 
@@ -72,8 +69,7 @@ const filteredData = computed(() => {
     (item) =>
       (item.kode_cabang && item.kode_cabang.toLowerCase().includes(q)) ||
       (item.nama_cabang && item.nama_cabang.toLowerCase().includes(q)) ||
-      (item.kode_wilayah && item.kode_wilayah.toLowerCase().includes(q)) ||
-      (item.approve_status && item.approve_status.toLowerCase().includes(q)),
+      (item.kode_wilayah && item.kode_wilayah.toLowerCase().includes(q)),
   );
 });
 
@@ -97,7 +93,6 @@ const openCreateModal = () => {
     kode_wilayah: "",
     kode_cabang: "",
     nama_cabang: "",
-    approve_status: "",
   };
   modalOpen.value = true;
 };
@@ -120,49 +115,6 @@ const {
   fetchDetail: (id) => getCabangById(id),
   getId: (row) => row.id || row.kode_cabang,
   onEdit: (record) => handleEdit(record),
-});
-
-const formattedCreatedDate = computed(() => {
-  if (!detailRecord.value?.created_at) return "-";
-  return formatAppDateTime(detailRecord.value.created_at);
-});
-
-const activityLogs = computed<ActivityLogItem[]>(() => {
-  if (!detailRecord.value) return [];
-  const historyList = (detailRecord.value as any)?.history;
-  if (Array.isArray(historyList) && historyList.length > 0) {
-    return historyList.map((item: any) => {
-      const userName = item.user_name || "Admin";
-      const initial = userName.charAt(0).toUpperCase();
-      const actionText =
-        item.title ||
-        (item.action === "CREATE"
-          ? `Membuat Cabang ${detailRecord.value?.nama_cabang || ""}`.trim()
-          : item.action === "UPDATE"
-            ? `Mengubah Cabang ${detailRecord.value?.nama_cabang || ""}`.trim()
-            : item.action || "Aktivitas Cabang");
-      const dt = formatAppDateTime(item.created_at);
-      return {
-        initial,
-        user: userName,
-        action: actionText,
-        timestamp: dt,
-      };
-    });
-  }
-
-  const creator =
-    (detailRecord.value as any)?.created_by_name ||
-    (detailRecord.value as any)?.created_by ||
-    "Admin";
-  return [
-    {
-      initial: creator.charAt(0).toUpperCase(),
-      user: creator,
-      action: `Membuat Cabang ${detailRecord.value?.nama_cabang || ""}`.trim(),
-      timestamp: formattedCreatedDate.value,
-    },
-  ];
 });
 
 const handleDelete = (row: CabangItem) => {
@@ -195,13 +147,14 @@ const handleSave = async (data: Record<string, any>) => {
       kode_wilayah: data.kode_wilayah,
       kode_cabang: data.kode_cabang,
       nama_cabang: data.nama_cabang,
-      approve_status: data.approve_status || "APPROVED",
     };
 
     if (modalMode.value === "create") {
       await createCabang(payload);
       modalOpen.value = false;
-      isSuccessModalOpen.value = true;
+      setTimeout(() => {
+        isSuccessModalOpen.value = true;
+      }, 150);
     } else {
       const id = formData.value.id || formData.value.kode_cabang;
       await updateCabang(id, payload);
@@ -215,14 +168,6 @@ const handleSave = async (data: Record<string, any>) => {
   }
 };
 
-const getStatusBadgeVariant = (status?: string): any => {
-  const s = (status || "").toUpperCase();
-  if (s === "APPROVED") return "success";
-  if (s === "REJECTED") return "danger";
-  if (s === "DRAFT") return "warning";
-  return "default";
-};
-
 // Detail Data Items
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
@@ -233,11 +178,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     },
     { label: "Kode Cabang", value: detailRecord.value.kode_cabang },
     { label: "Nama Cabang", value: detailRecord.value.nama_cabang },
-    {
-      label: "Status Approval",
-      value: detailRecord.value.approve_status || "APPROVED",
-      isStatus: true,
-    },
   ];
 });
 </script>
@@ -295,11 +235,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             }}</span>
           </template>
 
-          <template #approve_status-data="{ row }">
-            <BaseBadge :variant="getStatusBadgeVariant(row.approve_status)">
-              {{ row.approve_status || "APPROVED" }}
-            </BaseBadge>
-          </template>
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
@@ -353,15 +288,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Cabang"
       subtitle="Informasi Cabang"
-      :record-id="detailRecord?.id || detailRecord?.kode_cabang"
-      :created-date="formattedCreatedDate"
-      :created-by="
-        (detailRecord as any)?.created_by_name ||
-        (detailRecord as any)?.created_by ||
-        'Admin'
-      "
+      :record="detailRecord"
       :data-items="detailDataItems"
-      :activity-logs="activityLogs"
       :loading="detailLoading || asyncDetailLoading"
       @edit="openEditFromDetail"
       @close="closeDetailModal"

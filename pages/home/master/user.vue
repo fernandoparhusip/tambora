@@ -2,8 +2,6 @@
 import { ref, computed, onMounted } from "vue";
 import type { DetailDataItem, CreateUserRequest } from "~/types/master.types";
 import type { TableColumn } from "~/types";
-import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
-import { formatAppDateTime } from "~/utils/formatDate";
 import {
   getUserFormSections,
   userValidationSchema,
@@ -222,73 +220,6 @@ const currentUserData = computed(() => {
   return detailRecord.value.user || detailRecord.value;
 });
 
-const formattedCreatedDate = computed(() => {
-  const u = currentUserData.value;
-  const dt = u?.created_at;
-  if (!dt || dt.startsWith("0001-01-01")) {
-    const historyList = (detailRecord.value as any)?.history || u?.history;
-    if (Array.isArray(historyList) && historyList.length > 0) {
-      const createItem =
-        historyList.find((h: any) => h.action === "CREATE") || historyList[0];
-      if (
-        createItem?.created_at &&
-        !createItem.created_at.startsWith("0001-01-01")
-      ) {
-        return formatAppDateTime(createItem.created_at);
-      }
-    }
-    return "-";
-  }
-  return formatAppDateTime(dt);
-});
-
-const activityLogs = computed<ActivityLogItem[]>(() => {
-  if (!detailRecord.value) return [];
-  const u = currentUserData.value;
-  const historyList = (detailRecord.value as any)?.history || u?.history || [];
-
-  if (Array.isArray(historyList) && historyList.length > 0) {
-    return historyList.map((item: any) => {
-      const userName =
-        item.user_name ||
-        item.created_by_name ||
-        item.user ||
-        u?.full_name ||
-        u?.nama ||
-        "Admin";
-      const initial = (userName || "A").charAt(0).toUpperCase();
-      const actionText =
-        item.title ||
-        (item.action === "CREATE"
-          ? `Membuat Pengguna ${u?.full_name || u?.nama || ""}`.trim()
-          : item.action === "UPDATE"
-            ? `Mengubah Pengguna ${u?.full_name || u?.nama || ""}`.trim()
-            : item.action || "Aktivitas Pengguna");
-      const dt = formatAppDateTime(item.created_at || item.updated_at);
-      return {
-        initial,
-        user: userName,
-        action: actionText,
-        timestamp: dt,
-      };
-    });
-  }
-
-  const creator =
-    (detailRecord.value as any)?.created_by_name ||
-    u?.created_by_name ||
-    u?.created_by ||
-    "Admin";
-  return [
-    {
-      initial: creator.charAt(0).toUpperCase(),
-      user: creator,
-      action: `Membuat Pengguna ${u?.full_name || u?.nama || ""}`.trim(),
-      timestamp: formattedCreatedDate.value,
-    },
-  ];
-});
-
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!currentUserData.value) return [];
   const u = currentUserData.value;
@@ -371,20 +302,45 @@ const getPermissionTooltipContent = (p: any) => {
 };
 
 const handleEdit = async (row: any) => {
+  if (roles.value.length === 0) await fetchRoles().catch(() => {});
+  if (organizations.value.length === 0) await fetchOrganizations().catch(() => {});
+  if (scopes.value.length === 0) await fetchScopes().catch(() => {});
+  if (permissions.value.length === 0) await fetchPermissions().catch(() => {});
+
   modalMode.value = "edit";
   const userObj = row?.user || row;
-  let matchedRole = "ORG_ADMIN";
-  if (detailRoles.value && detailRoles.value.length > 0) {
-    matchedRole =
-      detailRoles.value[0].role_code ||
-      detailRoles.value[0].role_name ||
-      matchedRole;
-  } else if (userObj.role_assignments && userObj.role_assignments.length > 0) {
-    matchedRole = userObj.role_assignments[0].role_code;
-  } else if (userObj.aksesLevel) {
-    matchedRole = userObj.aksesLevel;
-  } else if (userObj.role) {
-    matchedRole = userObj.role;
+
+  const rawRoleKey =
+    userObj.akses_grup ||
+    userObj.aksesGrup ||
+    userObj.role_code ||
+    (detailRoles.value && detailRoles.value.length > 0
+      ? detailRoles.value[0].role_code ||
+        detailRoles.value[0].role_name ||
+        detailRoles.value[0].id
+      : null) ||
+    (userObj.role_assignments && userObj.role_assignments.length > 0
+      ? userObj.role_assignments[0].role_code ||
+        userObj.role_assignments[0].id
+      : null) ||
+    userObj.aksesLevel ||
+    userObj.role ||
+    "";
+
+  let matchedRole = rawRoleKey;
+  if (rawRoleKey && roles.value.length > 0) {
+    const found = roles.value.find(
+      (r: any) =>
+        r.code === rawRoleKey ||
+        (r as any).role_code === rawRoleKey ||
+        r.id === rawRoleKey ||
+        String(r.name || (r as any).role_name || (r as any).nama || "").toLowerCase() ===
+          String(rawRoleKey).toLowerCase(),
+    );
+    if (found) {
+      matchedRole =
+        found.code || (found as any).role_code || found.id || rawRoleKey;
+    }
   }
 
   // Prepopulate permissions
@@ -676,15 +632,8 @@ const handleSave = async (data?: Record<string, any>) => {
       v-model:is-open="isDetailModalOpen"
       :title="detailModalTitle"
       :subtitle="detailModalSubtitle"
-      :record-id="currentUserData?.id || detailRecord?.id"
+      :record="detailRecord"
       :loading="isDetailLoading"
-      :created-date="formattedCreatedDate"
-      :created-by="
-        currentUserData?.created_by_name ||
-        currentUserData?.created_by ||
-        'Admin'
-      "
-      :activity-logs="activityLogs"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
       @close="closeUserDetailModal"

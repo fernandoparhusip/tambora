@@ -59,7 +59,6 @@ export const useUpk = () => {
   };
 
   const createUpk = async (payload: CreateUpkRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<UpkItem>>('/upk', {
@@ -71,13 +70,10 @@ export const useUpk = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat UPK baru.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateUpk = async (id: string, payload: UpdateUpkRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<UpkItem>>(`/upk/${id}`, {
@@ -89,13 +85,10 @@ export const useUpk = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui UPK.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteUpk = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<any>>(`/upk/${id}/delete`, {
@@ -106,8 +99,6 @@ export const useUpk = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus UPK.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

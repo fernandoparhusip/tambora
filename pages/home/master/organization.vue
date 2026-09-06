@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import type { DetailDataItem } from '~/types/master.types';
+import type { DetailDataItem } from "~/types/master.types";
 import type { TableColumn, FormSectionConfig, OrganizationItem } from "~/types";
 import { getOrganizationFormSections } from "~/schemas/master/organization.schema";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
   organizations,
   loading,
+  detailLoading,
   fetchOrganizations,
+  getOrganizationById,
   createOrganization,
   updateOrganization,
-  deleteOrganization
+  deleteOrganization,
 } = useOrganization();
+const toast = useAppToast();
 
 const searchQuery = ref("");
 const currentPage = ref(1);
@@ -23,31 +27,30 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<OrganizationItem | null>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<OrganizationItem | null>(null);
 
 const orgColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode", label: "Kode Organisasi" },
-  { key: "nama", label: "Nama Organisasi" },
-  { key: "alamat", label: "Alamat / Wilayah" },
+  { key: "kode", label: "Kode" },
+  { key: "nama", label: "Nama" },
+  { key: "alamat", label: "Alamat" },
   { key: "keterangan", label: "Keterangan" },
-  { key: "actions", label: "Aksi" }
+  { key: "actions", label: "Aksi" },
 ];
 
 const parentOptions = computed(() => {
-  const list = [{ label: "-- Tanpa Parent (Root Node) --", value: "" }];
-  organizations.value.forEach((o: any) => {
-    list.push({ label: `${o.nama} (${o.kode})`, value: o.id });
-  });
-  return list;
+  return organizations.value
+    .filter((o: any) => !formData.value?.id || o.id !== formData.value.id)
+    .map((o: any) => ({
+      label: `${o.nama} (${o.kode})`,
+      value: o.id,
+    }));
 });
 
 const formSections = computed<FormSectionConfig[]>(() =>
-  getOrganizationFormSections({ parentOptions: parentOptions.value })
+  getOrganizationFormSections({ parentOptions: parentOptions.value }),
 );
 
 onMounted(async () => {
@@ -66,7 +69,7 @@ const filteredData = computed(() => {
       (o.kode && o.kode.toLowerCase().includes(q)) ||
       (o.nama && o.nama.toLowerCase().includes(q)) ||
       (o.alamat && o.alamat.toLowerCase().includes(q)) ||
-      (o.keterangan && o.keterangan.toLowerCase().includes(q))
+      (o.keterangan && o.keterangan.toLowerCase().includes(q)),
   );
 });
 
@@ -76,12 +79,14 @@ const paginatedData = computed(() => {
 });
 
 const modalTitle = computed(() =>
-  modalMode.value === "edit" ? "Edit Data Organisasi" : "Tambah Data Organisasi"
+  modalMode.value === "edit"
+    ? "Edit Data Organisasi"
+    : "Tambah Data Organisasi",
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "edit"
     ? "Form Ubah Organisasi"
-    : "Form Tambah Organisasi"
+    : "Form Tambah Organisasi",
 );
 
 const openCreateModal = () => {
@@ -91,29 +96,11 @@ const openCreateModal = () => {
     nama: "",
     parent_id: "",
     alamat: "",
-    latitude: "",
-    longitude: "",
-    keterangan: ""
+    latitude: null,
+    longitude: null,
+    keterangan: "",
   };
   modalOpen.value = true;
-};
-
-const handleView = (row: OrganizationItem) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-};
-
-const closeDetailModal = () => {
-  isDetailModalOpen.value = false;
-  detailRecord.value = null;
-};
-
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    const rec = detailRecord.value;
-    closeDetailModal();
-    handleEdit(rec);
-  }
 };
 
 const handleEdit = (row: OrganizationItem) => {
@@ -121,6 +108,19 @@ const handleEdit = (row: OrganizationItem) => {
   formData.value = { ...row };
   modalOpen.value = true;
 };
+
+// Universal Async Detail Management (Calls GET /api/v1/organization/{id})
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading: asyncDetailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<OrganizationItem>({
+  fetchDetail: (id) => getOrganizationById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const handleDelete = (row: OrganizationItem) => {
   deleteTarget.value = row;
@@ -132,6 +132,10 @@ const confirmDelete = async () => {
   isDeleting.value = true;
   try {
     await deleteOrganization(deleteTarget.value.id);
+    toast.success(
+      `Organisasi '${deleteTarget.value.nama}' berhasil dihapus.`,
+      "Sukses",
+    );
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (err: any) {
@@ -141,42 +145,58 @@ const confirmDelete = async () => {
   }
 };
 
-const handleSave = async () => {
-  if (!formData.value.kode || !formData.value.nama) {
-    alert("Kode Organisasi dan Nama Organisasi wajib diisi.");
+const handleSave = async (data?: Record<string, any>) => {
+  const currentData = data || formData.value;
+  if (!currentData.kode || !currentData.nama) {
+    toast.error("Kode Organisasi dan Nama Organisasi wajib diisi.", "Validasi");
     return;
   }
 
   submitting.value = true;
   try {
-    const parentId = formData.value.parent_id || undefined;
+    const parentId = currentData.parent_id || undefined;
+    const lat =
+      currentData.latitude != null &&
+      currentData.latitude !== "" &&
+      !isNaN(Number(currentData.latitude))
+        ? Number(currentData.latitude)
+        : undefined;
+    const lng =
+      currentData.longitude != null &&
+      currentData.longitude !== "" &&
+      !isNaN(Number(currentData.longitude))
+        ? Number(currentData.longitude)
+        : undefined;
+
+    const payload = {
+      kode: currentData.kode.toUpperCase().replace(/\s+/g, "-"),
+      nama: currentData.nama,
+      alamat: currentData.alamat || "",
+      keterangan: currentData.keterangan || "",
+      latitude: lat,
+      longitude: lng,
+      parent_id: parentId,
+    };
+
     if (modalMode.value === "create") {
-      await createOrganization({
-        kode: formData.value.kode.toUpperCase().replace(/\s+/g, "-"),
-        nama: formData.value.nama,
-        alamat: formData.value.alamat || "",
-        keterangan: formData.value.keterangan || "",
-        latitude: formData.value.latitude || undefined,
-        longitude: formData.value.longitude || undefined,
-        parent_id: parentId
-      });
+      await createOrganization(payload);
+      toast.success(
+        `Organisasi '${currentData.nama}' berhasil dibuat.`,
+        "Sukses",
+      );
     } else {
-      await updateOrganization(formData.value.id, {
-        kode: formData.value.kode.toUpperCase().replace(/\s+/g, "-"),
-        nama: formData.value.nama,
-        alamat: formData.value.alamat,
-        keterangan: formData.value.keterangan,
-        latitude: formData.value.latitude,
-        longitude: formData.value.longitude,
-        parent_id: parentId
-      });
+      await updateOrganization(currentData.id, payload);
+      toast.success(
+        `Organisasi '${currentData.nama}' berhasil diperbarui.`,
+        "Sukses",
+      );
     }
     modalOpen.value = false;
     setTimeout(() => {
       isSuccessModalOpen.value = true;
     }, 150);
   } catch (err: any) {
-    alert("Gagal menyimpan organisasi: " + (err?.message || err));
+    // Handled by useApi
   } finally {
     submitting.value = false;
   }
@@ -184,15 +204,30 @@ const handleSave = async () => {
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
-  const parent = organizations.value.find((o) => o.id === detailRecord.value?.parent_id);
+  const parent = organizations.value.find(
+    (o) => o.id === detailRecord.value?.parent_id,
+  );
   return [
-    { label: "Kode Organisasi", value: detailRecord.value.kode },
-    { label: "Nama Organisasi", value: detailRecord.value.nama },
-    { label: "Induk Organisasi", value: parent ? `${parent.nama} (${parent.kode})` : "Root Node" },
-    { label: "Alamat / Wilayah", value: detailRecord.value.alamat || "-" },
-    { label: "Latitude", value: detailRecord.value.latitude ? String(detailRecord.value.latitude) : "-" },
-    { label: "Longitude", value: detailRecord.value.longitude ? String(detailRecord.value.longitude) : "-" },
-    { label: "Keterangan", value: detailRecord.value.keterangan || "-" }
+    { label: "Kode", value: detailRecord.value.kode },
+    { label: "Nama", value: detailRecord.value.nama },
+    {
+      label: "Induk",
+      value: parent ? `${parent.nama} (${parent.kode})` : "Root Node",
+    },
+    { label: "Alamat", value: detailRecord.value.alamat || "-" },
+    {
+      label: "Latitude",
+      value: detailRecord.value.latitude
+        ? String(detailRecord.value.latitude)
+        : "-",
+    },
+    {
+      label: "Longitude",
+      value: detailRecord.value.longitude
+        ? String(detailRecord.value.longitude)
+        : "-",
+    },
+    { label: "Keterangan", value: detailRecord.value.keterangan || "-" },
   ];
 });
 </script>
@@ -233,22 +268,23 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #kode-data="{ row }">
-            <BaseBadge variant="mono">
-              {{ row.kode }}
-            </BaseBadge>
+            <span class="text-xs text-gray-600">{{ row.kode }}</span>
           </template>
 
           <template #nama-data="{ row }">
-            <span class="text-xs text-gray-900 font-semibold">{{ row.nama }}</span>
+            <span class="text-xs text-gray-600">{{ row.nama }}</span>
           </template>
 
           <template #alamat-data="{ row }">
-            <span class="text-xs text-gray-600">{{ row.alamat || '-' }}</span>
+            <span class="text-xs text-gray-600">{{ row.alamat || "-" }}</span>
           </template>
 
           <template #keterangan-data="{ row }">
-            <span class="text-xs text-gray-500 truncate max-w-xs block" :title="row.keterangan">
-              {{ row.keterangan || '-' }}
+            <span
+              class="text-xs text-gray-600 truncate max-w-xs block"
+              :title="row.keterangan"
+            >
+              {{ row.keterangan || "-" }}
             </span>
           </template>
 
@@ -256,8 +292,16 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="ORGANIZATION" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="ORGANIZATION" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="edit"
+                resource="ORGANIZATION"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="ORGANIZATION"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>
@@ -296,11 +340,13 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <!-- Success Modal Popup -->
     <BaseSuccessModal v-model:is-open="isSuccessModalOpen" />
 
-    <!-- ── View Detail Modal ─────────────────────────────────── -->
+    <!-- ── View Detail Modal ───────────────────────── -->
     <BaseDetailModal
       v-model:is-open="isDetailModalOpen"
       title="Detail Organisasi"
       subtitle="Informasi Organisasi"
+      :record="detailRecord"
+      :loading="detailLoading || asyncDetailLoading"
       :data-items="detailDataItems"
       @edit="openEditFromDetail"
       @close="closeDetailModal"

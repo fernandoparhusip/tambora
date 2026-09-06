@@ -2,12 +2,8 @@
 import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, RegionalItem } from "~/types";
 import { getRegionalFormSections } from "~/schemas/master/regional.schema";
-import type {
-  DetailDataItem,
-  ActivityLogItem,
-} from "~/components/base/BaseDetailModal.vue";
+import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
 import { useRegional } from "~/composables/master/useRegional";
-import { formatAppDateTime } from "~/utils/formatDate";
 import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
@@ -128,7 +124,7 @@ const confirmDelete = async () => {
     isConfirmDialogOpen.value = false;
     deleteTarget.value = null;
   } catch (err: any) {
-    toast.error(err?.message || "Gagal menghapus regional.", "Gagal Hapus");
+    // Handled by global toast in useApi
   } finally {
     isDeleting.value = false;
   }
@@ -153,7 +149,9 @@ const handleSave = async (data: Record<string, any>) => {
     if (modalMode.value === "create") {
       await createRegional(payload);
       modalOpen.value = false;
-      isSuccessModalOpen.value = true;
+      setTimeout(() => {
+        isSuccessModalOpen.value = true;
+      }, 150);
     } else {
       const id = formData.value.id || formData.value.kode_regional;
       await updateRegional(id, payload);
@@ -161,10 +159,7 @@ const handleSave = async (data: Record<string, any>) => {
       toast.success("Data regional berhasil diperbarui.", "Sukses");
     }
   } catch (err: any) {
-    toast.error(
-      err?.message || "Gagal menyimpan data regional.",
-      "Terjadi Kesalahan",
-    );
+    // Handled by global toast in useApi
   } finally {
     submitting.value = false;
   }
@@ -178,48 +173,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     { label: "Nama Regional", value: detailRecord.value.nama_regional },
     { label: "Latitude", value: detailRecord.value.latitude ?? "-" },
     { label: "Longitude", value: detailRecord.value.longitude ?? "-" },
-  ];
-});
-
-const createdDateFormatted = computed(() => {
-  return formatAppDateTime(detailRecord.value?.created_at);
-});
-
-const activityLogs = computed<ActivityLogItem[]>(() => {
-  const historyList = (detailRecord.value as any)?.history;
-  if (Array.isArray(historyList) && historyList.length > 0) {
-    return historyList.map((item: any) => {
-      const userName = item.user_name || "Admin";
-      const initial = userName.charAt(0).toUpperCase();
-      const actionText =
-        item.title ||
-        (item.action === "CREATE"
-          ? "Membuat Master Regional"
-          : item.action === "UPDATE"
-            ? "Mengubah Master Regional"
-            : item.action || "Aktivitas Regional");
-      const dt = formatAppDateTime(item.created_at);
-      return {
-        initial,
-        user: userName,
-        action: actionText,
-        timestamp: dt,
-      };
-    });
-  }
-
-  const creator =
-    (detailRecord.value as any)?.created_by_name ||
-    (detailRecord.value as any)?.created_by ||
-    "Admin";
-  return [
-    {
-      initial: creator.charAt(0).toUpperCase(),
-      user: creator,
-      action:
-        `Membuat Master Regional ${detailRecord.value?.nama_regional || ""}`.trim(),
-      timestamp: createdDateFormatted.value,
-    },
   ];
 });
 </script>
@@ -335,15 +288,8 @@ const activityLogs = computed<ActivityLogItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Regional"
       subtitle="Informasi Regional"
-      :record-id="detailRecord?.id || detailRecord?.kode_regional"
-      :created-date="createdDateFormatted"
-      :created-by="
-        (detailRecord as any)?.created_by_name ||
-        (detailRecord as any)?.created_by ||
-        'Admin'
-      "
+      :record="detailRecord"
       :data-items="detailDataItems"
-      :activity-logs="activityLogs"
       :loading="detailLoading || asyncDetailLoading"
       @close="closeDetailModal"
       @edit="openEditFromDetail()"

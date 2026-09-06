@@ -60,7 +60,6 @@ export const useMenu = () => {
   };
 
   const createMenu = async (payload: CreateMenuRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<MenuItem>>('/menu', {
@@ -72,13 +71,10 @@ export const useMenu = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat menu baru.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateMenu = async (id: string, payload: UpdateMenuRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<MenuItem>>(`/menu/${id}`, {
@@ -90,13 +86,10 @@ export const useMenu = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui menu.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteMenu = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       let res;
@@ -114,8 +107,6 @@ export const useMenu = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus menu.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

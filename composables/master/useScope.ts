@@ -49,7 +49,6 @@ export const useScope = () => {
   }
 
   const createScope = async (payload: CreateScopeRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<ScopeItem>>('/scopes', {
@@ -63,13 +62,10 @@ export const useScope = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat scope baru.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const updateScope = async (id: string, payload: UpdateScopeRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<ScopeItem>>(`/scopes/${id}`, {
@@ -83,13 +79,10 @@ export const useScope = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal mengubah data scope.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const deleteScope = async (id: string) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<null>>(`/scopes/${id}/delete`, {
@@ -100,8 +93,6 @@ export const useScope = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus scope.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 

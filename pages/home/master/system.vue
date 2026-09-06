@@ -2,9 +2,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import type { DetailDataItem } from "~/types/master.types";
 import type { TableColumn, FormSectionConfig, SystemItem } from "~/types";
-import type { ActivityLogItem } from "~/components/base/BaseDetailModal.vue";
 import { getSystemFormSections } from "~/schemas/master/system.schema";
-import { formatAppDateTime } from "~/utils/formatDate";
 import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
 const {
@@ -121,49 +119,6 @@ const {
   onEdit: (record) => handleEdit(record),
 });
 
-const formattedCreatedDate = computed(() => {
-  if (!detailRecord.value?.created_at) return "-";
-  return formatAppDateTime(detailRecord.value.created_at);
-});
-
-const activityLogs = computed<ActivityLogItem[]>(() => {
-  if (!detailRecord.value) return [];
-  const historyList = (detailRecord.value as any)?.history;
-  if (Array.isArray(historyList) && historyList.length > 0) {
-    return historyList.map((item: any) => {
-      const userName = item.user_name || "Admin";
-      const initial = userName.charAt(0).toUpperCase();
-      const actionText =
-        item.title ||
-        (item.action === "CREATE"
-          ? `Membuat Sistem ${detailRecord.value?.name || ""}`.trim()
-          : item.action === "UPDATE"
-            ? `Mengubah Sistem ${detailRecord.value?.name || ""}`.trim()
-            : item.action || "Aktivitas Sistem");
-      const dt = formatAppDateTime(item.created_at);
-      return {
-        initial,
-        user: userName,
-        action: actionText,
-        timestamp: dt,
-      };
-    });
-  }
-
-  const creator =
-    (detailRecord.value as any)?.created_by_name ||
-    (detailRecord.value as any)?.created_by ||
-    "Admin";
-  return [
-    {
-      initial: creator.charAt(0).toUpperCase(),
-      user: creator,
-      action: `Membuat Sistem ${detailRecord.value?.name || ""}`.trim(),
-      timestamp: formattedCreatedDate.value,
-    },
-  ];
-});
-
 const handleDelete = (row: SystemItem) => {
   deleteTarget.value = row;
   isConfirmDialogOpen.value = true;
@@ -219,7 +174,9 @@ const handleSave = async (data?: Record<string, any>) => {
         description: currentData.description || "",
       });
       modalOpen.value = false;
-      isSuccessModalOpen.value = true;
+      setTimeout(() => {
+        isSuccessModalOpen.value = true;
+      }, 150);
     } else {
       await updateSystem(currentData.id || formData.value.id, {
         code: currentData.code.toUpperCase().replace(/\s+/g, "-"),
@@ -408,15 +365,8 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Data Sistem Pembangkit"
       subtitle="Informasi Sistem Pembangkit"
-      :record-id="detailRecord?.id || detailRecord?.code"
-      :created-date="formattedCreatedDate"
-      :created-by="
-        (detailRecord as any)?.created_by_name ||
-        (detailRecord as any)?.created_by ||
-        'Admin'
-      "
+      :record="detailRecord"
       :data-items="detailDataItems"
-      :activity-logs="activityLogs"
       :loading="detailLoading || asyncDetailLoading"
       @edit="openEditFromDetail"
       @close="closeDetailModal"

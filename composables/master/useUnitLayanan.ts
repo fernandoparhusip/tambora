@@ -59,7 +59,6 @@ export const useUnitLayanan = () => {
   };
 
   const createUnitLayanan = async (payload: CreateUnitLayananRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<UnitLayananItem>>('/unit-layanan', {
@@ -71,13 +70,10 @@ export const useUnitLayanan = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat unit layanan baru.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateUnitLayanan = async (id: string, payload: UpdateUnitLayananRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<UnitLayananItem>>(`/unit-layanan/${id}`, {
@@ -89,13 +85,10 @@ export const useUnitLayanan = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal memperbarui unit layanan.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteUnitLayanan = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<any>>(`/unit-layanan/${id}/delete`, {
@@ -106,8 +99,6 @@ export const useUnitLayanan = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus unit layanan.';
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 

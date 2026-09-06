@@ -357,17 +357,54 @@ Semua halaman yang mengikuti pola di atas secara otomatis mendapatkan 3 perlindu
 
 ---
 
-## 4. Checklist Kualitas & Testing
+---
 
-Sebelum melakukan commit kode baru, pastikan:
+## 4. Standar Modal Detail SSOT, Isolasi State Loading & Validasi Form
 
-1. Jalankan unit test:
+### 4.1 Standarisasi Metadata Modal Detail (`BaseDetailModal`)
+Untuk mencegah duplikasi kode formatting tanggal, Published ID, dan parsing riwayat pada setiap halaman modul:
+- Cukup kirimkan `:record="detailRecord"` ke `<BaseDetailModal />`.
+- Komponen `BaseDetailModal` secara otomatis menyusun metadata standar (Published ID, Tanggal Pembuatan dengan filter tanggal nol Go `0001-01-01`, Pembuat, dan array riwayat aktivitas).
+- Halaman hanya perlu mendefinisikan `:data-items="detailDataItems"` untuk field spesifik modul.
+
+### 4.2 Isolasi State Loading Mutasi Composable
+- Fungsi mutasi (`createItem`, `updateItem`, `deleteItem`) **DILARANG** mengubah state `loading.value` tabel utama. State `loading.value` tabel hanya dikontrol oleh fungsi pemuatan (`fetchList`).
+- Form drawer mengelola state `submitting.value` tersendiri. Dengan demikian, jika validasi form gagal / backend mengembalikan error, tabel di latar belakang tidak berkedip (_flicker_).
+- Setelah mutasi berhasil, composable langsung menjalankan `await fetchList()` untuk memperbarui data tabel secara elegan.
+
+### 4.3 Jeda Transisi Modal Sukses (`BaseSuccessModal`)
+Saat menutup drawer form setelah operasi berhasil, gunakan jeda waktu 150ms sebelum membuka modal sukses untuk mencegah konflik unmount transisi:
+```typescript
+modalOpen.value = false;
+setTimeout(() => {
+  isSuccessModalOpen.value = true;
+}, 150);
+```
+
+### 4.4 Validasi Form `required: true/false`
+- Pada skema deklaratif (`schemas/`), tetapkan `required: true` untuk field wajib dan `required: false` untuk opsional.
+- `BaseFormModal` secara cerdas memvalidasi field:
+  - Tipe `coordinate-picker`: Memvalidasi Latitude (`latKey`) dan Longitude (`lngKey`) saat `required: true`.
+  - Tipe `multi-select`: Menolak array kosong `[]` jika `required: true`.
+  - Tipe teks / select: Menolak string kosong / null / undefined.
+- Indikator tanda bintang merah (`*`) pada `FormFieldRenderer` dievaluasi otomatis berdasarkan boolean `field.required`.
+
+---
+
+## 5. Checklist Kualitas & Pre-Commit Verification
+
+Sebelum melakukan commit kode baru, pastikan seluruh 3 tahapan verifikasi wajib berhasil tanpa error:
+
+1. **Linting Verification**:
    ```bash
-   npx vitest run
+   npm run lint
    ```
-   _(Wajib 100% test lulus)_.
-2. Jalankan linter:
+2. **Automated Unit Testing**:
    ```bash
-   npx eslint .
+   npm test
    ```
-3. Cek tidak ada hardcoded credentials atau URL eksternal tidak stabil.
+3. **Production Bundle Build**:
+   ```bash
+   npm run build
+   ```
+4. Pastikan tidak ada kredensial hardcoded, label usang / "Legacy", atau URL eksternal yang tidak stabil.

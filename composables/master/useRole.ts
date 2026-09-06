@@ -58,7 +58,6 @@ export const useRole = () => {
   }
 
   const createRole = async (payload: CreateRoleRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<RoleItem>>('/roles', {
@@ -72,13 +71,10 @@ export const useRole = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal membuat role baru.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const updateRole = async (id: string, payload: UpdateRoleRequest) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<RoleItem>>(`/roles/${id}`, {
@@ -92,13 +88,10 @@ export const useRole = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal mengubah data role.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
   const deleteRole = async (id: string) => {
-    loading.value = true
     error.value = null
     try {
       const res = await api<ApiResponse<null>>(`/roles/${id}/delete`, {
@@ -109,8 +102,6 @@ export const useRole = () => {
     } catch (err: any) {
       error.value = err?.message || 'Gagal menghapus role.'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 

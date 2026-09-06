@@ -37,19 +37,6 @@ export const getCabangFormSections = (
           required: true,
           colSpan: 12,
         },
-        {
-          key: "approve_status",
-          label: "Status",
-          type: "select",
-          placeholder: "Pilih Status Approval",
-          options: [
-            { label: "APPROVED", value: "APPROVED" },
-            { label: "DRAFT", value: "DRAFT" },
-            { label: "REJECTED", value: "REJECTED" },
-          ],
-          required: false,
-          colSpan: 12,
-        },
       ],
     },
   ];

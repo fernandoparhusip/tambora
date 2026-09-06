@@ -58,7 +58,6 @@ export const useAsset = () => {
   };
 
   const createAsset = async (payload: CreateAssetRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<AssetItem>>("/assets", {
@@ -70,13 +69,10 @@ export const useAsset = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal membuat data aset mesin.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const updateAsset = async (id: string, payload: UpdateAssetRequest) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<AssetItem>>(`/assets/${id}`, {
@@ -88,13 +84,10 @@ export const useAsset = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal mengubah data aset mesin.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
   const deleteAsset = async (id: string) => {
-    loading.value = true;
     error.value = null;
     try {
       const res = await api<ApiResponse<null>>(`/assets/${id}/delete`, {
@@ -105,8 +98,6 @@ export const useAsset = () => {
     } catch (err: any) {
       error.value = err?.message || "Gagal menghapus aset mesin.";
       throw err;
-    } finally {
-      loading.value = false;
     }
   };
 
