@@ -2,13 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '~/stores/auth'
 
-// Mock Nuxt runtime variables
-vi.mock('#app', () => ({
-  useCookie: () => ({
-    value: null
-  }),
-  navigateTo: vi.fn()
-}))
+
 
 describe('Auth Pinia Store', () => {
   beforeEach(() => {
@@ -56,12 +50,12 @@ describe('Auth Pinia Store', () => {
     expect(authStore.refreshToken).toBe('new_refresh_token')
   })
 
-  it('should reset state on logout', () => {
+  it('should reset state on logout', async () => {
     const authStore = useAuthStore()
     authStore.setSession({ nama: 'Admin User', role: 'Admin' }, 'token_123', 'refresh_123')
     expect(authStore.isLoggedIn).toBe(true)
 
-    authStore.logout()
+    await authStore.logout()
     expect(authStore.isLoggedIn).toBe(false)
     expect(authStore.user).toBeNull()
     expect(authStore.token).toBeNull()
