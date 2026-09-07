@@ -43,7 +43,7 @@ const pieceSize = 48; // Size of puzzle piece
 let maxX = sliderWidth - pieceSize; // Akan diupdate saat rendering berdasarkan ukuran container sebenarnya
 
 // Random target position (within reasonable limits)
-const targetPosition = () => Math.floor(Math.random() * (maxX - 100) + 50);
+const targetPosition = () => Math.floor(getSecureRandom() * (maxX - 100) + 50);
 const targetX = ref(targetPosition());
 const tolerance = 25; // Ditingkatkan untuk toleransi yang lebih besar agar puzzle yang sudah benar tidak dianggap salah
 
@@ -83,7 +83,14 @@ function preloadImage(src, timeoutMs = 2000) {
 }
 
 function getShuffledImages() {
-  return [...imageList].sort(() => Math.random() - 0.5);
+  const list = [...imageList];
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(getSecureRandom() * (i + 1));
+    const temp = list[i];
+    list[i] = list[j];
+    list[j] = temp;
+  }
+  return list;
 }
 
 async function assignRandomImage() {

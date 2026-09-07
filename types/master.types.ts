@@ -379,6 +379,7 @@ export interface AssetItem {
   id: string;
   kode_mesin: string;
   nama_mesin: string;
+  kode_spln?: string;
   serial_number?: string;
   merk_mesin?: string;
   tipe_mesin?: string;
@@ -404,6 +405,7 @@ export interface AssetItem {
 export interface CreateAssetRequest {
   kode_mesin: string;
   nama_mesin: string;
+  kode_spln?: string;
   serial_number?: string;
   merk_mesin?: string;
   tipe_mesin?: string;
@@ -428,11 +430,25 @@ export interface CreateAssetRequest {
 export interface UpdateAssetRequest {
   kode_mesin?: string;
   nama_mesin?: string;
+  kode_spln?: string;
   serial_number?: string;
+  merk_mesin?: string;
+  tipe_mesin?: string;
   daya_terpasang?: number;
   daya_mampu_netto?: number;
   daya_mampu_pasok?: number;
+  kapasitas?: number;
+  jenis_tegangan?: string;
+  tegangan_hv?: number;
+  tegangan_lv?: number;
+  merk_generator?: string;
+  nama_trafo?: string;
+  kode_bahan_bakar?: string;
   kondisi_mesin?: string;
+  status_kepemilikan_mesin?: string;
+  status_kepemilikan_kwh?: string;
+  tahun_operasi?: number;
+  power_plant_id?: string;
   system_id?: string;
 }
 
@@ -664,7 +680,7 @@ export interface UpdateUnitLayananRequest {
   is_active?: boolean;
 }
 
-/** Master Sentral Pembangkit DTOs */
+/** Master Sentral DTOs */
 export interface SentralItem {
   id: string;
   kode_wilayah?: string;

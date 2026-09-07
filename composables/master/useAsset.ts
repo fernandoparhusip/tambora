@@ -12,6 +12,7 @@ export const useAsset = () => {
   const assets = ref<AssetItem[]>([]);
   const currentAsset = ref<AssetItem | null>(null);
   const loading = ref(false);
+  const detailLoading = ref(false);
   const total = ref(0);
   const error = ref<string | null>(null);
 
@@ -41,19 +42,20 @@ export const useAsset = () => {
   };
 
   const getAssetById = async (id: string) => {
-    loading.value = true;
+    detailLoading.value = true;
     error.value = null;
     try {
-      const res = await api<ApiResponse<AssetItem>>(`/assets/${id}`);
-      if (res?.data) {
-        currentAsset.value = res.data;
+      const res = await api<ApiResponse<AssetItem> | AssetItem>(`/assets/${id}`);
+      const data = (res as any)?.data || res;
+      if (data) {
+        currentAsset.value = data;
       }
-      return res?.data;
+      return data;
     } catch (err: any) {
       error.value = err?.message || "Gagal mengambil detail aset mesin.";
       throw err;
     } finally {
-      loading.value = false;
+      detailLoading.value = false;
     }
   };
 
@@ -105,6 +107,7 @@ export const useAsset = () => {
     assets: computed(() => assets.value),
     currentAsset: computed(() => currentAsset.value),
     loading: computed(() => loading.value),
+    detailLoading: computed(() => detailLoading.value),
     total: computed(() => total.value),
     error: computed(() => error.value),
     fetchAssets,

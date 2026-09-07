@@ -3,10 +3,11 @@ import type { FormSectionConfig } from "~/types";
 export interface AssetSchemaOptions {
   systemOptions?: { label: string; value: any }[];
   conditionOptions?: { label: string; value: any }[];
+  powerPlantOptions?: { label: string; value: any }[];
 }
 
 export const getAssetFormSections = (
-  options: AssetSchemaOptions = {}
+  options: AssetSchemaOptions = {},
 ): FormSectionConfig[] => {
   const systemOptions = options.systemOptions || [];
   const conditionOptions = options.conditionOptions || [
@@ -16,14 +17,15 @@ export const getAssetFormSections = (
     { label: "Gangguan", value: "Gangguan" },
     { label: "Pemeliharaan", value: "Pemeliharaan" },
   ];
+  const powerPlantOptions = options.powerPlantOptions || [];
 
   return [
     {
-      title: "1. Identitas Mesin & Sistem",
+      title: "1. Identitas Mesin",
       fields: [
         {
           key: "kode_mesin",
-          label: "Kode Mesin",
+          label: "Kode",
           type: "text",
           placeholder: "Contoh: 1010111",
           required: true,
@@ -31,15 +33,23 @@ export const getAssetFormSections = (
         },
         {
           key: "nama_mesin",
-          label: "Nama Mesin",
+          label: "Nama",
           type: "text",
           placeholder: "Contoh: PLTD BIMA #07 (CATERPILLAR)",
           required: true,
           colSpan: 6,
         },
         {
+          key: "kode_spln",
+          label: "Kode SPLN",
+          type: "text",
+          placeholder: "Contoh: GNW01011",
+          required: false,
+          colSpan: 6,
+        },
+        {
           key: "serial_number",
-          label: "Nomor Seri",
+          label: "Serial Number",
           type: "text",
           placeholder: "Contoh: 28617",
           required: false,
@@ -47,10 +57,19 @@ export const getAssetFormSections = (
         },
         {
           key: "system_id",
-          label: "Sistem Pembangkit",
+          label: "Sistem",
           type: "searchable-select",
-          placeholder: "Pilih Sistem Pembangkit",
+          placeholder: "Pilih Sistem",
           options: systemOptions,
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "power_plant_id",
+          label: "Sentral",
+          type: "searchable-select",
+          placeholder: "Pilih Sentral",
+          options: powerPlantOptions,
           required: false,
           colSpan: 6,
         },
@@ -110,6 +129,53 @@ export const getAssetFormSections = (
           colSpan: 4,
         },
         {
+          key: "kapasitas",
+          label: "Kapasitas Generator (kVA)",
+          type: "number",
+          placeholder: "Contoh: 210",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "jenis_tegangan",
+          label: "Level Tegangan",
+          type: "select",
+          placeholder: "Pilih Level Tegangan",
+          options: [
+            {
+              label: "Tegangan Menengah (TM / MV)",
+              value: "Tegangan Menengah",
+            },
+            { label: "Tegangan Rendah (TR / LV)", value: "Tegangan Rendah" },
+            { label: "Tegangan Tinggi (TT / HV)", value: "Tegangan Tinggi" },
+            {
+              label: "Tegangan Ekstra Tinggi (TET / EHV)",
+              value: "Tegangan Ekstra Tinggi",
+            },
+            { label: "MV (Medium Voltage)", value: "MV" },
+            { label: "LV (Low Voltage)", value: "LV" },
+            { label: "HV (High Voltage)", value: "HV" },
+          ],
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "tegangan_hv",
+          label: "Tegangan HV (kV)",
+          type: "number",
+          placeholder: "Contoh: 20",
+          required: false,
+          colSpan: 6,
+        },
+        {
+          key: "tegangan_lv",
+          label: "Tegangan LV (kV)",
+          type: "number",
+          placeholder: "Contoh: 0.4",
+          required: false,
+          colSpan: 6,
+        },
+        {
           key: "merk_mesin",
           label: "Merk Mesin (Engine)",
           type: "text",
@@ -129,36 +195,15 @@ export const getAssetFormSections = (
           key: "merk_generator",
           label: "Merk Generator",
           type: "text",
-          placeholder: "Contoh: Kato, Leroy Somer, Stamford",
-          required: false,
-          colSpan: 6,
-        },
-        {
-          key: "kapasitas",
-          label: "Kapasitas Generator (kVA)",
-          type: "number",
-          placeholder: "Contoh: 4000",
-          required: false,
-          colSpan: 6,
-        },
-        {
-          key: "jenis_tegangan",
-          label: "Level Tegangan",
-          type: "select",
-          placeholder: "Pilih Level Tegangan",
-          options: [
-            { label: "LV (Low Voltage - 380V / 400V)", value: "LV" },
-            { label: "MV (Medium Voltage - 6.3kV / 20kV)", value: "MV" },
-            { label: "HV (High Voltage - 70kV / 150kV)", value: "HV" },
-          ],
+          placeholder: "Contoh: HYUNDAI, Kato, Stamford",
           required: false,
           colSpan: 6,
         },
         {
           key: "nama_trafo",
-          label: "Nama Trafo Step-Up Terhubung",
+          label: "Nama Trafo Step-Up",
           type: "text",
-          placeholder: "Contoh: Trafo Unit 7 (20kV)",
+          placeholder: "Contoh: Sintra",
           required: false,
           colSpan: 6,
         },
@@ -171,10 +216,12 @@ export const getAssetFormSections = (
           key: "status_kepemilikan_mesin",
           label: "Status Kepemilikan Mesin",
           type: "select",
-          placeholder: "Pilih Status",
+          placeholder: "Pilih Status Kepemilikan Mesin",
           options: [
-            { label: "PLN (Aset Milik Sendiri)", value: "PLN" },
-            { label: "Sewa (IPP / Rental Unit)", value: "SEWA" },
+            { label: "PLN Holding", value: "PLN Holding" },
+            { label: "PLN (Milik Sendiri)", value: "PLN" },
+            { label: "Sewa (IPP / Rental Unit)", value: "Sewa" },
+            { label: "SEWA", value: "SEWA" },
             { label: "KSO (Kerja Sama Operasi)", value: "KSO" },
           ],
           required: false,
@@ -184,9 +231,11 @@ export const getAssetFormSections = (
           key: "status_kepemilikan_kwh",
           label: "Status Kepemilikan kWh",
           type: "select",
-          placeholder: "Pilih Status kWh",
+          placeholder: "Pilih Status Kepemilikan kWh",
           options: [
+            { label: "Produksi Sendiri", value: "Produksi Sendiri" },
             { label: "PLN", value: "PLN" },
+            { label: "Beli / Sewa", value: "Beli / Sewa" },
             { label: "SEWA", value: "SEWA" },
           ],
           required: false,
@@ -195,10 +244,10 @@ export const getAssetFormSections = (
         {
           key: "tahun_operasi",
           label: "Tahun Mulai Operasi (COD)",
-          type: "number",
-          placeholder: "Contoh: 2018",
+          type: "year",
+          placeholder: "Pilih Tahun",
           required: false,
-          colSpan: 12,
+          colSpan: 6,
         },
       ],
     },

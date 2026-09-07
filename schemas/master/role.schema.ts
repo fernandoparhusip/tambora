@@ -5,7 +5,7 @@ export const roleFormSections: FormSectionConfig[] = [
     fields: [
       {
         key: "code",
-        label: "Kode Role",
+        label: "Kode",
         type: "text",
         placeholder: "Contoh: OPERATOR_UNIT, SUPERVISOR_HARIAN",
         required: true,
@@ -13,7 +13,7 @@ export const roleFormSections: FormSectionConfig[] = [
       },
       {
         key: "name",
-        label: "Nama Role",
+        label: "Nama",
         type: "text",
         placeholder: "Contoh: Operator Unit Pembangkit",
         required: true,
@@ -36,9 +36,9 @@ export const roleFormSections: FormSectionConfig[] = [
         required: false,
         colSpan: 12,
         options: [
-          { label: "Wilayah / Unit Induk", value: "Wilayah/Unit Induk" },
-          { label: "UPK / Unit Pelaksana", value: "UPK/Unit Pelaksana" },
-          { label: "ULP / Sentral Pembangkit", value: "ULP/Sentral Pembangkit" },
+          { label: "Regional", value: "Regional" },
+          { label: "UPK", value: "UPK" },
+          { label: "ULP", value: "ULP" },
         ],
       },
     ],

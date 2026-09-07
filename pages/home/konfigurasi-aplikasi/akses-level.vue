@@ -187,7 +187,8 @@ const handleSave = async () => {
         name
           .toUpperCase()
           .replace(/[^A-Z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "");
+          .replace(/^-+/, "")
+          .replace(/-+$/, "");
       if (codeToUse) {
         payload.code = codeToUse;
       }
@@ -300,25 +301,15 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton
-                type="view"
-                title="Lihat Detail"
-                @click="handleView(row)"
-              />
-              <BaseActionButton
-                type="edit"
-                resource="SCOPE"
-                title="Ubah Akses Level"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="SCOPE"
-                title="Hapus Akses Level"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="SCOPE"
+              view-title="Lihat Detail"
+              edit-title="Ubah Akses Level"
+              delete-title="Hapus Akses Level"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

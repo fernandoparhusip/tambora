@@ -71,7 +71,7 @@ const matrixSearch = ref("");
 
 function formatResourceName(code: string): string {
   const mapping: Record<string, string> = {
-    SENTRAL: "Sentral Pembangkit",
+    SENTRAL: "Master Sentral",
     CABANG: "Master Cabang",
     RANTING: "Master Ranting",
     REGIONAL: "Master Regional",
@@ -499,25 +499,15 @@ function getPermissionTooltipContent(permKey: string): string {
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton
-                type="view"
-                title="Lihat Detail"
-                @click="handleView(row)"
-              />
-              <BaseActionButton
-                type="edit"
-                resource="ROLE"
-                title="Ubah Role & Izin"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="ROLE"
-                title="Hapus Role"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="ROLE"
+              view-title="Lihat Detail"
+              edit-title="Ubah Role & Izin"
+              delete-title="Hapus Role"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 
@@ -547,12 +537,12 @@ function getPermissionTooltipContent(permKey: string): string {
         <!-- ── Permission Card Grid ── -->
         <div class="space-y-1.5">
           <!-- Form Field Style Label -->
-          <label
+          <div
             class="block text-xs font-semibold text-[#4D5E80] mb-1.5 select-none"
           >
             Daftar Hak Akses
             <span class="text-red-500 font-semibold ml-0.5">*</span>
-          </label>
+          </div>
 
           <!-- Main Permission Container Box (Modern Card Grid) -->
           <div

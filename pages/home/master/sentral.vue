@@ -29,19 +29,25 @@ const { systems, fetchSystems } = useSystem();
 const { can, isSuperAdmin } = useRbac();
 const toast = useAppToast();
 
-const searchQuery = ref("");
-const currentPage = ref(1);
-const pageSize = ref(10);
-
-const modalOpen = ref(false);
-const isSuccessModalOpen = ref(false);
-const modalMode = ref<"create" | "edit">("create");
-const formData = ref<Record<string, any>>({});
-const submitting = ref(false);
-
-const isConfirmDialogOpen = ref(false);
-const deleteTarget = ref<SentralItem | null>(null);
-const isDeleting = ref(false);
+const {
+  searchQuery,
+  currentPage,
+  pageSize,
+  paginateList,
+  modalOpen,
+  modalMode,
+  formData,
+  submitting,
+  isSuccessModalOpen,
+  modalTitle,
+  modalSubtitle,
+  openCreateModal,
+  isConfirmDialogOpen,
+  deleteTarget,
+  isDeleting,
+  openDeleteDialog,
+  executeDelete,
+} = useCrudState<SentralItem>({ resourceName: "Sentral" });
 
 const isApproveDialogOpen = ref(false);
 const approveTarget = ref<SentralItem | null>(null);
@@ -150,10 +156,6 @@ onMounted(async () => {
   ]);
 });
 
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
-
 const filteredData = computed(() => {
   if (!searchQuery.value) return sentralList.value;
   const q = searchQuery.value.toLowerCase();
@@ -167,21 +169,10 @@ const filteredData = computed(() => {
   );
 });
 
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredData.value.slice(start, start + pageSize.value);
-});
+const paginatedData = computed(() => paginateList(filteredData.value));
 
-const modalTitle = computed(() =>
-  modalMode.value === "create" ? "Tambah Data Sentral" : "Ubah Data Sentral",
-);
-const modalSubtitle = computed(() =>
-  modalMode.value === "create" ? "Form Tambah Sentral" : "Form Ubah Sentral",
-);
-
-const openCreateModal = () => {
-  modalMode.value = "create";
-  formData.value = {
+const handleCreate = () => {
+  openCreateModal({
     alamat: "",
     approve_status: "",
     color: "",
@@ -220,8 +211,7 @@ const openCreateModal = () => {
     tahun_operasi: null,
     wakil_manager: "",
     wakil_manager_phone: "",
-  };
-  modalOpen.value = true;
+  });
 };
 
 const handleEdit = (row: SentralItem) => {
@@ -263,28 +253,15 @@ const {
 });
 
 const handleDelete = (row: SentralItem) => {
-  deleteTarget.value = row;
-  isConfirmDialogOpen.value = true;
+  openDeleteDialog(row);
 };
 
 const confirmDelete = async () => {
   if (!deleteTarget.value) return;
-  isDeleting.value = true;
-  try {
-    await deleteSentral(
-      deleteTarget.value.id || deleteTarget.value.kode_sentral,
-    );
-    toast.success(
-      `Sentral '${deleteTarget.value.nama_sentral}' berhasil dihapus.`,
-      "Sukses",
-    );
-    isConfirmDialogOpen.value = false;
-    deleteTarget.value = null;
-  } catch (err: any) {
-    // Handled by global toast in useApi
-  } finally {
-    isDeleting.value = false;
-  }
+  await executeDelete((id) => deleteSentral(String(id)), {
+    targetId: deleteTarget.value.id || deleteTarget.value.kode_sentral,
+    targetName: deleteTarget.value.nama_sentral,
+  });
 };
 
 const handleApprove = (row: SentralItem) => {
@@ -567,7 +544,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton resource="SENTRAL" @click="openCreateModal" />
+          <BaseCreateButton resource="SENTRAL" @click="handleCreate" />
         </div>
 
         <!-- Table Container -->
@@ -631,48 +608,38 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton
-                type="view"
-                title="Lihat Detail"
-                @click="handleView(row)"
-              />
-              <BaseActionButton
-                type="edit"
-                resource="SENTRAL"
-                title="Ubah Sentral"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                v-if="canApprove && row.approve_status !== 'APPROVED'"
-                type="custom"
-                permission="SENTRAL.APPROVE"
-                title="Setujui Sentral (Approve)"
-                class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-100"
-                @click="handleApprove(row)"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="w-3.5 h-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2.5"
+            <BaseTableActions
+              resource="SENTRAL"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            >
+              <template #extra>
+                <BaseActionButton
+                  v-if="canApprove && row.approve_status !== 'APPROVED'"
+                  type="custom"
+                  permission="SENTRAL.APPROVE"
+                  title="Setujui Sentral (Approve)"
+                  class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-emerald-100"
+                  @click="handleApprove(row)"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </BaseActionButton>
-              <BaseActionButton
-                type="delete"
-                resource="SENTRAL"
-                title="Hapus Sentral"
-                @click="handleDelete(row)"
-              />
-            </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </BaseActionButton>
+              </template>
+            </BaseTableActions>
           </template>
         </BaseTable>
 
@@ -723,7 +690,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
     <!-- Confirm Approve Dialog -->
     <BaseConfirmDialog
       v-model:is-open="isApproveDialogOpen"
-      title="Setujui Sentral Pembangkit"
+      title="Setujui Sentral"
       :message="`Apakah Anda yakin ingin menyetujui (Approve) Sentral '${approveTarget?.nama_sentral || ''}'? Status sentral akan menjadi APPROVED.`"
       :loading="isApproving"
       @confirm="confirmApprove"

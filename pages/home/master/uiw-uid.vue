@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import type { DetailDataItem, UiwUidItem } from "~/types/master.types";
 import type { TableColumn } from "~/types";
 import { uiwUidFormSections } from "~/schemas/master/uiw-uid.schema";
@@ -16,21 +16,27 @@ const {
   updateUiwUid,
   deleteUiwUid,
 } = useUiwUid();
-const toast = useAppToast();
 
-const searchQuery = ref("");
-const currentPage = ref(1);
-const pageSize = ref(10);
-
-const modalOpen = ref(false);
-const isSuccessModalOpen = ref(false);
-const modalMode = ref<"create" | "edit">("create");
-const formData = ref<Record<string, any>>({});
-const submitting = ref(false);
-
-const isConfirmDialogOpen = ref(false);
-const deleteTarget = ref<UiwUidItem | null>(null);
-const isDeleting = ref(false);
+const {
+  searchQuery,
+  currentPage,
+  pageSize,
+  paginateList,
+  modalOpen,
+  modalMode,
+  formData,
+  submitting,
+  isSuccessModalOpen,
+  modalTitle,
+  modalSubtitle,
+  openCreateModal,
+  openEditModal,
+  isConfirmDialogOpen,
+  deleteTarget,
+  isDeleting,
+  openDeleteDialog,
+  executeDelete,
+} = useCrudState<UiwUidItem>({ resourceName: "UIW / UID" });
 
 const uiwUidColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -44,10 +50,6 @@ onMounted(async () => {
   await fetchUiwUids();
 });
 
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
-
 const filteredData = computed(() => {
   if (!searchQuery.value) return uiwUids.value;
   const q = searchQuery.value.toLowerCase();
@@ -59,39 +61,25 @@ const filteredData = computed(() => {
   );
 });
 
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredData.value.slice(start, start + pageSize.value);
-});
+const paginatedData = computed(() => paginateList(filteredData.value));
 
-const modalTitle = computed(() =>
-  modalMode.value === "edit" ? "Edit Data UIW / UID" : "Tambah Data UIW / UID",
-);
-const modalSubtitle = computed(() =>
-  modalMode.value === "edit" ? "Form Ubah UIW / UID" : "Form Tambah UIW / UID",
-);
-
-const openCreateModal = () => {
-  modalMode.value = "create";
-  formData.value = {
+const handleCreate = () => {
+  openCreateModal({
     kode: "",
     nama: "",
     alamat: "",
     keterangan: "",
-  };
-  modalOpen.value = true;
+  });
 };
 
 const handleEdit = (row: UiwUidItem) => {
-  modalMode.value = "edit";
-  formData.value = {
+  openEditModal({
     id: row.id,
     kode: row.kode,
     nama: row.nama,
     alamat: row.alamat || "",
     keterangan: row.keterangan || "",
-  };
-  modalOpen.value = true;
+  });
 };
 
 // Universal Async Detail Management (Guarded against race conditions & memory leaks)
@@ -108,23 +96,11 @@ const {
 });
 
 const handleDelete = (row: UiwUidItem) => {
-  deleteTarget.value = row;
-  isConfirmDialogOpen.value = true;
+  openDeleteDialog(row);
 };
 
 const confirmDelete = async () => {
-  if (!deleteTarget.value) return;
-  isDeleting.value = true;
-  try {
-    await deleteUiwUid(deleteTarget.value.id);
-    isConfirmDialogOpen.value = false;
-    deleteTarget.value = null;
-    toast.success("Berhasil!", "Data UIW / UID berhasil dihapus.");
-  } catch (err: any) {
-    // Handled by global toast in useApi
-  } finally {
-    isDeleting.value = false;
-  }
+  await executeDelete((id) => deleteUiwUid(String(id)));
 };
 
 const handleSave = async () => {
@@ -181,7 +157,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           <div class="flex items-center gap-3">
             <BaseSearchInput v-model="searchQuery" />
           </div>
-          <BaseCreateButton resource="UIW_UID" @click="openCreateModal" />
+          <BaseCreateButton resource="UIW_UID" @click="handleCreate" />
         </div>
 
         <!-- Table -->
@@ -213,19 +189,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton
-                type="edit"
-                resource="UIW_UID"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="UIW_UID"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="UIW_UID"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

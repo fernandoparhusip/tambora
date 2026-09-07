@@ -274,19 +274,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton
-                type="edit"
-                resource="DRIVER"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="DRIVER"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="DRIVER"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

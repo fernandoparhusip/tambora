@@ -62,7 +62,7 @@ export const menuItems: MenuItem[] = [
       {
         key: "menu-manajemen",
         label: "Master Menu",
-        pageTitle: "Master Menu Aplikasi",
+        pageTitle: "Master Menu",
         path: "/home/konfigurasi-aplikasi/menu",
         permission: "MENU.VIEW",
         menuCode: "MENU_AUTH_ACCESS",
@@ -76,7 +76,7 @@ export const menuItems: MenuItem[] = [
       {
         key: "pengguna",
         label: "Pengguna",
-        pageTitle: "Pengguna",
+        pageTitle: "Master Pengguna",
         path: "/home/master/user",
         permission: "USER.VIEW",
         menuCode: "MENU_USERS",
@@ -84,7 +84,7 @@ export const menuItems: MenuItem[] = [
       {
         key: "permission",
         label: "Permission",
-        pageTitle: "Akses Permission",
+        pageTitle: "Master Permission",
         path: "/home/master/permission",
         permission: "PERMISSION.VIEW",
         menuCode: "MENU_PERMISSIONS",
@@ -155,8 +155,8 @@ export const menuItems: MenuItem[] = [
       },
       {
         key: "sentral",
-        label: "Sentral Pembangkit",
-        pageTitle: "Master Sentral Pembangkit",
+        label: "Sentral",
+        pageTitle: "Master Sentral",
         path: "/home/master/sentral",
         permission: "SENTRAL.VIEW",
         menuCode: "MENU_SENTRAL",
@@ -164,15 +164,15 @@ export const menuItems: MenuItem[] = [
       {
         key: "system",
         label: "Sistem",
-        pageTitle: "Master Sistem Pembangkit",
+        pageTitle: "Master Sistem",
         path: "/home/master/system",
         permission: "SYSTEM.VIEW",
         menuCode: "MENU_SYSTEM",
       },
       {
         key: "asset",
-        label: "Aset Mesin",
-        pageTitle: "Master Aset Mesin Pembangkit",
+        label: "Asset Mesin",
+        pageTitle: "Master Asset Mesin",
         path: "/home/master/asset",
         permission: "ASSET.VIEW",
         menuCode: "MENU_ASSET",

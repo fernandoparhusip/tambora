@@ -3,7 +3,7 @@
 ## 1. Overview & Problem Statement
 **Tambora Web App** adalah platform monitoring operasional, analitik sistem ketenagalistrikan, neraca daya, dan tata kelola transaksi data terpadu untuk lingkungan **PT PLN (Persero)** (khususnya Sistem Tambora & Sumbawa). 
 
-Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terhadap stabilitas pembangkit listrik, pemetaan spasial geografis sentral pembangkit (GIS), pencatatan produksi dan konsumsi bahan bakar, perencanaan anggaran pagu, serta evaluasi prognosa kesiapan mesin dan KPI kinerja (NKO).
+Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terhadap stabilitas pembangkit listrik, pemetaan spasial geografis sentral (GIS), pencatatan produksi dan konsumsi bahan bakar, perencanaan anggaran pagu, serta evaluasi prognosa kesiapan mesin dan KPI kinerja (NKO).
 
 ---
 
@@ -19,7 +19,7 @@ Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terha
 
 ### 3.1. Dashboard Operasi Pembangkit
 - **Header & Metric Summary**: Menampilkan status sistem (Normal/Siaga/Darurat), DMN, DMP, Beban Sistem, Unit Max, dan Cadangan Total/Putar.
-- **GIS Map Monitoring (`BaseMap`)**: Visualisasi lokasi sentral pembangkit berbasis OpenLayers v10 + MapTiler Positron dengan marker status (Operasi, Gangguan, Pemeliharaan/Standby) dan popup detail.
+- **GIS Map Monitoring (`BaseMap`)**: Visualisasi lokasi sentral berbasis OpenLayers v10 + MapTiler Positron dengan marker status (Operasi, Gangguan, Pemeliharaan/Standby) dan popup detail.
 - **Beban & Grafik (`BaseChart`)**: Visualisasi kurva beban real-time menggunakan Apache ECharts.
 
 ### 3.2. Tata Kelola Modul Konfigurasi Aplikasi & Master Data
@@ -36,7 +36,7 @@ Tujuan platform ini adalah memberikan visibilitas *real-time* dan historis terha
   6. **Master UP2D**: Tata kelola Unit Pelaksana Pengatur Distribusi.
   7. **Master UPK**: Tata kelola Unit Pelaksana Pembangkitan.
   8. **Master Unit Layanan**: Tata kelola Unit Layanan Pembangkitan (ULPL).
-  9. **Master Sentral Pembangkit**: Profil lengkap unit pembangkit, lokasi, manajer, dan spesifikasi teknis.
+  9. **Master Sentral**: Profil lengkap unit pembangkit, lokasi, manajer, dan spesifikasi teknis.
   10. **Master User**: Manajemen akun pengguna 20-field payload dengan form drawer satu halaman tanpa tab, dukungan SSO/Non-SSO, dan hak akses khusus.
   11. **Master Permission**: Katalog permission dinamis berbasis resource & action.
   12. **Master Driver**: Data pengemudi kendaraan dinas operasional.

@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { extractApiErrorMessage } from '~/utils/apiError'
+import { getNextSequenceId } from '~/utils/cryptoRandom'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -22,7 +23,7 @@ export const useAppToast = () => {
     title?: string,
     duration = 4000
   ): string => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+    const id = getNextSequenceId('toast')
     
     // Default titles based on type
     const defaultTitles: Record<ToastType, string> = {

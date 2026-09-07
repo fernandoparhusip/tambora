@@ -33,10 +33,10 @@ export const getOperasiHarianFormSections = (
         },
         {
           key: "sentral_id",
-          label: "Sentral / Unit Pembangkit",
+          label: "Sentral",
           type: "searchable-select",
           options: sentralOptions,
-          placeholder: "Pilih sentral pembangkit",
+          placeholder: "Pilih Sentral",
           required: true,
           colSpan: 6
         },

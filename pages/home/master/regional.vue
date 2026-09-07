@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import type { TableColumn, RegionalItem } from "~/types";
 import { getRegionalFormSections } from "~/schemas/master/regional.schema";
 import type { DetailDataItem } from "~/components/base/BaseDetailModal.vue";
@@ -18,18 +18,26 @@ const {
 } = useRegional();
 const toast = useAppToast();
 
-const searchQuery = ref("");
-const currentPage = ref(1);
-const pageSize = ref(10);
-
-const modalOpen = ref(false);
-const isSuccessModalOpen = ref(false);
-const modalMode = ref<"create" | "edit">("create");
-const formData = ref<Record<string, any>>({});
-const submitting = ref(false);
-const isConfirmDialogOpen = ref(false);
-const deleteTarget = ref<RegionalItem | null>(null);
-const isDeleting = ref(false);
+const {
+  searchQuery,
+  currentPage,
+  pageSize,
+  paginateList,
+  modalOpen,
+  modalMode,
+  formData,
+  submitting,
+  isSuccessModalOpen,
+  modalTitle,
+  modalSubtitle,
+  openCreateModal,
+  openEditModal,
+  isConfirmDialogOpen,
+  deleteTarget,
+  isDeleting,
+  openDeleteDialog,
+  executeDelete,
+} = useCrudState<RegionalItem>({ resourceName: "Regional" });
 
 const regionalColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -45,10 +53,6 @@ onMounted(async () => {
   await fetchRegional();
 });
 
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
-
 const filteredData = computed(() => {
   if (!searchQuery.value) return regionalList.value;
   const q = searchQuery.value.toLowerCase();
@@ -59,37 +63,19 @@ const filteredData = computed(() => {
   );
 });
 
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredData.value.slice(start, start + pageSize.value);
-});
+const paginatedData = computed(() => paginateList(filteredData.value));
 
-const modalTitle = computed(() =>
-  modalMode.value === "create" ? "Tambah Data Regional" : "Ubah Data Regional",
-);
-const modalSubtitle = computed(() =>
-  modalMode.value === "create"
-    ? "Form Tambah Regional"
-    : "Form Ubah Regional",
-);
-
-const openCreateModal = () => {
-  modalMode.value = "create";
-  formData.value = {
+const handleCreate = () => {
+  openCreateModal({
     kode_regional: "",
     nama_regional: "",
     latitude: null,
     longitude: null,
-  };
-  modalOpen.value = true;
+  });
 };
 
-
-
 const handleEdit = (row: RegionalItem) => {
-  modalMode.value = "edit";
-  formData.value = { ...row };
-  modalOpen.value = true;
+  openEditModal(row);
 };
 
 // Universal Async Detail Management (Guarded against race conditions & memory leaks)
@@ -106,28 +92,15 @@ const {
 });
 
 const handleDelete = (row: RegionalItem) => {
-  deleteTarget.value = row;
-  isConfirmDialogOpen.value = true;
+  openDeleteDialog(row);
 };
 
 const confirmDelete = async () => {
   if (!deleteTarget.value) return;
-  isDeleting.value = true;
-  try {
-    await deleteRegional(
-      deleteTarget.value.id || deleteTarget.value.kode_regional,
-    );
-    toast.success(
-      `Regional '${deleteTarget.value.nama_regional}' berhasil dihapus.`,
-      "Sukses",
-    );
-    isConfirmDialogOpen.value = false;
-    deleteTarget.value = null;
-  } catch (err: any) {
-    // Handled by global toast in useApi
-  } finally {
-    isDeleting.value = false;
-  }
+  await executeDelete((id) => deleteRegional(String(id)), {
+    targetId: deleteTarget.value.id || deleteTarget.value.kode_regional,
+    targetName: deleteTarget.value.nama_regional,
+  });
 };
 
 const handleSave = async (data: Record<string, any>) => {
@@ -137,11 +110,11 @@ const handleSave = async (data: Record<string, any>) => {
       kode_regional: data.kode_regional,
       nama_regional: data.nama_regional,
       latitude:
-        data.latitude != null && data.latitude !== "" && !isNaN(Number(data.latitude))
+        data.latitude != null && data.latitude !== "" && !Number.isNaN(Number(data.latitude))
           ? Number(data.latitude)
           : undefined,
       longitude:
-        data.longitude != null && data.longitude !== "" && !isNaN(Number(data.longitude))
+        data.longitude != null && data.longitude !== "" && !Number.isNaN(Number(data.longitude))
           ? Number(data.longitude)
           : undefined,
     };
@@ -195,7 +168,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton resource="REGIONAL" @click="openCreateModal" />
+          <BaseCreateButton resource="REGIONAL" @click="handleCreate" />
         </div>
 
         <!-- Table Container -->
@@ -238,25 +211,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton
-                type="view"
-                title="Lihat Detail"
-                @click="handleView(row)"
-              />
-              <BaseActionButton
-                type="edit"
-                resource="REGIONAL"
-                title="Ubah Regional"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="REGIONAL"
-                title="Hapus Regional"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="REGIONAL"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

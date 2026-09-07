@@ -33,7 +33,7 @@ tambora-frontend/
 ├── stores/             # Pinia stores (auth.ts)
 ├── types/              # TypeScript interface & DTO contracts
 ├── utils/              # Pure utility functions (exportExcel, formatNumber, apiError)
-└── test/               # Vitest unit test suite (122 tests across 20 suites, 100% green required)
+└── test/               # Vitest unit test suite (216 tests across 31 suites, 100% green required)
 ```
 
 ---
@@ -388,6 +388,19 @@ setTimeout(() => {
   - Tipe `multi-select`: Menolak array kosong `[]` jika `required: true`.
   - Tipe teks / select: Menolak string kosong / null / undefined.
 - Indikator tanda bintang merah (`*`) pada `FormFieldRenderer` dievaluasi otomatis berdasarkan boolean `field.required`.
+
+---
+
+### 4.5 Standarisasi Aksi Tabel (`BaseTableActions`) & Manajemen State CRUD (`useCrudState`)
+Untuk menjaga konsistensi antarmuka dan mengeliminasi duplikasi kode (< 3.0% SonarQube Clean As You Go):
+- Gunakan `<BaseTableActions :record="slotProps.data" @view="..." @edit="..." @delete="..." />` di seluruh kolom aksi tabel data. Komponen ini menyediakan tombol Lihat Detail, Ubah, dan Hapus yang seragam dengan tooltip, accessibility label, dan slot `#extra` untuk aksi tambahan khusus (misal: tombol Setujui).
+- Gunakan composable `useCrudState({ resourceName: 'NamaModul' })` untuk mengelola state pencarian, paginasi (`currentPage`, `pageSize`, `paginateList`), status modal (`modalOpen`, `modalMode`, `formData`, `submitting`), serta dialog konfirmasi hapus (`openDeleteDialog`, `executeDelete`).
+
+### 4.6 Keamanan PRNG & Nilai Acak Kriptografis (`cryptoRandom.ts`)
+- **DILARANG** menggunakan `Math.random()` untuk menghasilkan ID, sequence, token, atau operasi yang berdampak pada keamanan/keacakan (CWE-330 / SonarQube S2245).
+- Selalu gunakan utilitas [`utils/cryptoRandom.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/utils/cryptoRandom.ts):
+  - `getSecureRandom()`: Menghasilkan angka acak floating-point aman `[0, 1)` menggunakan Web Crypto API (`crypto.getRandomValues()`).
+  - `getNextSequenceId(prefix)`: Menghasilkan ID unik berurutan yang aman dan deterministik.
 
 ---
 

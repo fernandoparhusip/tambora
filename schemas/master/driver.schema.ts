@@ -39,7 +39,7 @@ export const driverFormSections: FormSectionConfig[] = [
         key: "phone_number",
         label: "No. Telepon",
         type: "phone",
-        placeholder: "+6281234567890",
+        placeholder: "81234567890",
         colSpan: 6,
         required: true,
       },

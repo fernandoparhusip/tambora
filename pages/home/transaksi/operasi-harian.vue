@@ -27,7 +27,7 @@ const detailRecord = ref<OperasiHarianDTO | null>(null);
 const columns: TableColumn[] = [
   { key: "no", label: "No" },
   { key: "tanggal", label: "Tanggal & Jam" },
-  { key: "nama_sentral", label: "Sentral Pembangkit" },
+  { key: "nama_sentral", label: "Sentral" },
   { key: "daya_terpasang", label: "Daya Terpasang" },
   { key: "daya_mampu_netto", label: "DMN (MW)" },
   { key: "daya_mampu_pasok", label: "DMP (MW)" },

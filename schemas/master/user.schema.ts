@@ -166,8 +166,7 @@ export const getUserFormSections = (
           type: "searchable-multi-select",
           placeholder: "Pilih permission khusus jika ada...",
           options: permissionOptions,
-          helpText:
-            "Pilih permission tambahan di luar hak akses default role.",
+          helpText: "Pilih permission tambahan di luar hak akses default role.",
           colSpan: 12,
           required: false,
           hidden: (formData) => formData.akunPengelola === true,
@@ -178,7 +177,7 @@ export const getUserFormSections = (
           key: "noTelp",
           label: "No. Telepon",
           type: "phone",
-          placeholder: "+6281234567890",
+          placeholder: "81234567890",
           colSpan: 6,
           required: false,
         },

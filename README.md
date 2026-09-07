@@ -14,7 +14,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-150_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-216_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 
 </div>
 
@@ -24,7 +24,7 @@
 
 **Tambora Web App** adalah aplikasi web berbasis _Single Page & Server-Side Rendering (Universal SSR)_ yang dirancang untuk memonitor stabilitas sistem ketenagalistrikan, neraca daya, dan pengelolaan data master pembangkitan di lingkungan **PT PLN (Persero)**.
 
-Platform ini menyediakan pemetaan lokasi sentral pembangkit (GIS), visualisasi grafik beban, formulir dinamis berbasis skema, pencatatan transaksi operasional dan anggaran, sistem keamanan sesi pengguna, serta fitur penyimpanan draf otomatis formulir.
+Platform ini menyediakan pemetaan lokasi sentral (GIS), visualisasi grafik beban, formulir dinamis berbasis skema, pencatatan transaksi operasional dan anggaran, sistem keamanan sesi pengguna, serta fitur penyimpanan draf otomatis formulir.
 
 ```mermaid
 graph LR
@@ -63,15 +63,15 @@ graph LR
 | **UI Transitions, Motion & Clean Copy**  | Transisi perpindahan rute halaman, animasi tampilan baris tabel bertingkat, akordeon menu navigasi sidebar, serta standarisasi copywriting bersih tanpa AI buzzwords (*enterprise/seamless*). |
 | **Floating Toast, LIFO Modal Esc & Guard** | Sistem notifikasi mengambang (`useAppToast`), penutupan modal bertumpuk berbasis LIFO saat menekan tombol `Esc`, serta konfirmasi pengaman perubahan belum tersimpan (_Unsaved Changes Guard_). |
 | **Dynamic Form Engine & Strict Validation** | Formulir berbasis skema deklaratif di `schemas/master/`, `schemas/transaksi/`, dan `schemas/konfigurasi-aplikasi/` dengan evaluasi validasi presisi `required: true/false` (termasuk Latitude/Longitude pada `coordinate-picker` dan pencegahan array kosong pada multi-select). |
-| **Smart Data Table & Pagination**       | Komponen tabel terpadu (`BaseTable.vue`) dengan sticky header, pengaturan sembunyikan/tampilkan kolom (_Column Visibility Toggle_), dan komponen paginasi halaman yang praktis. |
-| **Standard Action Controls**            | Komponen kontrol standar: `<BaseCreateButton @click="openCreateModal" />` (label default `"TAMBAH DATA"`) dan `<BaseSearchInput v-model="searchQuery" />` (label default `"Cari Data"`). |
+| **Smart Data Table & Unified Actions**  | Komponen tabel terpadu (`BaseTable.vue`) dengan sticky header, pengaturan sembunyikan/tampilkan kolom (_Column Visibility Toggle_), paginasi cerdas, serta standarisasi tombol aksi `<BaseTableActions>` (Lihat Detail, Ubah, Hapus, dan slot aksi tambahan `#extra`). |
+| **Standard Action Controls & CRUD State** | Komponen kontrol standar: `<BaseCreateButton @click="openCreateModal" />`, `<BaseSearchInput v-model="searchQuery" />`, serta composable terpadu `useCrudState` untuk mereduksi boilerplate paginasi, pencarian, dan dialog konfirmasi hapus. |
 | **Modul Konfigurasi Aplikasi**          | Pengaturan hak akses pengguna: **Master Akses Level**, **Master Akses Grup** (kartu izin interaktif dengan switch On/Off, master switch toggle, dan filter modul), serta **Master Menu** (manajemen navigasi dinamis). |
-| **16 Modul Master Data (SSOT Detail)** | Tata kelola CRUD lengkap dengan form drawer satu halaman tanpa tab dan modal detail SSOT (`:record="detailRecord"`): _Regional, Cabang, Ranting, UIW/UID, UIK, UP2D, UPK, Unit Layanan, Sentral Pembangkit, User (20-field & Hak Akses Khusus), Permission, Driver, Organisasi (GIS Map Picker & Async Detail SSOT), Sistem (GIS Map Picker & Async Detail), Aset Mesin, dan Kondisi Mesin_. |
+| **16 Modul Master Data (SSOT Detail)** | Tata kelola CRUD lengkap dengan form drawer satu halaman tanpa tab dan modal detail SSOT (`:record="detailRecord"`): _Regional, Cabang, Ranting, UIW/UID, UIK, UP2D, UPK, Unit Layanan, Sentral, User (20-field & Hak Akses Khusus), Permission, Driver, Organisasi (GIS Map Picker & Async Detail SSOT), Sistem (GIS Map Picker & Async Detail), Aset Mesin, dan Kondisi Mesin_. |
 | **Modul Transaksi Terpadu**             | Pencatatan operasional & keuangan: _Operasi Harian_, _Pemakaian Bahan Bakar_, _Pembebanan Generator_, _Pagu Anggaran (Tab Dinamis Unit & Bidang)_, _Prognosa Kinerja (PLTU & Non-PLTU)_, dan _Perhitungan NKO (KPI)_.         |
 | **Dedicated Backend Export**            | Dukungan ekspor laporan spreadsheet resmi dari endpoint backend (`/api/v1/pagu/export`, `/api/v1/prognosa/export`, `/api/v1/nko/export`).                                                                                          |
 | **Unified Modal Dialogs & Transition**  | Modal konfirmasi hapus terpadu (`BaseConfirmDialog`), modal sukses (`BaseSuccessModal` dengan jeda transisi 150ms), dan Single Source of Truth (`BaseDetailModal`) untuk metadata riwayat audit. |
 | **Isolasi State Loading Tabel**        | Penanganan state loading mutasi terisolasi di composable (`create`, `update`, `delete`), mencegah tabel berkedip saat terjadi error validasi pada form drawer. |
-| **Keamanan Sesi & Pemantau Inaktivasi** | Deteksi inaktivitas berbasis selisih waktu sistem (`Date.now()`) dengan dialog peringatan 2 menit sebelum logout otomatis, perpanjangan token otomatis di latar belakang, sinkronisasi multi-tab, dan pengembalian rute login. |
+| **Keamanan Sesi & Pemantau Inaktivasi** | Deteksi inaktivitas berbasis selisih waktu sistem (`Date.now()`) dengan dialog peringatan 2 menit sebelum logout otomatis, perpanjangan token otomatis di latar belakang, sinkronisasi multi-tab, dan utilitas PRNG kriptografis (`cryptoRandom.ts`). |
 
 ---
 
@@ -81,7 +81,7 @@ graph LR
 tambora-frontend/
 ├── assets/             # Asset statis, logo branding PLN, dan style overrides
 ├── components/         # Arsitektur Komponen Atomic
-│   ├── base/           # Core Base Components (BaseTable, BaseFormModal, BaseCreateButton, BaseDateFilter, BaseMap, dll)
+│   ├── base/           # Core Base Components (BaseTable, BaseTableActions, BaseFormModal, BaseCreateButton, BaseDateFilter, BaseMap, dll)
 │   └── login/          # Komponen login, form credentials, dan typewriter animation
 ├── composables/        # State Management & Business Logic (Composables Pattern)
 │   ├── konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup, useMenu
@@ -94,7 +94,7 @@ tambora-frontend/
 │   ├── master/         # Berkas Skema Form Master (regional, uiw-uid, uik, up2d, upk, unit-layanan, sentral, user, asset, system, dll)
 │   └── transaksi/      # Berkas Skema Form Transaksi (operasi, pagu, pagu-bidang, prognosa, nko, dll)
 ├── stores/             # Pinia Global Store (auth: session, security, token)
-├── test/               # Vitest Unit Test Suites & Testing Mocks (122 Tests Passed 100%)
+├── test/               # Vitest Unit Test Suites & Testing Mocks (216 Tests Passed across 31 Suites, 100%)
 ├── types/              # Modular TypeScript DTOs & Contracts
 │   ├── form.types.ts      # Tipe field & section form
 │   ├── table.types.ts     # Tipe kolom tabel & pagination

@@ -15,13 +15,18 @@ export default defineConfig({
       exclude: [
         'node_modules/**',
         '.nuxt/**',
+        '**/.cache/**',
+        '**/.output/**',
+        '**/virtual:*',
         'dist/**',
         'coverage/**',
         'nuxt.config.ts',
         'vitest.config.ts',
         'eslint.config.mjs',
         'types/**',
-        'test/**'
+        'test/**',
+        'server/**',
+        'app.vue'
       ]
     }
   }

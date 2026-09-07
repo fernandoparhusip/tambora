@@ -27,7 +27,7 @@ const detailRecord = ref<PemakaianBahanBakarDTO | null>(null);
 const columns: TableColumn[] = [
   { key: "no", label: "No" },
   { key: "tanggal", label: "Tanggal" },
-  { key: "nama_sentral", label: "Sentral Pembangkit" },
+  { key: "nama_sentral", label: "Sentral" },
   { key: "nama_mesin", label: "Unit Mesin" },
   { key: "jenis_bahan_bakar", label: "Jenis BBM" },
   { key: "pemakaian", label: "Jumlah Pemakaian" },
