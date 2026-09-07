@@ -33,7 +33,7 @@ tambora-frontend/
 ├── stores/             # Pinia stores (auth.ts)
 ├── types/              # TypeScript interface & DTO contracts
 ├── utils/              # Pure utility functions (exportExcel, formatNumber, apiError)
-└── test/               # Vitest unit test suite (216 tests across 31 suites, 100% green required)
+└── test/               # Vitest unit test suite (466 tests across 78 suites, 80.43% coverage, 100% green required)
 ```
 
 ---
@@ -406,7 +406,7 @@ Untuk menjaga konsistensi antarmuka dan mengeliminasi duplikasi kode (< 3.0% Son
 
 ## 5. Checklist Kualitas & Pre-Commit Verification
 
-Sebelum melakukan commit kode baru, pastikan seluruh 3 tahapan verifikasi wajib berhasil tanpa error:
+Sebelum melakukan commit kode baru, pastikan seluruh tahapan verifikasi wajib berhasil tanpa error:
 
 1. **Linting Verification**:
    ```bash
@@ -416,8 +416,14 @@ Sebelum melakukan commit kode baru, pastikan seluruh 3 tahapan verifikasi wajib 
    ```bash
    npm test
    ```
-3. **Production Bundle Build**:
+3. **Coverage Report Verification (SonarQube Quality Gate > 80%)**:
+   ```bash
+   npm run test:coverage
+   ```
+   > [!NOTE]
+   > Menghasilkan artefak laporan `coverage/lcov.info` untuk SonarQube dengan target statement coverage > 80% (modul `**/transaksi/**` sementara dieksklusikan dari kalkulasi coverage hingga difinalisasi).
+4. **Production Bundle Build**:
    ```bash
    npm run build
    ```
-4. Pastikan tidak ada kredensial hardcoded, label usang / "Legacy", atau URL eksternal yang tidak stabil.
+5. Pastikan tidak ada kredensial hardcoded, label usang / "Legacy", atau URL eksternal yang tidak stabil.

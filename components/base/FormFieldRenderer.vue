@@ -426,7 +426,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
           :disabled="isDisabled"
           class="w-4 h-4 text-blue-600 bg-white border-gray-300 focus:ring-blue-500 cursor-pointer"
           style="color-scheme: light; accent-color: #2563eb"
-        />
+        >
         <span>{{ opt.label }}</span>
       </label>
     </div>
@@ -474,7 +474,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
         ]"
         :value="phoneInputValue"
         @input="onPhoneInput"
-      />
+      >
     </div>
 
     <!-- Multi Select Field (or Searchable Multi Select) -->
@@ -562,7 +562,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
                 @click.stop
                 @keydown.space.stop
                 @keydown.enter.stop.prevent
-              />
+              >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-3.5 h-3.5 text-gray-400 absolute right-4 pointer-events-none"
@@ -595,7 +595,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
                     :aria-label="opt.title || opt.label"
                     class="w-3.5 h-3.5 text-blue-600 bg-white rounded-xs border-gray-300 pointer-events-none shrink-0"
                     style="color-scheme: light; accent-color: #2563eb"
-                  />
+                  >
                   <div
                     v-if="opt.description || opt.subtitle"
                     class="flex flex-col gap-0.5 text-left py-0.5 min-w-0"
@@ -722,7 +722,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
                 @click.stop
                 @keydown.space.stop
                 @keydown.enter.stop.prevent
-              />
+              >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-3.5 h-3.5 text-gray-400 absolute right-4 pointer-events-none"
@@ -870,7 +870,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
           isDisabled ? 'bg-[#E2E8F0] text-gray-600 cursor-not-allowed' : '',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
-      />
+      >
     </div>
 
     <!-- Textarea Field -->
@@ -939,7 +939,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
                 : '',
               error ? 'border-red-500 focus:ring-red-500' : '',
             ]"
-          />
+          >
         </div>
 
         <!-- Longitude -->
@@ -971,7 +971,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
                 : '',
               error ? 'border-red-500 focus:ring-red-500' : '',
             ]"
-          />
+          >
         </div>
       </div>
 
@@ -1021,7 +1021,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
           :disabled="isDisabled"
           class="w-full h-10 pl-7 pr-3.5 text-xs bg-white text-gray-700 border border-gray-200/80 rounded-lg shadow-2xs font-mono font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase placeholder-gray-300 transition-all"
           @input="onHexInput"
-        />
+        >
       </div>
     </div>
 
@@ -1049,7 +1049,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
             : 'bg-white text-gray-700 border border-gray-200/80',
           error ? 'border-red-500 focus:ring-red-500' : '',
         ]"
-      />
+      >
     </div>
 
     <!-- Help Text under input -->
