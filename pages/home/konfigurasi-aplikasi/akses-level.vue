@@ -38,9 +38,7 @@ const modalTitle = computed(() =>
   isEditMode.value ? "Ubah Data Akses Level" : "Tambah Data Akses Level",
 );
 const modalSubtitle = computed(() =>
-  isEditMode.value
-    ? "Form Ubah Akses Level"
-    : "Form Tambah Akses Level",
+  isEditMode.value ? "Form Ubah Akses Level" : "Form Tambah Akses Level",
 );
 
 const aksesLevelColumns: TableColumn[] = [
@@ -182,13 +180,10 @@ const handleSave = async () => {
       await updateAksesLevel(editingId.value, payload);
       toast.success(`Akses Level '${name}' berhasil diperbarui.`, "Sukses");
     } else {
+      const sanitizedName = name.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
       const codeToUse =
         (formData.value.code || "").trim() ||
-        name
-          .toUpperCase()
-          .replace(/[^A-Z0-9]+/g, "-")
-          .replace(/^-+/, "")
-          .replace(/-+$/, "");
+        sanitizedName.split("-").filter(Boolean).join("-");
       if (codeToUse) {
         payload.code = codeToUse;
       }
