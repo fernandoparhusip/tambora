@@ -243,6 +243,5 @@ deploy:production:
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-      # Ubah ke 'when: on_success' jika ingin rilis otomatis tanpa tombol approval manual
-      when: manual
-      allow_failure: false
+      when: on_success
+
