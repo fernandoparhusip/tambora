@@ -489,8 +489,10 @@ function onCopy(e: ClipboardEvent) {
             <img :src="iconEmail" class="w-4 h-4" >
           </div>
           <input
+            id="forgot-email"
             v-model="forgotEmail"
             type="text"
+            aria-label="Email reset password"
             placeholder="Masukkan Email"
             class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
             :class="{ 'border-red-500': forgotEmailError }"
@@ -584,8 +586,10 @@ function onCopy(e: ClipboardEvent) {
               <img :src="iconEmail" class="w-4 h-4" >
             </div>
             <input
+              id="unlock-email"
               v-model="unlockEmail"
               type="text"
+              aria-label="Email unlock account"
               placeholder="Masukkan Email"
               class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
               :class="{ 'border-red-500': unlockEmailError }"
@@ -699,8 +703,10 @@ function onCopy(e: ClipboardEvent) {
               <img :src="iconEmail" class="w-4 h-4" >
             </div>
             <input
+              id="login-email"
               v-model="email"
               type="text"
+              aria-label="Email login"
               placeholder="Masukkan Email"
               class="w-full pl-12 pr-4 py-4 !bg-white border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
               :class="{ 'border-red-500': emailError }"
@@ -721,8 +727,10 @@ function onCopy(e: ClipboardEvent) {
               <img :src="iconPassword" class="w-4 h-4" >
             </div>
             <input
+              id="login-password"
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
+              aria-label="Password login"
               placeholder="Masukkan Password"
               class="w-full pl-12 pr-12 py-4 !bg-white border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
               :class="{ 'border-red-500': passwordError }"

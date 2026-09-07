@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import type { FormFieldConfig } from "~/types";
+import { getNextSequenceId } from "~/utils/cryptoRandom";
 
 interface Props {
   field: FormFieldConfig;
@@ -91,7 +92,7 @@ const triggerRef = ref<HTMLElement | null>(null);
 const popupRef = ref<HTMLElement | null>(null);
 const selectSearchInputRef = ref<HTMLInputElement | null>(null);
 const dropdownPos = ref({ top: 0, left: 0, width: 200 });
-const uniqueDropdownId = `${props.field.key}-${Math.random().toString(36).substring(2, 9)}`;
+const uniqueDropdownId = getNextSequenceId(props.field.key);
 
 const teleportTarget = computed(() => {
   return "body";
@@ -225,7 +226,7 @@ onBeforeUnmount(() => {
 const dateValue = computed<Date | null>(() => {
   if (!value.value) return null;
   const d = new Date(value.value);
-  return isNaN(d.getTime()) ? null : d;
+  return Number.isNaN(d.getTime()) ? null : d;
 });
 
 const onDateSelect = (
@@ -248,7 +249,7 @@ const timeValue = computed<Date | null>(() => {
   const parts = String(value.value).split(":");
   if (parts.length >= 2 && parts[0] !== undefined && parts[1] !== undefined) {
     const d = new Date();
-    d.setHours(parseInt(parts[0], 10) || 0, parseInt(parts[1], 10) || 0, 0, 0);
+    d.setHours(Number.parseInt(parts[0], 10) || 0, Number.parseInt(parts[1], 10) || 0, 0, 0);
     return d;
   }
   return null;
@@ -264,6 +265,26 @@ const onTimeSelect = (
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
   value.value = `${hours}:${minutes}`;
+};
+
+// PrimeVue YearPicker (DatePicker year-only) converters
+const yearValue = computed<Date | null>(() => {
+  if (!value.value && value.value !== 0) return null;
+  if (value.value instanceof Date) return value.value;
+  const num = Number(value.value);
+  if (Number.isNaN(num) || num <= 0) return null;
+  const d = new Date(num, 0, 1);
+  return Number.isNaN(d.getTime()) ? null : d;
+});
+
+const onYearSelect = (
+  date: Date | Date[] | (Date | null)[] | null | undefined,
+) => {
+  if (!date || Array.isArray(date)) {
+    value.value = null;
+    return;
+  }
+  value.value = date.getFullYear();
 };
 
 // PrimeVue ColorPicker helpers
@@ -305,7 +326,7 @@ const latValue = computed({
     if (props.formData) {
       // eslint-disable-next-line vue/no-mutating-props
       props.formData[latKey.value] =
-        val !== "" && val !== null && !isNaN(Number(val)) ? Number(val) : null;
+        val !== "" && val !== null && !Number.isNaN(Number(val)) ? Number(val) : null;
     }
   },
 });
@@ -316,7 +337,7 @@ const lngValue = computed({
     if (props.formData) {
       // eslint-disable-next-line vue/no-mutating-props
       props.formData[lngKey.value] =
-        val !== "" && val !== null && !isNaN(Number(val)) ? Number(val) : null;
+        val !== "" && val !== null && !Number.isNaN(Number(val)) ? Number(val) : null;
     }
   },
 });
@@ -329,8 +350,8 @@ const pickerMarkers = computed(() => {
     latValue.value !== null &&
     lngValue.value !== "" &&
     lngValue.value !== null &&
-    !isNaN(lat) &&
-    !isNaN(lng)
+    !Number.isNaN(lat) &&
+    !Number.isNaN(lng)
   ) {
     return [
       {
@@ -354,8 +375,8 @@ const pickerCenter = computed<[number, number]>(() => {
     latValue.value !== null &&
     lngValue.value !== "" &&
     lngValue.value !== null &&
-    !isNaN(lat) &&
-    !isNaN(lng)
+    !Number.isNaN(lat) &&
+    !Number.isNaN(lng)
   ) {
     return [lng, lat];
   }
@@ -531,9 +552,11 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
               @click.stop
             >
               <input
+                :id="`${field.key}-multi-search`"
                 ref="selectSearchInputRef"
                 v-model="selectSearchQuery"
                 type="text"
+                aria-label="Cari Data"
                 placeholder="Cari Data ..."
                 class="w-full h-8 pl-3 pr-8 text-xs bg-white border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-gray-700 placeholder-gray-400"
                 @click.stop
@@ -569,6 +592,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
                   <input
                     type="checkbox"
                     :checked="isMultiSelected(opt.value)"
+                    :aria-label="opt.title || opt.label"
                     class="w-3.5 h-3.5 text-blue-600 bg-white rounded-xs border-gray-300 pointer-events-none shrink-0"
                     style="color-scheme: light; accent-color: #2563eb"
                   />
@@ -688,9 +712,11 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
               @click.stop
             >
               <input
+                :id="`${field.key}-select-search`"
                 ref="selectSearchInputRef"
                 v-model="selectSearchQuery"
                 type="text"
+                aria-label="Cari Data"
                 placeholder="Cari Data ..."
                 class="w-full h-8 pl-3 pr-8 text-xs bg-white border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-gray-700 placeholder-gray-400"
                 @click.stop
@@ -804,6 +830,25 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
       />
     </div>
 
+    <!-- Year Field — PrimeVue YearPicker (DatePicker year-only) -->
+    <div
+      v-else-if="field.type === 'year'"
+      class="pv-datepicker-wrap w-full"
+      :class="{ 'is-error': error, 'is-disabled': isDisabled }"
+    >
+      <DatePicker
+        :id="field.key"
+        :model-value="yearValue"
+        :placeholder="field.placeholder || 'Pilih Tahun'"
+        :disabled="isDisabled"
+        view="year"
+        date-format="yy"
+        show-icon
+        fluid
+        @update:model-value="onYearSelect"
+      />
+    </div>
+
     <!-- Currency Field -->
     <div
       v-else-if="field.type === 'currency'"
@@ -883,6 +928,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
             v-model="latValue"
             type="number"
             step="any"
+            aria-label="Latitude"
             placeholder="Contoh: 1.4870"
             :disabled="isDisabled"
             autocomplete="off"
@@ -914,6 +960,7 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
             v-model="lngValue"
             type="number"
             step="any"
+            aria-label="Longitude"
             placeholder="Contoh: 124.8421"
             :disabled="isDisabled"
             autocomplete="off"
@@ -965,9 +1012,11 @@ const onPickerMapClick = (coords?: { lat: number; lng: number }) => {
           >#</span
         >
         <input
+          :id="`${field.key}-color-hex`"
           :value="rawHexValue"
           type="text"
           maxlength="6"
+          aria-label="Kode Hex Warna"
           :placeholder="field.placeholder?.replace(/^#/, '') || 'FF5733'"
           :disabled="isDisabled"
           class="w-full h-10 pl-7 pr-3.5 text-xs bg-white text-gray-700 border border-gray-200/80 rounded-lg shadow-2xs font-mono font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase placeholder-gray-300 transition-all"

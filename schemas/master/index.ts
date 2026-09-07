@@ -11,4 +11,8 @@ export * from "./regional.schema";
 export * from "./cabang.schema";
 export * from "./ranting.schema";
 export * from "./sentral.schema";
-
+export * from "./uiw-uid.schema";
+export * from "./uik.schema";
+export * from "./up2d.schema";
+export * from "./upk.schema";
+export * from "./unit-layanan.schema";

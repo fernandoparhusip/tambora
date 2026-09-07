@@ -16,11 +16,11 @@ export const getSentralFormSections = (
 
   return [
     {
-      title: "1. Identitas & Wilayah Pembangkit",
+      title: "1. Identitas & Wilayah Sentral",
       fields: [
         {
           key: "kode_sentral",
-          label: "Kode Sentral",
+          label: "Kode",
           type: "text",
           placeholder: "Contoh: PLTD-BTG",
           required: true,
@@ -28,7 +28,7 @@ export const getSentralFormSections = (
         },
         {
           key: "nama_sentral",
-          label: "Nama Sentral",
+          label: "Nama",
           type: "text",
           placeholder: "Contoh: PLTD Bitung",
           required: true,
@@ -84,7 +84,7 @@ export const getSentralFormSections = (
         },
         {
           key: "kode_wilayah",
-          label: "Regional / Wilayah",
+          label: "Regional",
           type: "select",
           placeholder: "Pilih Regional",
           options: regionalOptions,
@@ -107,7 +107,7 @@ export const getSentralFormSections = (
         },
         {
           key: "kode_sistem",
-          label: "Sistem Kelistrikan",
+          label: "Sistem",
           type: systemOptions.length > 0 ? "select" : "text",
           placeholder: "Pilih / Input Sistem",
           options: systemOptions.length > 0 ? systemOptions : undefined,
@@ -369,7 +369,8 @@ export const getSentralFormSections = (
           key: "sejarah",
           label: "Sejarah Operasi",
           type: "textarea",
-          placeholder: "Contoh: Beroperasi sejak tahun 2015 untuk suplai Pelabuhan Bitung",
+          placeholder:
+            "Contoh: Beroperasi sejak tahun 2015 untuk suplai Pelabuhan Bitung",
           required: false,
           colSpan: 12,
           rows: 2,
@@ -385,7 +386,7 @@ export const getSentralFormSections = (
         },
         {
           key: "deskripsi",
-          label: "Deskripsi Sentral",
+          label: "Deskripsi",
           type: "textarea",
           placeholder: "Contoh: Pembangkit Listrik Tenaga Diesel Bitung",
           required: false,

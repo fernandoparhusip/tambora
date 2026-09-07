@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import type { DetailDataItem } from "~/types/master.types";
 import type { TableColumn, FormSectionConfig, OrganizationItem } from "~/types";
 import { getOrganizationFormSections } from "~/schemas/master/organization.schema";
@@ -17,19 +17,26 @@ const {
 } = useOrganization();
 const toast = useAppToast();
 
-const searchQuery = ref("");
-const currentPage = ref(1);
-const pageSize = ref(10);
-
-const modalOpen = ref(false);
-const isSuccessModalOpen = ref(false);
-const modalMode = ref<"create" | "edit">("create");
-const formData = ref<Record<string, any>>({});
-const submitting = ref(false);
-
-const isConfirmDialogOpen = ref(false);
-const deleteTarget = ref<OrganizationItem | null>(null);
-const isDeleting = ref(false);
+const {
+  searchQuery,
+  currentPage,
+  pageSize,
+  paginateList,
+  modalOpen,
+  modalMode,
+  formData,
+  submitting,
+  isSuccessModalOpen,
+  modalTitle,
+  modalSubtitle,
+  openCreateModal,
+  openEditModal,
+  isConfirmDialogOpen,
+  deleteTarget,
+  isDeleting,
+  openDeleteDialog,
+  executeDelete,
+} = useCrudState<OrganizationItem>({ resourceName: "Organisasi" });
 
 const orgColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -57,10 +64,6 @@ onMounted(async () => {
   await fetchOrganizations();
 });
 
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
-
 const filteredData = computed(() => {
   if (!searchQuery.value) return organizations.value;
   const q = searchQuery.value.toLowerCase();
@@ -73,25 +76,10 @@ const filteredData = computed(() => {
   );
 });
 
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredData.value.slice(start, start + pageSize.value);
-});
+const paginatedData = computed(() => paginateList(filteredData.value));
 
-const modalTitle = computed(() =>
-  modalMode.value === "edit"
-    ? "Edit Data Organisasi"
-    : "Tambah Data Organisasi",
-);
-const modalSubtitle = computed(() =>
-  modalMode.value === "edit"
-    ? "Form Ubah Organisasi"
-    : "Form Tambah Organisasi",
-);
-
-const openCreateModal = () => {
-  modalMode.value = "create";
-  formData.value = {
+const handleCreate = () => {
+  openCreateModal({
     kode: "",
     nama: "",
     parent_id: "",
@@ -99,14 +87,11 @@ const openCreateModal = () => {
     latitude: null,
     longitude: null,
     keterangan: "",
-  };
-  modalOpen.value = true;
+  });
 };
 
 const handleEdit = (row: OrganizationItem) => {
-  modalMode.value = "edit";
-  formData.value = { ...row };
-  modalOpen.value = true;
+  openEditModal(row);
 };
 
 // Universal Async Detail Management (Calls GET /api/v1/organization/{id})
@@ -123,26 +108,11 @@ const {
 });
 
 const handleDelete = (row: OrganizationItem) => {
-  deleteTarget.value = row;
-  isConfirmDialogOpen.value = true;
+  openDeleteDialog(row);
 };
 
 const confirmDelete = async () => {
-  if (!deleteTarget.value) return;
-  isDeleting.value = true;
-  try {
-    await deleteOrganization(deleteTarget.value.id);
-    toast.success(
-      `Organisasi '${deleteTarget.value.nama}' berhasil dihapus.`,
-      "Sukses",
-    );
-    isConfirmDialogOpen.value = false;
-    deleteTarget.value = null;
-  } catch (err: any) {
-    // Handled by useApi
-  } finally {
-    isDeleting.value = false;
-  }
+  await executeDelete((id) => deleteOrganization(String(id)));
 };
 
 const handleSave = async (data?: Record<string, any>) => {
@@ -158,13 +128,13 @@ const handleSave = async (data?: Record<string, any>) => {
     const lat =
       currentData.latitude != null &&
       currentData.latitude !== "" &&
-      !isNaN(Number(currentData.latitude))
+      !Number.isNaN(Number(currentData.latitude))
         ? Number(currentData.latitude)
         : undefined;
     const lng =
       currentData.longitude != null &&
       currentData.longitude !== "" &&
-      !isNaN(Number(currentData.longitude))
+      !Number.isNaN(Number(currentData.longitude))
         ? Number(currentData.longitude)
         : undefined;
 
@@ -250,7 +220,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton resource="ORGANIZATION" @click="openCreateModal" />
+          <BaseCreateButton resource="ORGANIZATION" @click="handleCreate" />
         </div>
 
         <!-- ── Table Container ───────────────────────────────────── -->
@@ -290,19 +260,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton
-                type="edit"
-                resource="ORGANIZATION"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="ORGANIZATION"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="ORGANIZATION"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

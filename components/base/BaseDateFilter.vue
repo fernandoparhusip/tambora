@@ -23,7 +23,7 @@ const dateValue = computed<Date | null>(() => {
   if (!props.modelValue) return null;
   if (props.modelValue instanceof Date) return props.modelValue;
   const d = new Date(props.modelValue);
-  return isNaN(d.getTime()) ? null : d;
+  return Number.isNaN(d.getTime()) ? null : d;
 });
 
 const onDateChange = (val: any) => {

@@ -27,7 +27,7 @@ const detailRecord = ref<PembebananDTO | null>(null);
 const columns: TableColumn[] = [
   { key: "no", label: "No" },
   { key: "tanggal", label: "Waktu Pencatatan" },
-  { key: "sentral_id", label: "Sentral Pembangkit" },
+  { key: "sentral_id", label: "Sentral" },
   { key: "mesin_id", label: "Unit Generator" },
   { key: "beban_mw", label: "Beban (MW)" },
   { key: "tegangan_kv", label: "Tegangan (kV)" },

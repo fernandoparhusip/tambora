@@ -11,6 +11,8 @@ defineEmits<{
 <template>
   <div class="relative flex items-center h-12 w-full sm:w-64 shrink-0">
     <input
+      id="base-search-input"
+      aria-label="Cari Data"
       :value="modelValue"
       type="text"
       placeholder="Cari Data"

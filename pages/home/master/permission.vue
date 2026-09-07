@@ -401,25 +401,15 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <!-- Table Action Buttons (View, Edit, Delete) -->
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton
-                type="view"
-                title="Lihat Detail Permission"
-                @click="handleView(row)"
-              />
-              <BaseActionButton
-                type="edit"
-                resource="PERMISSION"
-                title="Edit Permission"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="PERMISSION"
-                title="Hapus Permission"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="PERMISSION"
+              view-title="Lihat Detail Permission"
+              edit-title="Edit Permission"
+              delete-title="Hapus Permission"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

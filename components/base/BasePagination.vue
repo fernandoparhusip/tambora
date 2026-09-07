@@ -60,8 +60,8 @@ const handleInput = (e: Event) => {
   const cleanVal = target.value.replace(/\D/g, "");
   pageSizeInput.value = cleanVal;
 
-  const num = parseInt(cleanVal, 10);
-  if (!isNaN(num) && num > 0) {
+  const num = Number.parseInt(cleanVal, 10);
+  if (!Number.isNaN(num) && num > 0) {
     emit("update:pageSize", num);
     emit("update:currentPage", 1);
   }
@@ -69,8 +69,8 @@ const handleInput = (e: Event) => {
 
 // Fallback when blurred empty
 const handleBlur = () => {
-  const num = parseInt(pageSizeInput.value, 10);
-  if (isNaN(num) || num <= 0) {
+  const num = Number.parseInt(pageSizeInput.value, 10);
+  if (Number.isNaN(num) || num <= 0) {
     const fallback = props.pageSize || 5;
     pageSizeInput.value = String(fallback);
     emit("update:pageSize", fallback);
@@ -149,6 +149,8 @@ const visiblePages = computed(() => {
           "
         >
           <input
+            id="page-size-input"
+            aria-label="Jumlah baris per halaman"
             data-testid="page-size-input"
             type="text"
             inputmode="numeric"

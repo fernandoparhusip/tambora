@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import type { TableColumn, RantingItem } from "~/types";
 import { getRantingFormSections } from "~/schemas/master/ranting.schema";
 import type { DetailDataItem } from "~/types/master.types";
@@ -20,18 +20,26 @@ const {
 const { cabangList, fetchCabang } = useCabang();
 const toast = useAppToast();
 
-const searchQuery = ref("");
-const currentPage = ref(1);
-const pageSize = ref(10);
-
-const modalOpen = ref(false);
-const isSuccessModalOpen = ref(false);
-const modalMode = ref<"create" | "edit">("create");
-const formData = ref<Record<string, any>>({});
-const submitting = ref(false);
-const isConfirmDialogOpen = ref(false);
-const deleteTarget = ref<RantingItem | null>(null);
-const isDeleting = ref(false);
+const {
+  searchQuery,
+  currentPage,
+  pageSize,
+  paginateList,
+  modalOpen,
+  modalMode,
+  formData,
+  submitting,
+  isSuccessModalOpen,
+  modalTitle,
+  modalSubtitle,
+  openCreateModal,
+  openEditModal,
+  isConfirmDialogOpen,
+  deleteTarget,
+  isDeleting,
+  openDeleteDialog,
+  executeDelete,
+} = useCrudState<RantingItem>({ resourceName: "Ranting" });
 
 const rantingColumns: TableColumn[] = [
   { key: "no", label: "No" },
@@ -58,10 +66,6 @@ onMounted(async () => {
   await Promise.allSettled([fetchRanting(), fetchCabang()]);
 });
 
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
-
 const filteredData = computed(() => {
   if (!searchQuery.value) return rantingList.value;
   const q = searchQuery.value.toLowerCase();
@@ -73,43 +77,27 @@ const filteredData = computed(() => {
   );
 });
 
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredData.value.slice(start, start + pageSize.value);
-});
+const paginatedData = computed(() => paginateList(filteredData.value));
 
-const modalTitle = computed(() =>
-  modalMode.value === "create" ? "Tambah Data Ranting" : "Ubah Data Ranting",
-);
-const modalSubtitle = computed(() =>
-  modalMode.value === "create"
-    ? "Form Tambah Ranting"
-    : "Form Ubah Ranting",
-);
-
-const openCreateModal = () => {
-  modalMode.value = "create";
-  formData.value = {
+const handleCreate = () => {
+  openCreateModal({
     kode_cabang: "",
     kode_ranting: "",
     nama_ranting: "",
-  };
-  modalOpen.value = true;
+  });
 };
 
 const handleEdit = (row: RantingItem) => {
-  modalMode.value = "edit";
   const matchedCabang = cabangList.value.find(
     (c) =>
       c.id === row.kode_cabang ||
       c.kode_cabang === row.kode_cabang,
   );
-  formData.value = {
+  openEditModal({
     ...row,
     kode_cabang:
       matchedCabang?.id || row.kode_cabang || "",
-  };
-  modalOpen.value = true;
+  });
 };
 
 // Universal Async Detail Management
@@ -127,28 +115,15 @@ const {
 });
 
 const handleDelete = (row: RantingItem) => {
-  deleteTarget.value = row;
-  isConfirmDialogOpen.value = true;
+  openDeleteDialog(row);
 };
 
 const confirmDelete = async () => {
   if (!deleteTarget.value) return;
-  isDeleting.value = true;
-  try {
-    await deleteRanting(
-      deleteTarget.value.id || deleteTarget.value.kode_ranting,
-    );
-    toast.success(
-      `Ranting '${deleteTarget.value.nama_ranting}' berhasil dihapus.`,
-      "Sukses",
-    );
-    isConfirmDialogOpen.value = false;
-    deleteTarget.value = null;
-  } catch {
-    // Error notifikasi sudah ditangani terpusat oleh useApi
-  } finally {
-    isDeleting.value = false;
-  }
+  await executeDelete((id) => deleteRanting(String(id)), {
+    targetId: deleteTarget.value.id || deleteTarget.value.kode_ranting,
+    targetName: deleteTarget.value.nama_ranting,
+  });
 };
 
 const handleSave = async (data: Record<string, any>) => {
@@ -221,7 +196,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton resource="RANTING" @click="openCreateModal" />
+          <BaseCreateButton resource="RANTING" @click="handleCreate" />
         </div>
 
         <!-- Table Container -->
@@ -258,29 +233,14 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             }}</span>
           </template>
 
-
-
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton
-                type="view"
-                title="Lihat Detail"
-                @click="handleView(row)"
-              />
-              <BaseActionButton
-                type="edit"
-                resource="RANTING"
-                title="Ubah Ranting"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="RANTING"
-                title="Hapus Ranting"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="RANTING"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

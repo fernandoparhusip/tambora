@@ -298,19 +298,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton
-                type="edit"
-                resource="MENU"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="MENU"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="MENU"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

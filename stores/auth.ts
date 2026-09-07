@@ -293,7 +293,7 @@ export const useAuthStore = defineStore('auth', () => {
   const fetchUserAccess = async (force: boolean = false) => {
     if (!token.value) return null
     const now = Date.now()
-    if (!force && isFetchingAccess) return isFetchingAccess
+    if (!force && isFetchingAccess !== null) return isFetchingAccess
     if (!force && now - lastFetchedAccess < 5000 && permissions.value.length > 0) {
       return { permissions: permissions.value, scopes: scopes.value }
     }
@@ -420,7 +420,7 @@ export const useAuthStore = defineStore('auth', () => {
   const fetchUserMe = async (force: boolean = false) => {
     if (!token.value) return null
     const now = Date.now()
-    if (!force && isFetchingMe) return isFetchingMe
+    if (!force && isFetchingMe !== null) return isFetchingMe
     if (!force && now - lastFetchedMe < 5000 && user.value) {
       return user.value
     }

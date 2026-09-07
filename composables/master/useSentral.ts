@@ -53,7 +53,7 @@ export const useSentral = () => {
       total.value = res?.meta?.total || sentralList.value.length;
       return sentralList.value;
     } catch (err: any) {
-      error.value = err?.message || "Gagal memuat daftar sentral pembangkit.";
+      error.value = err?.message || "Gagal memuat daftar sentral.";
       throw err;
     } finally {
       loading.value = false;
@@ -70,7 +70,7 @@ export const useSentral = () => {
       currentSentral.value = data;
       return data;
     } catch (err: any) {
-      error.value = err?.message || "Gagal mengambil detail sentral pembangkit.";
+      error.value = err?.message || "Gagal mengambil detail sentral.";
       throw err;
     } finally {
       detailLoading.value = false;
@@ -88,7 +88,7 @@ export const useSentral = () => {
       await fetchSentral();
       return res?.data || res;
     } catch (err: any) {
-      error.value = err?.message || "Gagal membuat sentral pembangkit baru.";
+      error.value = err?.message || "Gagal membuat sentral baru.";
       throw err;
     }
   };
@@ -117,7 +117,7 @@ export const useSentral = () => {
       await fetchSentral();
       return res;
     } catch (err: any) {
-      error.value = err?.message || "Gagal menghapus sentral pembangkit.";
+      error.value = err?.message || "Gagal menghapus sentral.";
       throw err;
     }
   };

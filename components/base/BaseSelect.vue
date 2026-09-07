@@ -141,6 +141,7 @@ onBeforeUnmount(() => {
             <input
               v-model="searchQuery"
               type="text"
+              aria-label="Cari opsi"
               placeholder="Cari..."
               class="w-full h-8 pl-8 pr-3 text-xs bg-gray-50 border border-gray-200 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
               @click.stop

@@ -199,13 +199,13 @@ const handleSave = async (data?: Record<string, any>) => {
     const lat =
       currentData.latitude != null &&
       currentData.latitude !== "" &&
-      !isNaN(Number(currentData.latitude))
+      !Number.isNaN(Number(currentData.latitude))
         ? Number(currentData.latitude)
         : undefined;
     const lng =
       currentData.longitude != null &&
       currentData.longitude !== "" &&
-      !isNaN(Number(currentData.longitude))
+      !Number.isNaN(Number(currentData.longitude))
         ? Number(currentData.longitude)
         : undefined;
 
@@ -370,25 +370,15 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
 
           <!-- Action Buttons Cell Slot -->
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton
-                type="view"
-                title="Lihat Detail"
-                @click="handleView(row)"
-              />
-              <BaseActionButton
-                type="edit"
-                resource="SYSTEM"
-                title="Ubah Sistem"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="SYSTEM"
-                title="Hapus Sistem"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="SYSTEM"
+              view-title="Lihat Detail"
+              edit-title="Ubah Sistem"
+              delete-title="Hapus Sistem"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

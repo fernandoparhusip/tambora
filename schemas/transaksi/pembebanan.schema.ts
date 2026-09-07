@@ -33,10 +33,10 @@ export const getPembebananFormSections = (
         },
         {
           key: "sentral_id",
-          label: "Sentral Pembangkit",
+          label: "Sentral",
           type: "searchable-select",
           options: sentralOptions,
-          placeholder: "Pilih sentral",
+          placeholder: "Pilih Sentral",
           required: true,
           colSpan: 6
         },

@@ -61,7 +61,7 @@ export function formatAppDateTime(
       ? new Date(dateInput)
       : dateInput;
 
-    if (isNaN(date.getTime()) || date.getFullYear() < 1970) return '-';
+    if (Number.isNaN(date.getTime()) || date.getFullYear() < 1970) return '-';
 
     const {
       includeTime = true,

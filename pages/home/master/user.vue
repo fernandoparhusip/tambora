@@ -616,19 +616,12 @@ const handleSave = async (data?: Record<string, any>) => {
           </template>
 
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton
-                type="edit"
-                resource="USER"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="USER"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="USER"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 
@@ -699,8 +692,10 @@ const handleSave = async (data?: Record<string, any>) => {
 
             <div v-if="detailPermissions.length > 6" class="mb-2.5">
               <input
+                id="user-permission-search"
                 v-model="permissionSearch"
                 type="text"
+                aria-label="Cari akses permission"
                 placeholder="Cari akses permission..."
                 class="w-full text-xs px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-colors"
               >

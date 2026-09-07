@@ -33,7 +33,7 @@ export const getPaguFormSections = (): FormSectionConfig[] => {
           options: [
             { label: "Unit Induk (UIK)", value: "Unit Induk" },
             { label: "Unit Pelaksana (UPK)", value: "Unit" },
-            { label: "Sentral Pembangkit", value: "Sentral" }
+            { label: "Sentral", value: "Sentral" }
           ],
           placeholder: "Pilih scope",
           required: true,

@@ -62,7 +62,7 @@ const AVATAR_COLORS = [
 
 const cachedFullName = ref(authStore.user?.full_name || authStore.user?.nama || "");
 const cachedUsername = ref(authStore.user?.username || "");
-const cachedOrg = ref(authStore.user?.organization || authStore.user?.role || "");
+const cachedEmail = ref(authStore.user?.email || "");
 
 watch(
   () => authStore.user,
@@ -70,7 +70,7 @@ watch(
     if (newVal) {
       if (newVal.full_name || newVal.nama) cachedFullName.value = newVal.full_name || newVal.nama;
       if (newVal.username) cachedUsername.value = newVal.username;
-      if (newVal.organization || newVal.role) cachedOrg.value = newVal.organization || newVal.role || "";
+      if (newVal.email) cachedEmail.value = newVal.email;
     }
   },
   { immediate: true, deep: true },
@@ -84,8 +84,8 @@ const fullName = computed(() => {
   return authStore.user?.full_name || authStore.user?.nama || cachedFullName.value || "User";
 });
 
-const organization = computed(() => {
-  return authStore.user?.organization || authStore.user?.role || cachedOrg.value || "";
+const email = computed(() => {
+  return authStore.user?.email || cachedEmail.value || "";
 });
 
 const initials = computed(() => {
@@ -307,7 +307,7 @@ const breadcrumbs = computed<Crumb[]>(() => {
                 {{ fullName }}
               </p>
               <p class="text-xs text-gray-400 truncate">
-                {{ organization }}
+                {{ email }}
               </p>
             </div>
 

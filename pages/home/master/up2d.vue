@@ -234,19 +234,12 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #actions-data="{ row }">
-            <div class="flex items-center gap-1.5">
-              <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton
-                type="edit"
-                resource="UP2D"
-                @click="handleEdit(row)"
-              />
-              <BaseActionButton
-                type="delete"
-                resource="UP2D"
-                @click="handleDelete(row)"
-              />
-            </div>
+            <BaseTableActions
+              resource="UP2D"
+              @view="handleView(row)"
+              @edit="handleEdit(row)"
+              @delete="handleDelete(row)"
+            />
           </template>
         </BaseTable>
 

@@ -166,5 +166,53 @@ describe('Master Phase 3 Composables Test Suite', () => {
         body: expect.objectContaining({ kode_mesin: '1010112' })
       });
     });
+
+    it('updateAsset calls POST /assets/:id with full payload', async () => {
+      mockApi
+        .mockResolvedValueOnce({ data: { id: 'ast-1', kode_mesin: '1010111' } })
+        .mockResolvedValueOnce({ data: [] });
+
+      const { updateAsset } = useAsset();
+      await updateAsset('ast-1', {
+        kode_mesin: '1010111',
+        nama_mesin: 'PLTD BIMA #07 (CATERPILLAR)',
+        kode_spln: 'GNW01011',
+        kapasitas: 210,
+        daya_terpasang: 3231,
+        daya_mampu_netto: 3131,
+        daya_mampu_pasok: 3000,
+        kondisi_mesin: 'Beroperasi',
+        power_plant_id: '98000000-0000-0000-0000-000000000001',
+        system_id: '98000000-0000-0000-0000-000000000002'
+      });
+
+      expect(mockApi).toHaveBeenCalledWith('/assets/ast-1', {
+        method: 'POST',
+        body: expect.objectContaining({
+          kode_spln: 'GNW01011',
+          kapasitas: 210,
+          power_plant_id: '98000000-0000-0000-0000-000000000001'
+        })
+      });
+    });
+
+    it('getAssetById calls GET /assets/:id and returns asset detail', async () => {
+      mockApi.mockResolvedValueOnce({
+        data: {
+          id: 'ast-1',
+          kode_mesin: '1010111',
+          nama_mesin: 'PLTD BIMA #07',
+          power_plant_id: 'pw-1'
+        }
+      });
+
+      const { getAssetById, currentAsset, detailLoading } = useAsset();
+      const res = await getAssetById('ast-1');
+
+      expect(mockApi).toHaveBeenCalledWith('/assets/ast-1');
+      expect(res.id).toBe('ast-1');
+      expect(currentAsset.value?.nama_mesin).toBe('PLTD BIMA #07');
+      expect(detailLoading.value).toBe(false);
+    });
   });
 });
