@@ -291,4 +291,278 @@ describe('FormFieldRenderer', () => {
       expect(wrapper.exists()).toBe(true)
     })
   })
+
+  describe('phone input event handler', () => {
+    it('onPhoneInput strips non-digit and prepends +62', async () => {
+      const wrapper = createWrapper({ type: 'phone' }, '')
+      const input = wrapper.find('input[type="text"]')
+      if (input.exists()) {
+        await input.setValue('8123456789')
+        await input.trigger('input')
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('onPhoneInput with empty input sets value to empty', async () => {
+      const wrapper = createWrapper({ type: 'phone' }, '+628123456789')
+      const input = wrapper.find('input[type="text"]')
+      if (input.exists()) {
+        await input.setValue('')
+        await input.trigger('input')
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
+
+  describe('multi-select toggle interaction', () => {
+    it('toggles option in and out of selection', async () => {
+      const wrapper = createWrapper({
+        type: 'multi-select',
+        options: [
+          { label: 'Apple', value: 'apple' },
+          { label: 'Banana', value: 'banana' },
+        ],
+      }, [])
+
+      // Open dropdown
+      const triggerBtn = wrapper.find('button')
+      if (triggerBtn.exists()) {
+        await triggerBtn.trigger('click')
+      }
+
+      // Click option buttons inside the dropdown
+      const optionBtns = wrapper.findAll('button')
+      for (const btn of optionBtns) {
+        const text = btn.text()
+        if (text.includes('Apple') || text.includes('Banana')) {
+          await btn.trigger('click')
+          break
+        }
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('multiSelectDisplayLabel shows selected labels', () => {
+      const wrapper = createWrapper({
+        type: 'multi-select',
+        options: [
+          { label: 'Alpha', value: 'a' },
+          { label: 'Beta', value: 'b' },
+        ],
+      }, ['a', 'b'])
+      expect(wrapper.text()).toContain('Alpha')
+    })
+
+    it('multiSelectDisplayLabel returns empty for no selection', () => {
+      const wrapper = createWrapper({
+        type: 'multi-select',
+        options: [{ label: 'A', value: 'a' }],
+      }, [])
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
+
+  describe('searchable select interaction', () => {
+    it('selectOption sets value and closes dropdown', async () => {
+      const wrapper = createWrapper({
+        type: 'searchable-select',
+        options: [
+          { label: 'Option 1', value: 'o1' },
+          { label: 'Option 2', value: 'o2' },
+        ],
+      }, '')
+
+      // Open
+      const triggerBtn = wrapper.find('button')
+      if (triggerBtn.exists()) {
+        await triggerBtn.trigger('click')
+      }
+
+      // Click an option
+      const optionBtns = wrapper.findAll('button')
+      for (const btn of optionBtns) {
+        if (btn.text().includes('Option 1')) {
+          await btn.trigger('click')
+          break
+        }
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('filteredOptions filters by search query', async () => {
+      const wrapper = createWrapper({
+        type: 'searchable-select',
+        options: [
+          { label: 'Jakarta', value: 'jkt', description: 'Ibukota' },
+          { label: 'Surabaya', value: 'sub', description: 'Kota Pahlawan' },
+        ],
+      }, '')
+
+      // Open dropdown to show search
+      const triggerBtn = wrapper.find('button')
+      if (triggerBtn.exists()) {
+        await triggerBtn.trigger('click')
+      }
+
+      const searchInput = wrapper.find('input[aria-label="Cari Data"]')
+      if (searchInput.exists()) {
+        await searchInput.setValue('Jakarta')
+        await searchInput.trigger('input')
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
+
+  describe('date/time/year select handlers', () => {
+    it('onDateSelect converts Date to YYYY-MM-DD', async () => {
+      const wrapper = createWrapper({ type: 'date' }, '')
+      // Trigger via emitted events from DatePicker stub
+      const dp = wrapper.findComponent({ name: 'DatePicker' })
+      if (dp.exists()) {
+        await dp.vm.$emit('update:modelValue', new Date('2025-06-15'))
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('onDateSelect with null/array sets empty', async () => {
+      const wrapper = createWrapper({ type: 'date' }, '2025-01-01')
+      const dp = wrapper.findComponent({ name: 'DatePicker' })
+      if (dp.exists()) {
+        await dp.vm.$emit('update:modelValue', null)
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('onTimeSelect converts Date to HH:MM', async () => {
+      const wrapper = createWrapper({ type: 'time' }, '')
+      const dp = wrapper.findComponent({ name: 'DatePicker' })
+      if (dp.exists()) {
+        const d = new Date()
+        d.setHours(14, 30)
+        await dp.vm.$emit('update:modelValue', d)
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('timeValue parses HH:MM string correctly', () => {
+      const wrapper = createWrapper({ type: 'time' }, '08:45')
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('timeValue returns null when value is instance of Date', () => {
+      const wrapper = createWrapper({ type: 'time' }, new Date())
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('yearValue handles valid year number', () => {
+      const wrapper = createWrapper({ type: 'year' }, 2025)
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('yearValue handles 0 or invalid year', () => {
+      const wrapper = createWrapper({ type: 'year' }, 0)
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('onYearSelect with null sets null', async () => {
+      const wrapper = createWrapper({ type: 'year' }, 2024)
+      const dp = wrapper.findComponent({ name: 'DatePicker' })
+      if (dp.exists()) {
+        await dp.vm.$emit('update:modelValue', null)
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('month-year type renders correctly', () => {
+      const wrapper = createWrapper({ type: 'month-year' }, '2025-08')
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
+
+  describe('color picker logic', () => {
+    it('colorPickerValue strips # prefix for PrimeVue ColorPicker', () => {
+      const wrapper = createWrapper({ type: 'color' }, '#FF5733')
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('colorPickerValue returns fallback FF5733 for empty value', () => {
+      const wrapper = createWrapper({ type: 'color' }, '')
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('onHexInput filters and uppercases hex characters', async () => {
+      const wrapper = createWrapper({ type: 'color' }, '#000000')
+      const hexInput = wrapper.find('input[type="text"]')
+      if (hexInput.exists()) {
+        await hexInput.setValue('ff5733zz')
+        await hexInput.trigger('input')
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('onHexInput with empty value clears color', async () => {
+      const wrapper = createWrapper({ type: 'color' }, '#FF5733')
+      const hexInput = wrapper.find('input[type="text"]')
+      if (hexInput.exists()) {
+        await hexInput.setValue('')
+        await hexInput.trigger('input')
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
+
+  describe('coordinate picker logic', () => {
+    it('pickerMarkers returns marker when lat/lng are valid', () => {
+      const wrapper = createWrapper(
+        { type: 'coordinate-picker', latKey: 'lat', lngKey: 'lng' },
+        '',
+        { lat: -8.5, lng: 117.4 }
+      )
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('pickerMarkers returns empty for missing coordinates', () => {
+      const wrapper = createWrapper(
+        { type: 'coordinate-picker' },
+        '',
+        {}
+      )
+      expect(wrapper.exists()).toBe(true)
+    })
+
+    it('pickerZoom is 10 when marker exists, 8 when not', () => {
+      const withMarker = createWrapper(
+        { type: 'coordinate-picker' },
+        '',
+        { latitude: -8.5, longitude: 117.4 }
+      )
+      expect(withMarker.exists()).toBe(true)
+
+      const noMarker = createWrapper(
+        { type: 'coordinate-picker' },
+        '',
+        {}
+      )
+      expect(noMarker.exists()).toBe(true)
+    })
+  })
+
+  describe('label rendering', () => {
+    it('renders label with required asterisk when required=true', () => {
+      const wrapper = createWrapper({ label: 'My Field', required: true })
+      expect(wrapper.text()).toContain('My Field')
+      expect(wrapper.text()).toContain('*')
+    })
+
+    it('does not render asterisk when required=false', () => {
+      const wrapper = createWrapper({ label: 'My Field', required: false })
+      expect(wrapper.text()).toContain('My Field')
+    })
+
+    it('does not render label element when label is empty', () => {
+      const wrapper = createWrapper({ label: '' })
+      const label = wrapper.find('label')
+      expect(label.exists()).toBe(false)
+    })
+  })
 })

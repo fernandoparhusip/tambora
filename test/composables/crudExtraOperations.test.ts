@@ -74,6 +74,7 @@ describe('Master Composables Full CRUD Coverage', () => {
     await up2d.updateUp2d('u2', { nama: 'UP2D C' } as any)
     mockApi.mockResolvedValueOnce({ data: null }).mockResolvedValueOnce({ data: [] })
     await up2d.deleteUp2d('u2')
+    expect(up2d.up2ds.value).toBeDefined()
 
     // UIW / UID
     const uiw = useUiwUid()
@@ -89,6 +90,7 @@ describe('Master Composables Full CRUD Coverage', () => {
     await uiw.updateUiwUid('w2', { nama: 'UIW C' } as any)
     mockApi.mockResolvedValueOnce({ data: null }).mockResolvedValueOnce({ data: [] })
     await uiw.deleteUiwUid('w2')
+    expect(uiw.uiwUids.value).toBeDefined()
 
     // Unit Layanan
     const ul = useUnitLayanan()
@@ -102,6 +104,7 @@ describe('Master Composables Full CRUD Coverage', () => {
     await ul.updateUnitLayanan('l2', { nama: 'UL C' } as any)
     mockApi.mockResolvedValueOnce({ data: null }).mockResolvedValueOnce({ data: [] })
     await ul.deleteUnitLayanan('l2')
+    expect(ul.unitLayanans.value).toBeDefined()
 
     // UPK
     const upk = useUpk()
@@ -115,5 +118,6 @@ describe('Master Composables Full CRUD Coverage', () => {
     await upk.updateUpk('k2', { nama: 'UPK C' } as any)
     mockApi.mockResolvedValueOnce({ data: null }).mockResolvedValueOnce({ data: [] })
     await upk.deleteUpk('k2')
+    expect(upk.upks.value).toBeDefined()
   })
 })

@@ -33,7 +33,7 @@ tambora-frontend/
 ├── stores/             # Pinia stores (auth.ts)
 ├── types/              # TypeScript interface & DTO contracts
 ├── utils/              # Pure utility functions (exportExcel, formatNumber, apiError)
-└── test/               # Vitest unit test suite (466 tests across 78 suites, 80.43% coverage, 100% green required)
+└── test/               # Vitest unit test suite (524 tests across 78 suites, 80.43% coverage, 100% green required)
 ```
 
 ---

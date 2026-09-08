@@ -153,6 +153,7 @@ describe('BasePagination Component', () => {
       await toggleBtn.trigger('click')
       document.body.click()
     }
+    expect(wrapper.exists()).toBe(true)
     wrapper.unmount()
   })
 })

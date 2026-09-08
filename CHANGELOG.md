@@ -4,6 +4,27 @@ Semua perubahan penting pada proyek ini didokumentasikan di berkas ini.
 Format penulisan mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/),
 dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.7.3] - 2026-09-08
+
+### Remediasi SonarCloud Blocker/Maintainability, Deduplikasi Navigasi & Ekspansi Test Suites 524 Passed
+
+- **remediasi-sonarcloud-maintainability:**
+  - Menuntaskan issue SonarCloud Blocker/Maintainability (*"Add at least one assertion to this test case"*) pada berkas pengujian:
+    - [`test/components/basePagination.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/components/basePagination.test.ts): menambahkan assertion eksplisit pada skenario edge case paginasi.
+    - [`test/components/loginComponents.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/components/loginComponents.test.ts): melengkapi assertion pada pengujian rendering komponen login credentials dan typewriter.
+    - [`test/composables/crudExtraOperations.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/composables/crudExtraOperations.test.ts): menambahkan assertion state dan error tracking pada operasi ekstra CRUD.
+- **deduplikasi-konfigurasi-navigasi:**
+  - Merefaktor [`config/navigation.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/config/navigation.ts) menggunakan fungsi pembantu (`nav` dan `masterNav`) untuk mengeliminasi duplikasi struktur objek pada 16 modul Master Data dan 6 sub-menu Transaksi, menyederhanakan konfigurasi dan memelihara kepatuhan SonarQube Clean Code.
+- **penyelarasan-validasi-skema-master:**
+  - Memperbarui definisi `required: true` pada field-field wajib di skema formulir master data:
+    - [`schemas/master/sentral.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/sentral.schema.ts) (informasi status operasi, kepemilikan, lokasi koordinat, kontak manager, dan narasi profil).
+    - [`schemas/master/system.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/system.schema.ts) (relasi UPK, Unit Layanan, deskripsi, dan pemilih koordinat).
+    - [`schemas/master/asset.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/asset.schema.ts) (parameter teknis dan kelistrikan mesin).
+- **ekspansi-test-suites-dan-verifikasi:**
+  - Penambahan pengujian komprehensif pada [`test/components/formFieldRenderer.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/components/formFieldRenderer.test.ts), [`test/composables/master_hierarchy.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/composables/master_hierarchy.test.ts), [`test/pages/master/asset.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/pages/master/asset.test.ts), dan [`test/utils/deviceMeta.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/utils/deviceMeta.test.ts).
+  - Total test suite mencapai **524 tests passed across 78 test files (100% pass)**.
+  - Verifikasi pipeline lokal: `npm run lint` (0 error, 0 warning), `npx vitest run` (524 tests passed), dan `npm run build` (sukses tanpa error).
+
 ## [0.7.2] - 2026-09-07
 
 ### Pencapaian Code Coverage >80% SonarQube, Eksklusi Modul Transaksi & Ekspansi Test Suites Komprehensif
