@@ -44,7 +44,7 @@ export const getAssetFormSections = (
           label: "Kode SPLN",
           type: "text",
           placeholder: "Contoh: GNW01011",
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -52,7 +52,7 @@ export const getAssetFormSections = (
           label: "Serial Number",
           type: "text",
           placeholder: "Contoh: 28617",
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -61,7 +61,7 @@ export const getAssetFormSections = (
           type: "searchable-select",
           placeholder: "Pilih Sistem",
           options: systemOptions,
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -70,7 +70,7 @@ export const getAssetFormSections = (
           type: "searchable-select",
           placeholder: "Pilih Sentral",
           options: powerPlantOptions,
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -96,7 +96,7 @@ export const getAssetFormSections = (
             { label: "401 - Tenaga Surya (PLTS)", value: "401 - SURYA" },
             { label: "501 - Tenaga Air (PLTA/PLTM)", value: "501 - AIR" },
           ],
-          required: false,
+          required: true,
           colSpan: 6,
         },
       ],
@@ -133,7 +133,7 @@ export const getAssetFormSections = (
           label: "Kapasitas Generator (kVA)",
           type: "number",
           placeholder: "Contoh: 210",
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -156,7 +156,7 @@ export const getAssetFormSections = (
             { label: "LV (Low Voltage)", value: "LV" },
             { label: "HV (High Voltage)", value: "HV" },
           ],
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -164,7 +164,7 @@ export const getAssetFormSections = (
           label: "Tegangan HV (kV)",
           type: "number",
           placeholder: "Contoh: 20",
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -172,7 +172,7 @@ export const getAssetFormSections = (
           label: "Tegangan LV (kV)",
           type: "number",
           placeholder: "Contoh: 0.4",
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -180,7 +180,7 @@ export const getAssetFormSections = (
           label: "Merk Mesin (Engine)",
           type: "text",
           placeholder: "Contoh: Caterpillar, Niigata, Daihatsu",
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -188,7 +188,7 @@ export const getAssetFormSections = (
           label: "Tipe Mesin",
           type: "text",
           placeholder: "Contoh: 3156B-DITA",
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -196,7 +196,7 @@ export const getAssetFormSections = (
           label: "Merk Generator",
           type: "text",
           placeholder: "Contoh: HYUNDAI, Kato, Stamford",
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -204,7 +204,7 @@ export const getAssetFormSections = (
           label: "Nama Trafo Step-Up",
           type: "text",
           placeholder: "Contoh: Sintra",
-          required: false,
+          required: true,
           colSpan: 6,
         },
       ],
@@ -224,7 +224,7 @@ export const getAssetFormSections = (
             { label: "SEWA", value: "SEWA" },
             { label: "KSO (Kerja Sama Operasi)", value: "KSO" },
           ],
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -238,7 +238,7 @@ export const getAssetFormSections = (
             { label: "Beli / Sewa", value: "Beli / Sewa" },
             { label: "SEWA", value: "SEWA" },
           ],
-          required: false,
+          required: true,
           colSpan: 6,
         },
         {
@@ -246,7 +246,7 @@ export const getAssetFormSections = (
           label: "Tahun Mulai Operasi (COD)",
           type: "year",
           placeholder: "Pilih Tahun",
-          required: false,
+          required: true,
           colSpan: 6,
         },
       ],

@@ -14,7 +14,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-466_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-524_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Coverage](https://img.shields.io/badge/Coverage-80.43%25-brightgreen?style=for-the-badge&logo=sonarqube&logoColor=white)](https://sonarcloud.io/)
 
 </div>
@@ -95,7 +95,7 @@ tambora-frontend/
 │   ├── master/         # Berkas Skema Form Master (regional, uiw-uid, uik, up2d, upk, unit-layanan, sentral, user, asset, system, dll)
 │   └── transaksi/      # Berkas Skema Form Transaksi (operasi, pagu, pagu-bidang, prognosa, nko, dll)
 ├── stores/             # Pinia Global Store (auth: session, security, token)
-├── test/               # Vitest Unit Test Suites & Testing Mocks (466 Tests Passed across 78 Suites, 80.43% Coverage)
+├── test/               # Vitest Unit Test Suites & Testing Mocks (524 Tests Passed across 78 Suites, 80.43% Coverage)
 ├── types/              # Modular TypeScript DTOs & Contracts
 │   ├── form.types.ts      # Tipe field & section form
 │   ├── table.types.ts     # Tipe kolom tabel & pagination

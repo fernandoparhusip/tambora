@@ -18,6 +18,26 @@ describe('deviceMeta Utility', () => {
       expect(detectOS(ua)).toBe('Windows 10/11')
     })
 
+    it('detects Windows 8.1', () => {
+      const ua = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36'
+      expect(detectOS(ua)).toBe('Windows 8.1')
+    })
+
+    it('detects Windows 8', () => {
+      const ua = 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36'
+      expect(detectOS(ua)).toBe('Windows 8')
+    })
+
+    it('detects Windows 7', () => {
+      const ua = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36'
+      expect(detectOS(ua)).toBe('Windows 7')
+    })
+
+    it('detects generic Windows', () => {
+      const ua = 'Mozilla/5.0 (Windows NT 5.1; Win32; x86) AppleWebKit/537.36'
+      expect(detectOS(ua)).toBe('Windows')
+    })
+
     it('detects macOS', () => {
       const ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
       expect(detectOS(ua)).toBe('macOS')
@@ -38,8 +58,21 @@ describe('deviceMeta Utility', () => {
       expect(detectOS(ua)).toBe('iOS')
     })
 
+    it('detects ChromeOS', () => {
+      const ua = 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36'
+      expect(detectOS(ua)).toBe('ChromeOS')
+    })
+
     it('returns Unknown OS when UA is empty', () => {
       expect(detectOS('')).toBe('Unknown OS')
+    })
+
+    it('uses navigator.userAgent when no UA argument given', () => {
+      Object.defineProperty(globalThis, 'navigator', {
+        value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        writable: true, configurable: true,
+      })
+      expect(detectOS()).toBe('Windows 10/11')
     })
   })
 
@@ -47,6 +80,16 @@ describe('deviceMeta Utility', () => {
     it('detects Edge', () => {
       const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
       expect(detectBrowser(ua)).toBe('Edge')
+    })
+
+    it('detects Opera (OPR)', () => {
+      const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0'
+      expect(detectBrowser(ua)).toBe('Opera')
+    })
+
+    it('detects Opera (legacy)', () => {
+      const ua = 'Opera/9.80 (Windows NT 6.1; WOW64) Presto/2.12.388 Version/12.18'
+      expect(detectBrowser(ua)).toBe('Opera')
     })
 
     it('detects Chrome', () => {
@@ -82,6 +125,22 @@ describe('deviceMeta Utility', () => {
       const deviceId2 = getOrCreateDeviceId()
       expect(deviceId2).toBe(deviceId)
     })
+
+    it('returns existing deviceId from localStorage', () => {
+      localStorage.setItem('tambora_device_id', 'existing-device-uuid')
+      const deviceId = getOrCreateDeviceId()
+      expect(deviceId).toBe('existing-device-uuid')
+    })
+
+    it('falls back to generateUUID when localStorage.getItem throws', () => {
+      vi.spyOn(localStorage, 'getItem').mockImplementationOnce(() => {
+        throw new Error('localStorage blocked')
+      })
+      const deviceId = getOrCreateDeviceId()
+      expect(deviceId).toBeTruthy()
+      expect(deviceId.length).toBeGreaterThan(5)
+      vi.restoreAllMocks()
+    })
   })
 
   describe('getDeviceMetaHeaders', () => {
@@ -98,6 +157,15 @@ describe('deviceMeta Utility', () => {
       expect(headers['X-Browser']).toBe('Edge')
       expect(headers['X-Device-Name']).toBe('Windows 10/11 Desktop')
       expect(headers['X-Device-ID']).toBeTruthy()
+    })
+
+    it('detects Mobile device type from navigator.userAgent', () => {
+      Object.defineProperty(globalThis, 'navigator', {
+        value: { userAgent: 'Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36 Mobile Safari/537.36' },
+        writable: true, configurable: true,
+      })
+      const headers = getDeviceMetaHeaders('Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36')
+      expect(headers['X-Device-Name']).toContain('Mobile')
     })
   })
 })

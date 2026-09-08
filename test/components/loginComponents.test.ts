@@ -212,6 +212,8 @@ describe('Login Components', () => {
       if (helpdeskBtn) {
         await helpdeskBtn.trigger('click')
       }
+
+      expect(wrapper.exists()).toBe(true)
     })
   })
 })
