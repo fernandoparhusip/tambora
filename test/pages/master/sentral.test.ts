@@ -18,24 +18,6 @@ vi.mock('~/composables/master/useSentral', () => ({
     approveSentral: vi.fn().mockResolvedValue({}),
   })
 }))
-vi.mock('~/composables/master/useRegional', () => ({
-  useRegional: () => ({
-    regionalList: ref([{ id: 'r1', kode_regional: 'REG-01', nama_regional: 'Regional 1' }]),
-    fetchRegional: vi.fn().mockResolvedValue([]),
-  })
-}))
-vi.mock('~/composables/master/useCabang', () => ({
-  useCabang: () => ({
-    cabangList: ref([{ id: 'c1', kode_cabang: 'CAB-01', nama_cabang: 'Cabang 1', kode_wilayah: 'REG-01' }]),
-    fetchCabang: vi.fn().mockResolvedValue([]),
-  })
-}))
-vi.mock('~/composables/master/useRanting', () => ({
-  useRanting: () => ({
-    rantingList: ref([{ id: 'rt1', kode_ranting: 'RNT-01', nama_ranting: 'Ranting 1', kode_cabang: 'CAB-01' }]),
-    fetchRanting: vi.fn().mockResolvedValue([]),
-  })
-}))
 vi.mock('~/composables/master/useSystem', () => ({
   useSystem: () => ({
     systems: ref([{ id: 's1', code: 'PLTD', name: 'PLTD' }]),

@@ -1,19 +1,17 @@
 import type { FormSectionConfig } from "~/types";
 
 export interface OperasiHarianSchemaOptions {
-  sentralOptions?: { label: string; value: any }[];
   mesinOptions?: { label: string; value: any }[];
 }
 
 export const getOperasiHarianFormSections = (
-  options: OperasiHarianSchemaOptions = {}
+  options: OperasiHarianSchemaOptions = {},
 ): FormSectionConfig[] => {
-  const sentralOptions = options.sentralOptions || [];
   const mesinOptions = options.mesinOptions || [];
 
   return [
     {
-      title: "Informasi Waktu & Lokasi Operasi",
+      title: "Informasi Waktu & Mesin Operasi",
       fields: [
         {
           key: "tanggal",
@@ -21,7 +19,7 @@ export const getOperasiHarianFormSections = (
           type: "date",
           placeholder: "Pilih tanggal",
           required: true,
-          colSpan: 6
+          colSpan: 6,
         },
         {
           key: "jam",
@@ -29,72 +27,71 @@ export const getOperasiHarianFormSections = (
           type: "time",
           placeholder: "08:00",
           required: true,
-          colSpan: 6
-        },
-        {
-          key: "sentral_id",
-          label: "Sentral",
-          type: "searchable-select",
-          options: sentralOptions,
-          placeholder: "Pilih Sentral",
-          required: true,
-          colSpan: 6
+          colSpan: 6,
         },
         {
           key: "mesin_id",
-          label: "Mesin Pembangkit",
+          label: "Mesin",
           type: "searchable-select",
           options: mesinOptions,
-          placeholder: "Pilih mesin pembangkit",
+          placeholder: "Pilih mesin",
           required: true,
-          colSpan: 6
-        }
-      ]
+          colSpan: 6,
+        },
+        {
+          key: "nama_sentral",
+          label: "Nama Sentral",
+          type: "text",
+          placeholder: "Contoh: PLTU Tambora 1",
+          required: false,
+          colSpan: 6,
+        },
+      ],
     },
     {
       title: "Parameter Daya & Produksi",
       fields: [
         {
           key: "daya_terpasang",
-          label: "Daya Terpasang (MW)",
+          label: "Daya Terpasang (kW)",
           type: "number",
           placeholder: "Contoh: 100.5",
           required: true,
-          colSpan: 6
+          colSpan: 6,
         },
         {
           key: "daya_mampu_netto",
-          label: "Daya Mampu Netto / DMN (MW)",
+          label: "Daya Mampu Netto / DMN (kW)",
           type: "number",
           placeholder: "Contoh: 88.5",
           required: true,
-          colSpan: 6
+          colSpan: 6,
         },
         {
           key: "daya_mampu_pasok",
-          label: "Daya Mampu Pasok / DMP (MW)",
+          label: "Daya Mampu Pasok / DMP (kW)",
           type: "number",
           placeholder: "Contoh: 90",
           required: true,
-          colSpan: 6
+          colSpan: 6,
         },
         {
           key: "daya_mampu_aktual",
-          label: "Daya Mampu Aktual (MW)",
+          label: "Daya Mampu Aktual (kW)",
           type: "number",
           placeholder: "Contoh: 87",
           required: true,
-          colSpan: 6
+          colSpan: 6,
         },
         {
           key: "produksi",
-          label: "Produksi Energi (MWh)",
+          label: "Produksi Energi (kWh)",
           type: "number",
           placeholder: "Contoh: 85.2",
           required: true,
-          colSpan: 12
-        }
-      ]
+          colSpan: 12,
+        },
+      ],
     },
     {
       title: "Konsumsi Bahan Bakar",
@@ -109,11 +106,11 @@ export const getOperasiHarianFormSections = (
             { label: "B30 / B35", value: "B30" },
             { label: "MFO", value: "MFO" },
             { label: "BIOMASSA", value: "BIOMASSA" },
-            { label: "GAS ALAM", value: "GAS" }
+            { label: "GAS ALAM", value: "GAS" },
           ],
           placeholder: "Pilih jenis bahan bakar",
           required: true,
-          colSpan: 6
+          colSpan: 6,
         },
         {
           key: "bahan_bakar",
@@ -121,9 +118,9 @@ export const getOperasiHarianFormSections = (
           type: "number",
           placeholder: "Contoh: 1200.5",
           required: true,
-          colSpan: 6
-        }
-      ]
-    }
+          colSpan: 6,
+        },
+      ],
+    },
   ];
 };

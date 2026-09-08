@@ -7,7 +7,7 @@ describe('Konfigurasi Aplikasi Schemas Suite', () => {
   describe('Akses Grup Schema', () => {
     it('contains name and description fields with expected rules', () => {
       expect(aksesGrupFormSections.length).toBeGreaterThan(0)
-      const fields = aksesGrupFormSections[0].fields
+      const fields = aksesGrupFormSections[0]?.fields || []
       expect(fields.some((f) => f.key === 'name' && f.required === true)).toBe(true)
       expect(fields.some((f) => f.key === 'description')).toBe(true)
     })
@@ -17,14 +17,14 @@ describe('Konfigurasi Aplikasi Schemas Suite', () => {
     it('returns fields with injected scopeTypeOptions', () => {
       const mockTypes = [{ label: 'Unit PLN', value: 'type-1' }]
       const sections = getAksesLevelFormSections(mockTypes)
-      const fields = sections[0].fields
+      const fields = sections[0]?.fields || []
       const typeField = fields.find((f) => f.key === 'scope_type_id')
       expect(typeField?.options).toEqual(mockTypes)
     })
 
     it('provides fallback static aksesLevelFormSections', () => {
       expect(aksesLevelFormSections.length).toBeGreaterThan(0)
-      const fields = aksesLevelFormSections[0].fields
+      const fields = aksesLevelFormSections[0]?.fields || []
       expect(fields.find((f) => f.key === 'name')?.required).toBe(true)
     })
   })
@@ -36,11 +36,16 @@ describe('Konfigurasi Aplikasi Schemas Suite', () => {
         { label: 'Konfigurasi', value: 'p-2', route: '/config' }
       ]
       const sections = getMenuFormSections(parentOptions)
-      const fields = sections[0].fields
+      const fields = sections[0]?.fields || []
 
       const routeField = fields.find((f) => f.key === 'route')
       expect(routeField).toBeDefined()
       expect(typeof routeField?.prefix).toBe('function')
+
+      const orderField = fields.find((f) => f.key === 'order')
+      expect(orderField).toBeDefined()
+      expect(orderField?.type).toBe('number')
+      expect(orderField?.colSpan).toBe(6)
 
       if (typeof routeField?.prefix === 'function') {
         // Test empty / no parent_id

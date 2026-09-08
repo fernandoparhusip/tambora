@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import type { TableColumn, FormSectionConfig, OperasiHarianDTO } from "~/types";
-import type { DetailDataItem } from '~/types/master.types';
+import type { DetailDataItem } from "~/types/master.types";
 import { getOperasiHarianFormSections } from "~/schemas/transaksi/operasi-harian.schema";
+import { useAsyncDetail } from "~/composables/useAsyncDetail";
 
-const { list, loading, fetchList, createItem, updateItem, deleteItem } = useOperasiHarian();
-const { organizations, fetchOrganizations } = useOrganization();
+const {
+  list,
+  loading,
+  fetchList,
+  getById,
+  createItem,
+  updateItem,
+  deleteItem,
+} = useOperasiHarian();
 const { assets, fetchAssets } = useAsset();
 
 const searchQuery = ref("");
@@ -18,52 +26,76 @@ const modalMode = ref<"create" | "edit">("create");
 const formData = ref<Record<string, any>>({});
 const submitting = ref(false);
 
-const isDetailModalOpen = ref(false);
 const isConfirmDialogOpen = ref(false);
 const deleteTarget = ref<OperasiHarianDTO | null>(null);
 const isDeleting = ref(false);
-const detailRecord = ref<OperasiHarianDTO | null>(null);
+
+const {
+  isDetailModalOpen,
+  detailRecord,
+  detailLoading,
+  handleView,
+  closeDetailModal,
+  openEditFromDetail,
+} = useAsyncDetail<OperasiHarianDTO>({
+  fetchDetail: (id) => getById(id),
+  onEdit: (record) => handleEdit(record),
+});
 
 const columns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "tanggal", label: "Tanggal & Jam" },
-  { key: "nama_sentral", label: "Sentral" },
-  { key: "daya_terpasang", label: "Daya Terpasang" },
-  { key: "daya_mampu_netto", label: "DMN (MW)" },
-  { key: "daya_mampu_pasok", label: "DMP (MW)" },
-  { key: "produksi", label: "Produksi (MWh)" },
-  { key: "jenis_bahan_bakar", label: "Bahan Bakar" },
-  { key: "actions", label: "Aksi" }
+  { key: "tanggal", label: "Tanggal Transaksi" },
+  { key: "nama_mesin", label: "Nama Mesin" },
+  { key: "jenis_bahan_bakar", label: "Jenis Bahan Bakar" },
+  { key: "produksi", label: "Produksi (kWh)" },
+  { key: "daya_mampu_pasok", label: "DMP (kW)" },
+  { key: "daya_mampu_netto", label: "DMN (kW)" },
+  { key: "actions", label: "Aksi" },
 ];
-
-const sentralOptions = computed(() =>
-  organizations.value.map((org: any) => ({
-    label: `${org.nama} (${org.kode})`,
-    value: org.id
-  }))
-);
 
 const mesinOptions = computed(() =>
   assets.value.map((a: any) => ({
-    label: `${a.nama_mesin} - ${a.tipe_mesin || "Unit"}`,
-    value: a.id
-  }))
+    label: `${a.kode_mesin || a.id} - ${a.nama_mesin}`,
+    value: a.id,
+  })),
 );
 
 const formSections = computed<FormSectionConfig[]>(() =>
   getOperasiHarianFormSections({
-    sentralOptions: sentralOptions.value,
-    mesinOptions: mesinOptions.value
-  })
+    mesinOptions: mesinOptions.value,
+  }),
 );
 
 onMounted(async () => {
-  await Promise.all([fetchList(), fetchOrganizations(), fetchAssets()]);
+  await Promise.all([fetchList(), fetchAssets()]);
 });
 
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
+
+// Auto-fill defaults when mesin_id changes
+watch(
+  () => formData.value.mesin_id,
+  (newMesinId) => {
+    if (!newMesinId) return;
+    const asset = assets.value.find((a: any) => a.id === newMesinId);
+    if (asset) {
+      if (asset.daya_terpasang && !formData.value.daya_terpasang) {
+        formData.value.daya_terpasang = asset.daya_terpasang;
+      }
+      if (asset.daya_mampu_netto && !formData.value.daya_mampu_netto) {
+        formData.value.daya_mampu_netto = asset.daya_mampu_netto;
+      }
+      if (asset.daya_mampu_pasok && !formData.value.daya_mampu_pasok) {
+        formData.value.daya_mampu_pasok = asset.daya_mampu_pasok;
+      }
+      if (asset.kode_bahan_bakar && !formData.value.jenis_bahan_bakar) {
+        formData.value.jenis_bahan_bakar = asset.kode_bahan_bakar;
+      }
+    }
+  },
+);
 
 const filteredList = computed(() => {
   if (!searchQuery.value.trim()) return list.value;
@@ -71,8 +103,9 @@ const filteredList = computed(() => {
   return list.value.filter(
     (item: OperasiHarianDTO) =>
       item.nama_sentral?.toLowerCase().includes(q) ||
+      item.nama_mesin?.toLowerCase().includes(q) ||
       item.jenis_bahan_bakar?.toLowerCase().includes(q) ||
-      item.tanggal?.toLowerCase().includes(q)
+      item.tanggal?.toLowerCase().includes(q),
   );
 });
 
@@ -82,28 +115,30 @@ const paginatedList = computed(() => {
 });
 
 const modalTitle = computed(() =>
-  modalMode.value === "edit" ? "Edit Data Operasi Harian" : "Tambah Data Operasi Harian"
+  modalMode.value === "edit"
+    ? "Edit Data Operasi Harian"
+    : "Tambah Data Operasi Harian",
 );
 const modalSubtitle = computed(() =>
   modalMode.value === "edit"
-    ? "Form Ubah Parameter Operasi Pembangkit"
-    : "Form Pencatatan Operasi Harian Pembangkit"
+    ? "Form Ubah Operasi Harian"
+    : "Form Pencatatan Operasi Harian",
 );
 
 const openCreateModal = () => {
   modalMode.value = "create";
   formData.value = {
     tanggal: new Date().toISOString().split("T")[0],
-    jam: "08:00",
-    sentral_id: "",
+    jam: "",
     mesin_id: "",
-    daya_terpasang: 0,
-    daya_mampu_netto: 0,
-    daya_mampu_pasok: 0,
-    daya_mampu_aktual: 0,
-    produksi: 0,
-    bahan_bakar: 0,
-    jenis_bahan_bakar: "BATUBARA"
+    nama_sentral: "",
+    daya_terpasang: null,
+    daya_mampu_netto: null,
+    daya_mampu_pasok: null,
+    daya_mampu_aktual: null,
+    produksi: null,
+    bahan_bakar: null,
+    jenis_bahan_bakar: "",
   };
   modalOpen.value = true;
 };
@@ -113,27 +148,12 @@ const handleEdit = (row: OperasiHarianDTO) => {
   formData.value = {
     ...row,
     tanggal: row.tanggal ? row.tanggal.split("T")[0] : "",
-    jam: row.jam && row.jam.includes("T") ? row.jam.split("T")[1]?.substring(0, 5) : row.jam || "08:00"
+    jam:
+      row.jam && row.jam.includes("T")
+        ? row.jam.split("T")[1]?.substring(0, 5)
+        : row.jam || "10:00",
   };
   modalOpen.value = true;
-};
-
-const handleView = (row: OperasiHarianDTO) => {
-  detailRecord.value = row;
-  isDetailModalOpen.value = true;
-};
-
-const closeDetailModal = () => {
-  isDetailModalOpen.value = false;
-  detailRecord.value = null;
-};
-
-const openEditFromDetail = () => {
-  if (detailRecord.value) {
-    const rec = detailRecord.value;
-    closeDetailModal();
-    handleEdit(rec);
-  }
 };
 
 const handleDelete = (row: OperasiHarianDTO) => {
@@ -141,24 +161,95 @@ const handleDelete = (row: OperasiHarianDTO) => {
   isConfirmDialogOpen.value = true;
 };
 
+const formatTanggalTransaksi = (val: string | null | undefined): string => {
+  if (!val) return "-";
+  try {
+    const d = new Date(val);
+    if (Number.isNaN(d.getTime())) return String(val);
+    const days = [
+      "Minggu",
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+    ];
+    const months = [
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
+    ];
+    const dayName = days[d.getDay()];
+    const day = String(d.getDate()).padStart(2, "0");
+    const monthName = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${dayName}, ${day}-${monthName}-${year}`;
+  } catch {
+    return String(val);
+  }
+};
+
+const getNamaMesin = (row: OperasiHarianDTO): string => {
+  if (row.nama_mesin) return row.nama_mesin;
+  const found = assets.value.find((a: any) => a.id === row.mesin_id);
+  if (found) {
+    return `${found.kode_mesin || found.id} - ${found.nama_mesin}`;
+  }
+  return row.mesin_id || "-";
+};
+
+const formatBahanBakar = (val: string | undefined): string => {
+  if (!val) return "-";
+  const map: Record<string, string> = {
+    BATUBARA: "BBR - Batubara",
+    HSD: "HSD - Solar",
+    B30: "B30 - Biosolar",
+    MFO: "MFO - Minyak Bakar",
+    BIOMASSA: "BMS - Biomassa",
+    GAS: "GAS - Gas Alam",
+  };
+  return map[val.toUpperCase()] || val;
+};
+
+const formatNumber = (val: number | string | undefined | null): string => {
+  if (val === undefined || val === null || val === "") return "-";
+  const num = Number(val);
+  if (Number.isNaN(num)) return String(val);
+  return num.toLocaleString("id-ID");
+};
+
 const handleSubmit = async () => {
   submitting.value = true;
   try {
     const data = formData.value;
-    const selectedSentral = organizations.value.find((o: any) => o.id === data.sentral_id);
     const payload = {
-      tanggal: data.tanggal ? `${data.tanggal}T00:00:00Z` : new Date().toISOString(),
-      jam: data.jam ? `2026-01-01T${data.jam}:00Z` : new Date().toISOString(),
-      sentral_id: data.sentral_id,
-      nama_sentral: selectedSentral?.nama || data.nama_sentral || "Sentral Tambora",
+      tanggal: data.tanggal
+        ? `${data.tanggal}T00:00:00Z`
+        : new Date().toISOString(),
+      jam: data.jam
+        ? data.jam.includes("T")
+          ? data.jam
+          : `2026-08-26T${data.jam}:00Z`
+        : new Date().toISOString(),
       mesin_id: data.mesin_id,
+      nama_sentral: data.nama_sentral || "PLTU Tambora 1",
       daya_terpasang: Number(data.daya_terpasang) || 0,
       daya_mampu_netto: Number(data.daya_mampu_netto) || 0,
       daya_mampu_pasok: Number(data.daya_mampu_pasok) || 0,
       daya_mampu_aktual: Number(data.daya_mampu_aktual) || 0,
       produksi: Number(data.produksi) || 0,
       bahan_bakar: Number(data.bahan_bakar) || 0,
-      jenis_bahan_bakar: data.jenis_bahan_bakar || "BATUBARA"
+      jenis_bahan_bakar: data.jenis_bahan_bakar || "BATUBARA",
     };
 
     if (modalMode.value === "create") {
@@ -189,17 +280,35 @@ const detailItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const r = detailRecord.value;
   return [
-    { label: "ID Operasi", value: r.id },
-    { label: "Tanggal & Jam", value: `${r.tanggal?.split("T")[0] || "-"} ${r.jam && r.jam.includes("T") ? r.jam.split("T")[1]?.substring(0, 5) : r.jam || ""}` },
+    { label: "Tanggal Transaksi", value: formatTanggalTransaksi(r.tanggal) },
+    {
+      label: "Jam",
+      value:
+        r.jam && r.jam.includes("T")
+          ? r.jam.split("T")[1]?.substring(0, 5)
+          : r.jam || "-",
+    },
+    { label: "Nama Mesin", value: getNamaMesin(r) },
     { label: "Nama Sentral", value: r.nama_sentral || "-" },
-    { label: "Daya Terpasang", value: `${r.daya_terpasang} MW` },
-    { label: "Daya Mampu Netto (DMN)", value: `${r.daya_mampu_netto} MW` },
-    { label: "Daya Mampu Pasok (DMP)", value: `${r.daya_mampu_pasok} MW` },
-    { label: "Daya Mampu Pasok (DMP)", value: `${r.daya_mampu_pasok} MW` },
-    { label: "Daya Mampu Aktual", value: `${r.daya_mampu_aktual} MW` },
-    { label: "Produksi Energi", value: `${r.produksi} MWh` },
-    { label: "Jenis Bahan Bakar", value: r.jenis_bahan_bakar },
-    { label: "Konsumsi Bahan Bakar", value: `${r.bahan_bakar}` }
+    { label: "Daya Terpasang", value: `${formatNumber(r.daya_terpasang)} kW` },
+    {
+      label: "Daya Mampu Netto (DMN)",
+      value: `${formatNumber(r.daya_mampu_netto)} kW`,
+    },
+    {
+      label: "Daya Mampu Pasok (DMP)",
+      value: `${formatNumber(r.daya_mampu_pasok)} kW`,
+    },
+    {
+      label: "Daya Mampu Aktual",
+      value: `${formatNumber(r.daya_mampu_aktual)} kW`,
+    },
+    { label: "Produksi Energi", value: `${formatNumber(r.produksi)} kWh` },
+    {
+      label: "Jenis Bahan Bakar",
+      value: formatBahanBakar(r.jenis_bahan_bakar),
+    },
+    { label: "Konsumsi Bahan Bakar", value: `${formatNumber(r.bahan_bakar)}` },
   ];
 });
 </script>
@@ -222,7 +331,10 @@ const detailItems = computed<DetailDataItem[]>(() => {
             <BaseSearchInput v-model="searchQuery" />
           </div>
 
-          <BaseCreateButton resource="OPERASI_HARIAN" @click="openCreateModal" />
+          <BaseCreateButton
+            resource="OPERASI_HARIAN"
+            @click="openCreateModal"
+          />
         </div>
 
         <!-- Table Container -->
@@ -240,47 +352,52 @@ const detailItems = computed<DetailDataItem[]>(() => {
           </template>
 
           <template #tanggal-data="{ row }">
-            <div>
-              <span class="font-medium text-gray-900 text-xs block">
-                {{ row.tanggal ? row.tanggal.split("T")[0] : "-" }}
-              </span>
-              <span class="text-[11px] text-gray-400">
-                {{ row.jam && row.jam.includes("T") ? row.jam.split("T")[1]?.substring(0, 5) : row.jam || "08:00" }} WITA
-              </span>
-            </div>
+            <span class="text-xs text-gray-600">
+              {{ formatTanggalTransaksi(row.tanggal) }}
+            </span>
           </template>
 
-          <template #nama_sentral-data="{ row }">
-            <span class="text-xs font-semibold text-gray-900">{{ row.nama_sentral || "-" }}</span>
-          </template>
-
-          <template #daya_terpasang-data="{ row }">
-            <span class="text-xs text-gray-700">{{ row.daya_terpasang }} MW</span>
-          </template>
-
-          <template #daya_mampu_netto-data="{ row }">
-            <span class="text-xs text-blue-600 font-medium">{{ row.daya_mampu_netto }} MW</span>
-          </template>
-
-          <template #daya_mampu_pasok-data="{ row }">
-            <span class="text-xs text-emerald-600 font-medium">{{ row.daya_mampu_pasok }} MW</span>
-          </template>
-
-          <template #produksi-data="{ row }">
-            <span class="text-xs font-bold text-gray-800">{{ row.produksi }} MWh</span>
+          <template #nama_mesin-data="{ row }">
+            <span class="text-xs text-gray-600">{{ getNamaMesin(row) }}</span>
           </template>
 
           <template #jenis_bahan_bakar-data="{ row }">
-            <BaseBadge :variant="row.jenis_bahan_bakar === 'BATUBARA' ? 'mono' : 'info'">
-              {{ row.jenis_bahan_bakar }}
-            </BaseBadge>
+            <span class="text-xs text-gray-600">{{
+              formatBahanBakar(row.jenis_bahan_bakar)
+            }}</span>
+          </template>
+
+          <template #produksi-data="{ row }">
+            <span class="text-xs text-gray-600">{{
+              formatNumber(row.produksi)
+            }}</span>
+          </template>
+
+          <template #daya_mampu_pasok-data="{ row }">
+            <span class="text-xs text-gray-600">{{
+              formatNumber(row.daya_mampu_pasok)
+            }}</span>
+          </template>
+
+          <template #daya_mampu_netto-data="{ row }">
+            <span class="text-xs text-gray-600">{{
+              formatNumber(row.daya_mampu_netto)
+            }}</span>
           </template>
 
           <template #actions-data="{ row }">
             <div class="flex items-center gap-1.5">
               <BaseActionButton type="view" @click="handleView(row)" />
-              <BaseActionButton type="edit" resource="OPERASI_HARIAN" @click="handleEdit(row)" />
-              <BaseActionButton type="delete" resource="OPERASI_HARIAN" @click="handleDelete(row)" />
+              <BaseActionButton
+                type="edit"
+                resource="OPERASI_HARIAN"
+                @click="handleEdit(row)"
+              />
+              <BaseActionButton
+                type="delete"
+                resource="OPERASI_HARIAN"
+                @click="handleDelete(row)"
+              />
             </div>
           </template>
         </BaseTable>
@@ -313,7 +430,9 @@ const detailItems = computed<DetailDataItem[]>(() => {
       v-model:is-open="isDetailModalOpen"
       title="Detail Operasi Harian"
       subtitle="Rincian parameter daya & konsumsi bahan bakar"
+      :record="detailRecord"
       :data-items="detailItems"
+      :loading="detailLoading"
       @edit="openEditFromDetail"
       @close="closeDetailModal"
     />

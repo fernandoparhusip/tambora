@@ -35,7 +35,15 @@ export const getMenuFormSections = (
           );
           return parent?.route || "";
         },
-        required: false,
+        required: true,
+      },
+      {
+        key: "order",
+        label: "Urutan Halaman",
+        type: "number",
+        placeholder: "Contoh: 1",
+        colSpan: 6,
+        required: true,
       },
       {
         key: "status",
@@ -46,7 +54,7 @@ export const getMenuFormSections = (
           { label: "Aktif", value: 1 },
           { label: "Non-Aktif", value: 0 },
         ],
-        colSpan: 12,
+        colSpan: 6,
         required: true,
       },
     ],

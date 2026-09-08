@@ -15,15 +15,15 @@ tambora-frontend/
 │   └── login/          # Komponen login & slider captcha
 ├── composables/        # State reaktif, auth, SWR cache, form draft, dan API CRUD
 │   ├── konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup, useMenu
-│   ├── master/         # useRegional, useUiwUid, useUik, useUp2d, useUpk, useUnitLayanan, useSentral, useUser, dll.
-│   └── transaksi/      # useOperasiHarian, usePagu, usePrognosa, dll.
+│   ├── master/         # useUiwUid, useUp2d, useSentral, useUser, useAsset, dll.
+│   └── transaksi/      # useOperasiHarian
 ├── config/             # Konfigurasi navigasi sidebar (config/navigation.ts)
 ├── docs/               # Dokumentasi arsitektur, PRD, schema, dan developer guide
 ├── pages/              # Halaman routing Nuxt
 │   ├── home/
 │   │   ├── dashboard/  # Halaman GIS & ECharts monitoring
 │   │   ├── konfigurasi-aplikasi/ # Halaman Akses Level, Akses Grup, Menu
-│   │   ├── master/     # Halaman CRUD data master (Regional, UIW/UID, UIK, UP2D, UPK, Unit Layanan, Sentral, dll.)
+│   │   ├── master/     # Halaman CRUD data master (UIW/UID, UP2D, Sentral, User, Asset, System, dll.)
 │   │   └── transaksi/  # Halaman CRUD modul transaksi
 │   └── login.vue       # Halaman autentikasi
 ├── schemas/            # Definisi deklaratif Form Engine (12-column grid system)
@@ -32,8 +32,8 @@ tambora-frontend/
 │   └── transaksi/      # Form schema untuk transaksi
 ├── stores/             # Pinia stores (auth.ts)
 ├── types/              # TypeScript interface & DTO contracts
-├── utils/              # Pure utility functions (exportExcel, formatNumber, apiError)
-└── test/               # Vitest unit test suite (524 tests across 78 suites, 80.43% coverage, 100% green required)
+├── utils/              # Pure utility functions (exportExcel, formatNumber, apiError, menuSort)
+└── test/               # Vitest unit test suite (498 tests across 71 suites, 100% green required)
 ```
 
 ---

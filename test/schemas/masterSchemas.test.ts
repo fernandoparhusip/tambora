@@ -6,20 +6,13 @@ import {
   getOrganizationFormSections,
   getPermissionFormSections,
   permissionFormSections,
-  getRantingFormSections,
-  getCabangFormSections,
-  getRegionalFormSections,
-  regionalFormSections,
   roleFormSections,
   scopeFormSections,
   getSentralFormSections,
   sentralFormSections,
   getSystemFormSections,
-  uikFormSections,
   uiwUidFormSections,
-  getUnitLayananFormSections,
   getUp2dFormSections,
-  getUpkFormSections
 } from '~/schemas/master'
 
 describe('Master Schemas Suite', () => {
@@ -65,25 +58,16 @@ describe('Master Schemas Suite', () => {
       expect(sentralFormSections.length).toBeGreaterThanOrEqual(1)
     })
 
-    it('injects regional, ranting, and unit options', () => {
-      const mockRegionals = [{ label: 'Regional 1', value: 'reg-1' }]
-      const mockRantings = [{ label: 'Ranting 1', value: 'ran-1' }]
+    it('injects system options', () => {
+      const mockSystems = [{ label: 'Sistem 1', value: 'sys-1' }]
       const sections = getSentralFormSections({
-        regionalOptions: mockRegionals,
-        rantingOptions: mockRantings,
-        isRantingDisabled: true,
-        rantingPlaceholder: 'Pilih Regional Dulu'
+        systemOptions: mockSystems,
       })
 
       const fields = sections.flatMap((s) => s.fields)
-      const rantingField = fields.find((f) => (f as any).name === 'kode_ranting' || f.key === 'kode_ranting')
-      expect(rantingField).toBeDefined()
-      if (typeof rantingField?.disabled === 'function') {
-        expect((rantingField.disabled as any)({})).toBe(true)
-      } else {
-        expect(rantingField?.disabled).toBe(true)
-      }
-      expect(rantingField?.placeholder).toBe('Pilih Regional Terlebih Dahulu')
+      const systemField = fields.find((f) => (f as any).name === 'kode_sistem' || f.key === 'kode_sistem')
+      expect(systemField).toBeDefined()
+      expect(systemField?.options).toEqual(mockSystems)
     })
   })
 
@@ -96,38 +80,12 @@ describe('Master Schemas Suite', () => {
       expect(fields.some((f) => f.type === 'coordinate-picker')).toBe(true)
     })
 
-    it('returns system form sections with UPK and service unit options', () => {
-      const mockUpk = [{ label: 'UPK 1', value: 'upk-1' }]
-      const mockUnits = [{ label: 'UL 1', value: 'ul-1' }]
-      const sections = getSystemFormSections({
-        upkOptions: mockUpk,
-        unitLayananOptions: mockUnits
-      })
+    it('returns system form sections', () => {
+      const sections = getSystemFormSections()
       const fields = sections.flatMap((s) => s.fields)
-      expect(fields.find((f) => (f as any).name === 'upk_id' || f.key === 'upk_id')?.options).toEqual(mockUpk)
-      expect(fields.find((f) => (f as any).name === 'service_unit_ids' || f.key === 'service_unit_ids')?.options).toEqual(mockUnits)
-    })
-  })
-
-  describe('Hierarchy Schemas (Cabang, Ranting, Regional)', () => {
-    it('returns valid cabang form sections', () => {
-      const mockWilayah = [{ label: 'Wilayah 1', value: 'w-1' }]
-      const sections = getCabangFormSections({ regionalOptions: mockWilayah })
-      const fields = sections.flatMap((s) => s.fields)
-      expect(fields.find((f) => (f as any).name === 'kode_wilayah' || f.key === 'kode_wilayah')?.options).toEqual(mockWilayah)
-    })
-
-    it('returns valid ranting form sections', () => {
-      const mockCabang = [{ label: 'Cabang 1', value: 'c-1' }]
-      const sections = getRantingFormSections({ cabangOptions: mockCabang })
-      const fields = sections.flatMap((s) => s.fields)
-      expect(fields.find((f) => (f as any).name === 'kode_cabang' || f.key === 'kode_cabang')?.options).toEqual(mockCabang)
-    })
-
-    it('returns valid regional form sections and static export', () => {
-      const sections = getRegionalFormSections()
-      expect(sections.length).toBeGreaterThan(0)
-      expect(regionalFormSections.length).toBeGreaterThan(0)
+      expect(fields.some((f) => f.key === 'code')).toBe(true)
+      expect(fields.some((f) => f.key === 'name')).toBe(true)
+      expect(fields.some((f) => f.key === 'coordinates')).toBe(true)
     })
   })
 
@@ -146,24 +104,15 @@ describe('Master Schemas Suite', () => {
     })
   })
 
-  describe('Unit PLN Schemas (UIW/UID, UIK, UP2D, UPK, Unit Layanan)', () => {
-    it('verifies uiwUidFormSections and uikFormSections', () => {
+  describe('Unit PLN Schemas (UIW/UID, UP2D)', () => {
+    it('verifies uiwUidFormSections', () => {
       expect(uiwUidFormSections.length).toBeGreaterThan(0)
-      expect(uikFormSections.length).toBeGreaterThan(0)
     })
 
-    it('verifies up2d, upk, and unit layanan schemas with options', () => {
+    it('verifies up2d schema with options', () => {
       const mockUiw = [{ label: 'UIW 1', value: 'uiw-1' }]
-      const mockUik = [{ label: 'UIK 1', value: 'uik-1' }]
-
       const up2dSections = getUp2dFormSections(mockUiw)
       expect(up2dSections.flatMap((s) => s.fields).find((f) => (f as any).name === 'uiw_uid_id' || f.key === 'uiw_uid_id')?.options).toEqual(mockUiw)
-
-      const upkSections = getUpkFormSections(mockUik)
-      expect(upkSections.flatMap((s) => s.fields).find((f) => (f as any).name === 'uik_id' || f.key === 'uik_id')?.options).toEqual(mockUik)
-
-      const unitLayananSections = getUnitLayananFormSections(mockUik)
-      expect(unitLayananSections.flatMap((s) => s.fields).find((f) => (f as any).name === 'upk_id' || f.key === 'upk_id')?.options).toEqual(mockUik)
     })
   })
 

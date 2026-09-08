@@ -72,14 +72,8 @@ export const menuItems: MenuItem[] = [
     children: [
       masterNav("pengguna",          "Pengguna",       "/home/master/user",               "USER.VIEW",              "MENU_USERS"),
       masterNav("permission",        "Permission",     "/home/master/permission",         "PERMISSION.VIEW",        "MENU_PERMISSIONS"),
-      masterNav("regional",          "Regional",       "/home/master/regional",           "REGIONAL.VIEW",          "MENU_REGIONAL"),
-      masterNav("cabang",            "Cabang",         "/home/master/cabang",             "CABANG.VIEW",            "MENU_CABANG"),
-      masterNav("ranting",           "Ranting",        "/home/master/ranting",            "RANTING.VIEW",           "MENU_RANTING"),
       masterNav("uiw-uid",           "UIW / UID",      "/home/master/uiw-uid",            "UIW_UID.VIEW",           "MENU_UIW_UID"),
-      masterNav("uik",               "UIK",            "/home/master/uik",                "UIK.VIEW",               "MENU_UIK"),
       masterNav("up2d",              "UP2D",           "/home/master/up2d",               "UP2D.VIEW",              "MENU_UP2D"),
-      masterNav("upk",               "UPK",            "/home/master/upk",                "UPK.VIEW",               "MENU_UPK"),
-      masterNav("unit-layanan",      "Unit Layanan",   "/home/master/unit-layanan",       "UNIT_LAYANAN.VIEW",      "MENU_UNIT_LAYANAN"),
       masterNav("sentral",           "Sentral",        "/home/master/sentral",            "SENTRAL.VIEW",           "MENU_SENTRAL"),
       masterNav("system",            "Sistem",         "/home/master/system",             "SYSTEM.VIEW",            "MENU_SYSTEM"),
       masterNav("asset",             "Asset Mesin",    "/home/master/asset",              "ASSET.VIEW",             "MENU_ASSET"),
@@ -92,12 +86,7 @@ export const menuItems: MenuItem[] = [
     key: "transaksi",
     label: "Transaksi",
     children: [
-      nav("operasi-harian",        "Operasi Harian",        "/home/transaksi/operasi-harian",        "OPERASI_HARIAN.VIEW",       "MENU_OPERASI_HARIAN",  "Operasi Harian Pembangkit"),
-      nav("pemakaian-bahan-bakar", "Pemakaian Bahan Bakar", "/home/transaksi/pemakaian-bahan-bakar", "PEMAKAIAN_BAHAN_BAKAR.VIEW","MENU_PEMAKAIAN_BB"),
-      nav("pembebanan",            "Pembebanan",            "/home/transaksi/pembebanan",            "PEMBEBANAN.VIEW",           "MENU_PEMBEBANAN",      "Pembebanan Generator"),
-      nav("pagu",                  "Pagu",                  "/home/transaksi/pagu",                  "PAGU.VIEW",                 "MENU_PAGU"),
-      nav("prognosa",              "Prognosa Kinerja",      "/home/transaksi/prognosa",              "PROGNOSA.VIEW",             "MENU_PROGNOSA_PLTU",   "Prognosa Kinerja Pembangkit"),
-      nav("nko",                   "Perhitungan NKO",       "/home/transaksi/nko",                   "NKO.VIEW",                  "MENU_PERHITUNGAN_NKO", "Perhitungan NKO (Nilai Kinerja Organisasi)"),
+      nav("operasi-harian", "Operasi Harian", "/home/transaksi/operasi-harian", "OPERASI_HARIAN.VIEW", "MENU_OPERASI_HARIAN", "Operasi Harian Pembangkit"),
     ],
   },
 ];

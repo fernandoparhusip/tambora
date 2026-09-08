@@ -326,24 +326,12 @@ export interface UpdateMachineConditionRequest {
 }
 
 /** Master System DTOs */
-export interface SystemServiceUnit {
-  id: string;
-  kode?: string;
-  nama?: string;
-}
-
 export interface SystemItem {
   id: string;
   code: string;
   name: string;
   system_type: "BESAR" | "KECIL" | string;
-  upk_id?: string;
-  upk_kode?: string;
-  upk_nama?: string;
   label?: string;
-  service_units?: SystemServiceUnit[];
-  service_unit_ids?: string[];
-  regional_id?: string;
   latitude?: number;
   longitude?: number;
   description?: string;
@@ -354,9 +342,6 @@ export interface CreateSystemRequest {
   code: string;
   name: string;
   system_type: string;
-  upk_id?: string;
-  service_unit_ids?: string[];
-  regional_id?: string;
   latitude?: number;
   longitude?: number;
   description?: string;
@@ -366,9 +351,6 @@ export interface UpdateSystemRequest {
   code?: string;
   name?: string;
   system_type?: string;
-  upk_id?: string;
-  service_unit_ids?: string[];
-  regional_id?: string;
   latitude?: number;
   longitude?: number;
   description?: string;
@@ -452,98 +434,7 @@ export interface UpdateAssetRequest {
   system_id?: string;
 }
 
-/** Master Regional DTOs */
-export interface RegionalItem {
-  id: string;
-  kode_regional: string;
-  nama_regional: string;
-  latitude?: number;
-  longitude?: number;
-  created_at?: string;
-  created_by?: string;
-  updated_at?: string;
-  updated_by?: string;
-}
 
-export interface CreateRegionalRequest {
-  kode_regional: string;
-  nama_regional: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-export interface UpdateRegionalRequest {
-  kode_regional?: string;
-  nama_regional?: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-/** Master Cabang DTOs */
-export interface CabangItem {
-  id: string;
-  kode_wilayah: string;
-  kode_regional?: string;
-  nama_wilayah?: string;
-  kode_cabang: string;
-  nama_cabang: string;
-  approve_status?: string;
-  keterangan?: string;
-  created_at?: string;
-  created_by?: string;
-  updated_at?: string;
-  updated_by?: string;
-}
-
-export interface CreateCabangRequest {
-  kode_wilayah: string;
-  kode_cabang: string;
-  nama_cabang: string;
-  approve_status?: string;
-  keterangan?: string;
-}
-
-export interface UpdateCabangRequest {
-  kode_wilayah?: string;
-  kode_cabang?: string;
-  nama_cabang?: string;
-  approve_status?: string;
-  keterangan?: string;
-}
-
-/** Master Ranting DTOs */
-export interface RantingItem {
-  id: string;
-  kode_cabang: string;
-  nama_cabang?: string;
-  kode_ranting: string;
-  nama_ranting: string;
-  status_ranting?: string;
-  approve_status?: string;
-  keterangan?: string;
-  created_at?: string;
-  created_by?: string;
-  updated_at?: string;
-  updated_by?: string;
-}
-
-export interface CreateRantingRequest {
-  kode_cabang: string;
-  kode_ranting: string;
-  nama_ranting: string;
-  status_ranting?: string;
-  approve_status?: string;
-  keterangan?: string;
-}
-
-export interface UpdateRantingRequest {
-  kode_cabang?: string;
-  kode_ranting?: string;
-  nama_ranting?: string;
-  status_ranting?: string;
-  approve_status?: string;
-  keterangan?: string;
-}
 
 /** Master UIW / UID DTOs */
 export interface UiwUidItem {
@@ -572,26 +463,7 @@ export interface UpdateUiwUidRequest {
   keterangan?: string;
 }
 
-/** Master UIK DTOs */
-export interface UikItem {
-  id: string;
-  kode: string;
-  nama: string;
-  created_at?: string;
-  created_by?: string;
-  updated_at?: string;
-  updated_by?: string;
-}
 
-export interface CreateUikRequest {
-  kode: string;
-  nama: string;
-}
-
-export interface UpdateUikRequest {
-  kode?: string;
-  nama?: string;
-}
 
 /** Master UP2D DTOs */
 export interface Up2dItem {
@@ -624,68 +496,11 @@ export interface UpdateUp2dRequest {
   keterangan?: string;
 }
 
-/** Master UPK DTOs */
-export interface UpkItem {
-  id: string;
-  kode: string;
-  nama: string;
-  uik_id?: string;
-  uik_nama?: string;
-  is_active?: boolean;
-  created_at?: string;
-  created_by?: string;
-  updated_at?: string;
-  updated_by?: string;
-}
 
-export interface CreateUpkRequest {
-  kode: string;
-  nama: string;
-  uik_id?: string;
-  is_active?: boolean;
-}
-
-export interface UpdateUpkRequest {
-  kode?: string;
-  nama?: string;
-  uik_id?: string;
-  is_active?: boolean;
-}
-
-/** Master Unit Layanan DTOs */
-export interface UnitLayananItem {
-  id: string;
-  kode: string;
-  nama: string;
-  upk_id?: string;
-  upk_nama?: string;
-  is_active?: boolean;
-  created_at?: string;
-  created_by?: string;
-  updated_at?: string;
-  updated_by?: string;
-}
-
-export interface CreateUnitLayananRequest {
-  kode: string;
-  nama: string;
-  upk_id?: string;
-  is_active?: boolean;
-}
-
-export interface UpdateUnitLayananRequest {
-  kode?: string;
-  nama?: string;
-  upk_id?: string;
-  is_active?: boolean;
-}
 
 /** Master Sentral DTOs */
 export interface SentralItem {
   id: string;
-  kode_wilayah?: string;
-  kode_ranting?: string;
-  nama_ranting?: string;
   kode_sentral: string;
   nama_sentral: string;
   kode_singkatan_sentral?: string;
@@ -740,12 +555,10 @@ export interface CreateSentralRequest {
   kelurahan?: string;
   keterangan?: string;
   kode_jenis_pembangkit?: string;
-  kode_ranting?: string;
   kode_sentral: string;
   kode_singkatan_sentral?: string;
   kode_sistem?: string;
   kode_status_milik?: string;
-  kode_wilayah?: string;
   kondisi?: string;
   kota_kabupaten?: string;
   latitude?: number;
@@ -781,12 +594,10 @@ export interface UpdateSentralRequest {
   kelurahan?: string;
   keterangan?: string;
   kode_jenis_pembangkit?: string;
-  kode_ranting?: string;
   kode_sentral?: string;
   kode_singkatan_sentral?: string;
   kode_sistem?: string;
   kode_status_milik?: string;
-  kode_wilayah?: string;
   kondisi?: string;
   kota_kabupaten?: string;
   latitude?: number;

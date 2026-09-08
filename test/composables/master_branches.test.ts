@@ -5,8 +5,6 @@ import { useOrganization } from '~/composables/master/useOrganization'
 import { useDriver } from '~/composables/master/useDriver'
 import { useMachineCondition } from '~/composables/master/useMachineCondition'
 import { useSystem } from '~/composables/master/useSystem'
-import { useCabang } from '~/composables/master/useCabang'
-import { useRanting } from '~/composables/master/useRanting'
 
 const mockApi = vi.fn()
 vi.mock('~/composables/useApi', () => ({
@@ -161,30 +159,5 @@ describe('Master Composables Error & Branch Handling', () => {
       expect(error.value).toBe('System delete error')
     })
   })
-
-  describe('useCabang and useRanting Branches', () => {
-    it('handles useCabang delete and update errors', async () => {
-      mockApi.mockRejectedValueOnce(new Error('Cabang update error'))
-      const { updateCabang, deleteCabang, error } = useCabang()
-
-      await expect(updateCabang('1', {} as any)).rejects.toThrow('Cabang update error')
-      expect(error.value).toBe('Cabang update error')
-
-      mockApi.mockRejectedValueOnce(new Error('Cabang delete error'))
-      await expect(deleteCabang('1')).rejects.toThrow('Cabang delete error')
-      expect(error.value).toBe('Cabang delete error')
-    })
-
-    it('handles useRanting delete and update errors', async () => {
-      mockApi.mockRejectedValueOnce(new Error('Ranting update error'))
-      const { updateRanting, deleteRanting, error } = useRanting()
-
-      await expect(updateRanting('1', {} as any)).rejects.toThrow('Ranting update error')
-      expect(error.value).toBe('Ranting update error')
-
-      mockApi.mockRejectedValueOnce(new Error('Ranting delete error'))
-      await expect(deleteRanting('1')).rejects.toThrow('Ranting delete error')
-      expect(error.value).toBe('Ranting delete error')
-    })
-  })
 })
+
