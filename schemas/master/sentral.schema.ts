@@ -1,17 +1,12 @@
 import type { FormSectionConfig } from "~/types";
 
 export interface SentralSchemaOptions {
-  regionalOptions?: { label: string; value: any }[];
-  rantingOptions?: { label: string; value: any }[];
   systemOptions?: { label: string; value: any }[];
-  hasSelectedRegional?: boolean;
 }
 
 export const getSentralFormSections = (
   options: SentralSchemaOptions = {},
 ): FormSectionConfig[] => {
-  const regionalOptions = options.regionalOptions || [];
-  const rantingOptions = options.rantingOptions || [];
   const systemOptions = options.systemOptions || [];
 
   return [
@@ -79,29 +74,6 @@ export const getSentralFormSections = (
             { label: "Surya (Solar)", value: "Surya" },
             { label: "Geothermal", value: "Geothermal" },
           ],
-          required: true,
-          colSpan: 6,
-        },
-        {
-          key: "kode_wilayah",
-          label: "Regional",
-          type: "select",
-          placeholder: "Pilih Regional",
-          options: regionalOptions,
-          required: true,
-          colSpan: 6,
-        },
-        {
-          key: "kode_ranting",
-          label: "Ranting",
-          type: "select",
-          placeholder: options.hasSelectedRegional
-            ? rantingOptions.length > 0
-              ? "Pilih Ranting"
-              : "Tidak Ada Ranting di Regional Ini"
-            : "Pilih Regional Terlebih Dahulu",
-          options: rantingOptions,
-          disabled: (form: Record<string, any>) => !form.kode_wilayah,
           required: true,
           colSpan: 6,
         },

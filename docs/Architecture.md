@@ -25,8 +25,8 @@
 ┌───────────────────────────────┐ ┌───────────────────────────┐
 │     Composables & Stores      │ │      Schemas Layer        │
 │  (useAksesLevel, useMenu,     │ │  (schemas/konfigurasi-    │
-│   useRegional, useSentral,    │ │   aplikasi/*.ts,          │
-│   useOperasiHarian, usePagu,  │ │   schemas/master/*.ts,    │
+│   useSentral, useUser,        │ │   aplikasi/*.ts,          │
+│   useOperasiHarian,           │ │   schemas/master/*.ts,    │
 │   useIdleTimer, useAppToast,  │ │   schemas/transaksi/*.ts) │
 │   useNetwork, useAuthStore,   │ │                           │
 │   Pinia Stores)               │ │                           │

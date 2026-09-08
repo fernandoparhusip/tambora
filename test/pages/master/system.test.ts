@@ -7,7 +7,7 @@ import { pageComponentStubs } from '../../helpers/pageMocks'
 vi.mock('~/composables/master/useSystem', () => ({
   useSystem: () => ({
     systems: ref([
-      { id: 's1', code: 'SYS-01', name: 'Sistem A', upk_id: 'upk1', unit_layanan_id: 'ul1' },
+      { id: 's1', code: 'SYS-01', name: 'Sistem A' },
     ]),
     loading: ref(false),
     detailLoading: ref(false),
@@ -16,20 +16,6 @@ vi.mock('~/composables/master/useSystem', () => ({
     createSystem: vi.fn().mockResolvedValue({}),
     updateSystem: vi.fn().mockResolvedValue({}),
     deleteSystem: vi.fn().mockResolvedValue({}),
-  }),
-}))
-
-vi.mock('~/composables/master/useUpk', () => ({
-  useUpk: () => ({
-    upks: ref([{ id: 'upk1', nama_upk: 'UPK 1' }]),
-    fetchUpks: vi.fn().mockResolvedValue([]),
-  }),
-}))
-
-vi.mock('~/composables/master/useUnitLayanan', () => ({
-  useUnitLayanan: () => ({
-    unitLayanans: ref([{ id: 'ul1', nama_unit_layanan: 'UL 1' }]),
-    fetchUnitLayanans: vi.fn().mockResolvedValue([]),
   }),
 }))
 

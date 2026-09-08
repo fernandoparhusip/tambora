@@ -1,16 +1,10 @@
 import type { FormSectionConfig } from "~/types";
 
-export interface SystemSchemaOptions {
-  upkOptions?: { label: string; value: any }[];
-  unitLayananOptions?: { label: string; value: any }[];
-}
+export interface SystemSchemaOptions {}
 
 export const getSystemFormSections = (
-  options: SystemSchemaOptions = {},
+  _options: SystemSchemaOptions = {},
 ): FormSectionConfig[] => {
-  const upkOptions = options.upkOptions || [];
-  const unitLayananOptions = options.unitLayananOptions || [];
-
   return [
     {
       fields: [
@@ -41,24 +35,6 @@ export const getSystemFormSections = (
           ],
           required: true,
           colSpan: 12,
-        },
-        {
-          key: "upk_id",
-          label: "UPK",
-          type: "searchable-select",
-          placeholder: "Pilih UPK",
-          options: upkOptions,
-          required: true,
-          colSpan: 6,
-        },
-        {
-          key: "service_unit_ids",
-          label: "Unit Layanan",
-          type: "searchable-multi-select",
-          placeholder: "Pilih Unit Layanan",
-          options: unitLayananOptions,
-          required: true,
-          colSpan: 6,
         },
         {
           key: "description",

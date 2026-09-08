@@ -5,6 +5,7 @@ import {
   type MenuItem,
   type SubMenuItem,
 } from "~/config/navigation";
+import { sortMenuItems } from "~/utils/menuSort";
 
 // Logo Assets
 import LogoFullPLN from "@/assets/logo/LogoFullPLN.svg";
@@ -64,7 +65,7 @@ const visibleMenuItems = computed<MenuItem[]>(() => {
                 authStore.hasMenuAccess(leaf.path, leaf.permission, leaf.menuCode)
               );
               if (filteredLeaves.length > 0) {
-                return { ...sub, children: filteredLeaves };
+                return { ...sub, children: sortMenuItems(filteredLeaves, authStore.userMenus) };
               }
               return null;
             }
@@ -84,7 +85,7 @@ const visibleMenuItems = computed<MenuItem[]>(() => {
         if (filteredChildren.length > 0) {
           return {
             ...item,
-            children: filteredChildren,
+            children: sortMenuItems(filteredChildren, authStore.userMenus),
           };
         }
       }

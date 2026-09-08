@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import type { TableColumn, SentralItem } from "~/types";
 import { getSentralFormSections } from "~/schemas/master/sentral.schema";
 import type { DetailDataItem } from "~/types/master.types";
 import { useSentral } from "~/composables/master/useSentral";
 import { useAsyncDetail } from "~/composables/useAsyncDetail";
-import { useRegional } from "~/composables/master/useRegional";
-import { useCabang } from "~/composables/master/useCabang";
-import { useRanting } from "~/composables/master/useRanting";
 import { useSystem } from "~/composables/master/useSystem";
 import { useRbac } from "~/composables/useRbac";
 
@@ -22,9 +19,6 @@ const {
   deleteSentral,
   approveSentral,
 } = useSentral();
-const { regionalList, fetchRegional } = useRegional();
-const { cabangList, fetchCabang } = useCabang();
-const { rantingList, fetchRanting } = useRanting();
 const { systems, fetchSystems } = useSystem();
 const { can, isSuperAdmin } = useRbac();
 const toast = useAppToast();
@@ -55,7 +49,6 @@ const isApproving = ref(false);
 
 const sentralColumns: TableColumn[] = [
   { key: "no", label: "No" },
-  { key: "kode_wilayah", label: "Regional" },
   { key: "kode_sentral", label: "Kode" },
   { key: "nama_sentral", label: "Nama" },
   { key: "kode_jenis_pembangkit", label: "Jenis Pembangkit" },
@@ -64,56 +57,6 @@ const sentralColumns: TableColumn[] = [
   { key: "approve_status", label: "Status" },
   { key: "actions", label: "Aksi" },
 ];
-
-const regionalOptions = computed(() =>
-  regionalList.value.map((r) => ({
-    label: `${r.kode_regional} - ${r.nama_regional}`,
-    value: r.kode_regional || r.id,
-  })),
-);
-
-const rantingOptions = computed(() => {
-  const selectedWilayah = formData.value?.kode_wilayah;
-  if (!selectedWilayah) return [];
-
-  // Match regional in regionalList to cover both ID and code formats
-  const matchedReg = regionalList.value.find(
-    (r) => r.kode_regional === selectedWilayah || r.id === selectedWilayah,
-  );
-  const possibleWilayahKeys = new Set<string>([selectedWilayah]);
-  if (matchedReg) {
-    if (matchedReg.kode_regional)
-      possibleWilayahKeys.add(matchedReg.kode_regional);
-    if (matchedReg.id) possibleWilayahKeys.add(matchedReg.id);
-  }
-
-  // Find all cabang under this regional
-  const matchingCabangCodes = new Set<string>();
-  cabangList.value.forEach((c) => {
-    if (
-      possibleWilayahKeys.has(c.kode_wilayah) ||
-      (c.kode_regional && possibleWilayahKeys.has(c.kode_regional)) ||
-      possibleWilayahKeys.has(c.id)
-    ) {
-      if (c.kode_cabang) matchingCabangCodes.add(c.kode_cabang);
-      if (c.id) matchingCabangCodes.add(c.id);
-    }
-  });
-
-  // Filter ranting belonging to any matching cabang
-  return rantingList.value
-    .filter((rt) => {
-      return (
-        matchingCabangCodes.has(rt.kode_cabang) ||
-        ((rt as any).kode_wilayah &&
-          possibleWilayahKeys.has((rt as any).kode_wilayah))
-      );
-    })
-    .map((rt) => ({
-      label: `${rt.kode_ranting} - ${rt.nama_ranting}`,
-      value: rt.kode_ranting || rt.id,
-    }));
-});
 
 const systemOptions = computed(() =>
   systems.value.map((s) => ({
@@ -124,34 +67,13 @@ const systemOptions = computed(() =>
 
 const formSections = computed(() =>
   getSentralFormSections({
-    regionalOptions: regionalOptions.value,
-    rantingOptions: rantingOptions.value,
     systemOptions: systemOptions.value,
-    hasSelectedRegional: !!formData.value?.kode_wilayah,
   }),
-);
-
-// Auto-reset ranting when regional changes
-watch(
-  () => formData.value?.kode_wilayah,
-  (newVal, oldVal) => {
-    if (
-      modalOpen.value &&
-      oldVal !== undefined &&
-      oldVal !== "" &&
-      newVal !== oldVal
-    ) {
-      formData.value.kode_ranting = "";
-    }
-  },
 );
 
 onMounted(async () => {
   await Promise.allSettled([
     fetchSentral(),
-    fetchRegional({ limit: 100 }),
-    fetchCabang({ limit: 200 }),
-    fetchRanting({ limit: 200 }),
     fetchSystems(),
   ]);
 });
@@ -184,12 +106,10 @@ const handleCreate = () => {
     kelurahan: "",
     keterangan: "",
     kode_jenis_pembangkit: "",
-    kode_ranting: "",
     kode_sentral: "",
     kode_singkatan_sentral: "",
     kode_sistem: "",
     kode_status_milik: "",
-    kode_wilayah: "",
     kondisi: "",
     kota_kabupaten: "",
     latitude: "",
@@ -216,21 +136,8 @@ const handleCreate = () => {
 
 const handleEdit = (row: SentralItem) => {
   modalMode.value = "edit";
-  const matchedReg = regionalList.value.find(
-    (r) => r.id === row.kode_wilayah || r.kode_regional === row.kode_wilayah,
-  );
-  const matchedRanting = rantingList.value.find(
-    (rt) => rt.id === row.kode_ranting || rt.kode_ranting === row.kode_ranting,
-  );
   formData.value = {
     ...row,
-    kode_wilayah:
-      matchedReg?.kode_regional || matchedReg?.id || row.kode_wilayah || "",
-    kode_ranting:
-      matchedRanting?.kode_ranting ||
-      matchedRanting?.id ||
-      row.kode_ranting ||
-      "",
     color: row.color || "",
     radius: row.radius ?? null,
     latitude: row.latitude ?? "",
@@ -298,28 +205,6 @@ const handleSave = async (data: Record<string, any>) => {
 
   submitting.value = true;
   try {
-    const matchedReg = regionalList.value.find(
-      (r) =>
-        r.id === currentData.kode_wilayah ||
-        r.kode_regional === currentData.kode_wilayah,
-    );
-    const regId =
-      matchedReg?.kode_regional ||
-      matchedReg?.id ||
-      currentData.kode_wilayah ||
-      "";
-
-    const matchedRanting = rantingList.value.find(
-      (rt) =>
-        rt.id === currentData.kode_ranting ||
-        rt.kode_ranting === currentData.kode_ranting,
-    );
-    const rantingId =
-      matchedRanting?.kode_ranting ||
-      matchedRanting?.id ||
-      currentData.kode_ranting ||
-      "";
-
     const payload: Record<string, any> = {
       alamat: currentData.alamat || "",
       approve_status: currentData.approve_status || "DRAFT",
@@ -338,12 +223,10 @@ const handleSave = async (data: Record<string, any>) => {
       kelurahan: currentData.kelurahan || "",
       keterangan: currentData.keterangan || "",
       kode_jenis_pembangkit: currentData.kode_jenis_pembangkit || "",
-      kode_ranting: rantingId,
       kode_sentral: currentData.kode_sentral,
       kode_singkatan_sentral: currentData.kode_singkatan_sentral || "",
       kode_sistem: currentData.kode_sistem || "",
       kode_status_milik: currentData.kode_status_milik || "",
-      kode_wilayah: regId,
       kondisi: currentData.kondisi || "SIAP_OPERASI",
       kota_kabupaten: currentData.kota_kabupaten || "",
       latitude:
@@ -413,7 +296,7 @@ const getStatusBadgeVariant = (status?: string): any => {
 const canApprove = computed(() => {
   return (
     can("SENTRAL.APPROVE") ||
-    (can("SENTRAL.CREATE") && (isSuperAdmin.value || can("REGIONAL.CREATE")))
+    (can("SENTRAL.CREATE") && isSuperAdmin.value)
   );
 });
 
@@ -421,22 +304,11 @@ const canApprove = computed(() => {
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
   const rec = detailRecord.value;
-  const reg = regionalList.value.find(
-    (r) => r.id === rec.kode_wilayah || r.kode_regional === rec.kode_wilayah,
-  );
-  const rnt = rantingList.value.find(
-    (rt) => rt.id === rec.kode_ranting || rt.kode_ranting === rec.kode_ranting,
-  );
 
   return [
     { label: "Kode", value: rec.kode_sentral },
     { label: "Nama", value: rec.nama_sentral },
     { label: "Singkatan Sentral", value: rec.kode_singkatan_sentral || "-" },
-    { label: "Regional", value: reg?.nama_regional || rec.kode_wilayah || "-" },
-    {
-      label: "Ranting",
-      value: rnt?.nama_ranting || rec.nama_ranting || rec.kode_ranting || "-",
-    },
     { label: "Sistem", value: rec.kode_sistem || "-" },
     { label: "Jenis Pembangkit", value: rec.kode_jenis_pembangkit || "-" },
     { label: "Bahan Bakar Utama", value: rec.jenis_bahan_bakar || "-" },
@@ -569,14 +441,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
             <span class="text-xs text-gray-600">{{ row.nama_sentral }}</span>
           </template>
 
-          <template #kode_wilayah-data="{ row }">
-            <span class="text-xs text-gray-600">{{
-              regionalList.find((r) => r.id === row.kode_wilayah)
-                ?.nama_regional ||
-              row.kode_wilayah ||
-              "-"
-            }}</span>
-          </template>
 
           <template #kode_jenis_pembangkit-data="{ row }">
             <span class="text-xs text-gray-600">{{

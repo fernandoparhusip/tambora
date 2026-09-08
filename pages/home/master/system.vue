@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import type { DetailDataItem } from "~/types/master.types";
 import type { TableColumn, FormSectionConfig, SystemItem } from "~/types";
 import { getSystemFormSections } from "~/schemas/master/system.schema";
@@ -16,8 +16,6 @@ const {
   deleteSystem,
 } = useSystem();
 
-const { upks, fetchUpks } = useUpk();
-const { unitLayanans, fetchUnitLayanans } = useUnitLayanan();
 const toast = useAppToast();
 
 const searchQuery = ref("");
@@ -44,29 +42,12 @@ const systemColumns: TableColumn[] = [
   { key: "actions", label: "Aksi" },
 ];
 
-const upkOptions = computed(() =>
-  upks.value.map((u) => ({
-    label: u.nama ? `${u.kode} - ${u.nama}` : u.kode,
-    value: u.id,
-  })),
-);
-
-const unitLayananOptions = computed(() =>
-  unitLayanans.value.map((ul) => ({
-    label: ul.nama ? `${ul.kode} - ${ul.nama}` : ul.kode,
-    value: ul.id,
-  })),
-);
-
 const formSections = computed<FormSectionConfig[]>(() =>
-  getSystemFormSections({
-    upkOptions: upkOptions.value,
-    unitLayananOptions: unitLayananOptions.value,
-  }),
+  getSystemFormSections(),
 );
 
 onMounted(async () => {
-  await Promise.allSettled([fetchSystems(), fetchUpks(), fetchUnitLayanans()]);
+  await fetchSystems();
 });
 
 watch(searchQuery, () => {
@@ -103,9 +84,6 @@ const openCreateModal = () => {
     code: "",
     name: "",
     system_type: "",
-    upk_id: "",
-    service_unit_ids: [],
-    regional_id: "",
     latitude: "",
     longitude: "",
     description: "",
@@ -113,41 +91,12 @@ const openCreateModal = () => {
   modalOpen.value = true;
 };
 
-const handleEdit = async (row: SystemItem) => {
+const handleEdit = (row: SystemItem) => {
   modalMode.value = "edit";
-  const extractIds = (item: any) => {
-    if (
-      Array.isArray(item.service_unit_ids) &&
-      item.service_unit_ids.length > 0
-    ) {
-      return item.service_unit_ids.map((id: any) => String(id));
-    }
-    if (Array.isArray(item.service_units) && item.service_units.length > 0) {
-      return item.service_units.map((su: any) => String(su.id || su));
-    }
-    return [];
-  };
-
   formData.value = {
     ...row,
-    upk_id: row.upk_id || "",
-    service_unit_ids: extractIds(row),
   };
   modalOpen.value = true;
-
-  if (row.id) {
-    try {
-      const detail = await getSystemById(row.id);
-      if (detail && modalOpen.value && formData.value.id === row.id) {
-        const fetchedIds = extractIds(detail);
-        if (fetchedIds.length > 0) {
-          formData.value.service_unit_ids = fetchedIds;
-        }
-      }
-    } catch {
-      // Ignored
-    }
-  }
 };
 
 // Universal Async Detail Management
@@ -216,13 +165,6 @@ const handleSave = async (data?: Record<string, any>) => {
       latitude: lat,
       longitude: lng,
       description: currentData.description || "",
-      upk_id: currentData.upk_id || undefined,
-      service_unit_ids: Array.isArray(currentData.service_unit_ids)
-        ? currentData.service_unit_ids
-        : currentData.service_unit_ids
-          ? [currentData.service_unit_ids]
-          : [],
-      regional_id: currentData.regional_id || undefined,
     };
 
     if (modalMode.value === "create") {
@@ -245,23 +187,6 @@ const handleSave = async (data?: Record<string, any>) => {
 
 const detailDataItems = computed<DetailDataItem[]>(() => {
   if (!detailRecord.value) return [];
-  const upk = upks.value.find((u) => u.id === detailRecord.value?.upk_id);
-  let unitLayananLabel = "-";
-  if (
-    Array.isArray(detailRecord.value.service_units) &&
-    detailRecord.value.service_units.length > 0
-  ) {
-    unitLayananLabel = detailRecord.value.service_units
-      .map((su: any) => su.nama || su.kode)
-      .join(", ");
-  } else {
-    const selectedUnits = unitLayanans.value
-      .filter((ul) => detailRecord.value?.service_unit_ids?.includes(ul.id))
-      .map((ul) => (ul.nama ? `${ul.kode} - ${ul.nama}` : ul.kode));
-    if (selectedUnits.length > 0) {
-      unitLayananLabel = selectedUnits.join(", ");
-    }
-  }
 
   return [
     { label: "Kode Sistem", value: detailRecord.value.code },
@@ -272,14 +197,6 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
         detailRecord.value.system_type === "BESAR"
           ? "Sistem Besar (Interkoneksi)"
           : "Sistem Kecil (Isolated)",
-    },
-    {
-      label: "UPK",
-      value: detailRecord.value.upk_nama || (upk ? upk.nama : "-"),
-    },
-    {
-      label: "Unit Layanan",
-      value: unitLayananLabel,
     },
     {
       label: "Latitude",

@@ -14,7 +14,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-Tailwind_3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![OpenLayers](https://img.shields.io/badge/GIS-OpenLayers_10-1F6B75?style=for-the-badge&logo=openlayers&logoColor=white)](https://openlayers.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript_5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-524_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-504_Passed_100%25-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Coverage](https://img.shields.io/badge/Coverage-80.43%25-brightgreen?style=for-the-badge&logo=sonarqube&logoColor=white)](https://sonarcloud.io/)
 
 </div>
@@ -58,7 +58,7 @@ graph LR
 | Modul                                      | Deskripsi & Kemampuan Teknis                                                                                                                                                                                                      |
 | :----------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Dashboard Operasi**                   | Monitoring metrik real-time: **DMN** (Daya Mampu Nyata), **DMP** (Daya Mampu Pasok), **Beban Sistem**, **Unit Max**, dan **Cadangan Total/Putar**.                                                                                |
-| **GIS Sentral & Coordinate Picker**    | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan penanda status visual, popup detail unit, serta **Interactive Coordinate Picker** (sinkronisasi dua arah klik peta & input koordinat latitude/longitude desimal di form drawer Regional, Sistem, dan Organisasi). |
+| **GIS Sentral & Coordinate Picker**    | Peta interaktif berbasis **OpenLayers v10 + MapTiler Positron** dengan penanda status visual, popup detail unit, serta **Interactive Coordinate Picker** (sinkronisasi dua arah klik peta & input koordinat latitude/longitude desimal di form drawer Sistem dan Organisasi). |
 | **Analisis Beban & Grafik**             | Visualisasi kurva beban harian/mingguan dan tren neraca energi menggunakan **Apache ECharts**.                                                                                                                                    |
 | **Remote Resilience & Smart Form Drafts** | **Auto-Save Form Drafts** (penyimpanan draf otomatis per ID/kode record dengan pencegahan banner palsu), **SWR API Client Cache** untuk pemuatan data instan, dan penanganan koneksi ulang otomatis saat jaringan terputus. |
 | **UI Transitions, Motion & Clean Copy**  | Transisi perpindahan rute halaman, animasi tampilan baris tabel bertingkat, akordeon menu navigasi sidebar, serta standarisasi copywriting bersih tanpa AI buzzwords (*enterprise/seamless*). |
@@ -67,7 +67,7 @@ graph LR
 | **Smart Data Table & Unified Actions**  | Komponen tabel terpadu (`BaseTable.vue`) dengan sticky header, pengaturan sembunyikan/tampilkan kolom (_Column Visibility Toggle_), paginasi cerdas, serta standarisasi tombol aksi `<BaseTableActions>` (Lihat Detail, Ubah, Hapus, dan slot aksi tambahan `#extra`). |
 | **Standard Action Controls & CRUD State** | Komponen kontrol standar: `<BaseCreateButton @click="openCreateModal" />`, `<BaseSearchInput v-model="searchQuery" />`, serta composable terpadu `useCrudState` untuk mereduksi boilerplate paginasi, pencarian, dan dialog konfirmasi hapus. |
 | **Modul Konfigurasi Aplikasi**          | Pengaturan hak akses pengguna: **Master Akses Level**, **Master Akses Grup** (kartu izin interaktif dengan switch On/Off, master switch toggle, dan filter modul), serta **Master Menu** (manajemen navigasi dinamis). |
-| **16 Modul Master Data (SSOT Detail)** | Tata kelola CRUD lengkap dengan form drawer satu halaman tanpa tab dan modal detail SSOT (`:record="detailRecord"`): _Regional, Cabang, Ranting, UIW/UID, UIK, UP2D, UPK, Unit Layanan, Sentral, User (20-field & Hak Akses Khusus), Permission, Driver, Organisasi (GIS Map Picker & Async Detail SSOT), Sistem (GIS Map Picker & Async Detail), Aset Mesin, dan Kondisi Mesin_. |
+| **10 Modul Master Data (SSOT Detail)** | Tata kelola CRUD lengkap dengan form drawer satu halaman tanpa tab dan modal detail SSOT (`:record="detailRecord"`): _UIW/UID, UP2D, Sentral, User (20-field & Hak Akses Khusus), Permission, Driver, Organisasi (GIS Map Picker & Async Detail SSOT), Sistem (GIS Map Picker & Async Detail), Aset Mesin, dan Kondisi Mesin_. |
 | **Modul Transaksi Terpadu**             | Pencatatan operasional & keuangan: _Operasi Harian_, _Pemakaian Bahan Bakar_, _Pembebanan Generator_, _Pagu Anggaran (Tab Dinamis Unit & Bidang)_, _Prognosa Kinerja (PLTU & Non-PLTU)_, dan _Perhitungan NKO (KPI)_.         |
 | **Dedicated Backend Export**            | Dukungan ekspor laporan spreadsheet resmi dari endpoint backend (`/api/v1/pagu/export`, `/api/v1/prognosa/export`, `/api/v1/nko/export`).                                                                                          |
 | **Unified Modal Dialogs & Transition**  | Modal konfirmasi hapus terpadu (`BaseConfirmDialog`), modal sukses (`BaseSuccessModal` dengan jeda transisi 150ms), dan Single Source of Truth (`BaseDetailModal`) untuk metadata riwayat audit. |
@@ -86,16 +86,16 @@ tambora-frontend/
 │   └── login/          # Komponen login, form credentials, dan typewriter animation
 ├── composables/        # State Management & Business Logic (Composables Pattern)
 │   ├── konfigurasi-aplikasi/ # useAksesLevel, useAksesGrup, useMenu
-│   ├── master/         # CRUD Logic per entitas master (useRegional, useUiwUid, useUik, useUp2d, useUpk, useUnitLayanan, useSentral, useUser, usePermission, useAsset, dll)
-│   └── transaksi/      # CRUD Logic transaksi (useOperasiHarian, usePagu, usePrognosa, dll)
+│   ├── master/         # CRUD Logic per entitas master (useUiwUid, useUp2d, useSentral, useUser, usePermission, useAsset, useSystem, dll)
+│   └── transaksi/      # CRUD Logic transaksi (useOperasiHarian)
 ├── docs/               # Dokumentasi Teknis Standar Proyek (PRD, Architecture, Schema, Rules, DeveloperGuide)
 ├── pages/              # Nuxt 4 File-Based Routing (home/dashboard, home/konfigurasi-aplikasi, home/master, home/transaksi, login)
 ├── schemas/            # Definisi Skema Formulir Deklaratif
 │   ├── konfigurasi-aplikasi/ # Skema Form Akses Level, Akses Grup, Menu
-│   ├── master/         # Berkas Skema Form Master (regional, uiw-uid, uik, up2d, upk, unit-layanan, sentral, user, asset, system, dll)
-│   └── transaksi/      # Berkas Skema Form Transaksi (operasi, pagu, pagu-bidang, prognosa, nko, dll)
+│   ├── master/         # Berkas Skema Form Master (uiw-uid, up2d, sentral, user, asset, system, dll)
+│   └── transaksi/      # Berkas Skema Form Transaksi (operasi-harian)
 ├── stores/             # Pinia Global Store (auth: session, security, token)
-├── test/               # Vitest Unit Test Suites & Testing Mocks (524 Tests Passed across 78 Suites, 80.43% Coverage)
+├── test/               # Vitest Unit Test Suites & Testing Mocks (498 Tests Passed across 71 Suites, 100% Green)
 ├── types/              # Modular TypeScript DTOs & Contracts
 │   ├── form.types.ts      # Tipe field & section form
 │   ├── table.types.ts     # Tipe kolom tabel & pagination

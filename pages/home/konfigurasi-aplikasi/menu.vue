@@ -43,6 +43,7 @@ const menuColumns: TableColumn[] = [
   { key: "no", label: "No" },
   { key: "nama", label: "Nama Menu" },
   { key: "route", label: "URL Route" },
+  { key: "sort_no", label: "Urutan Halaman" },
   { key: "status", label: "Status" },
   { key: "actions", label: "Aksi" },
 ];
@@ -89,6 +90,7 @@ const openCreateModal = () => {
     nama: "",
     route: "",
     parent_id: "",
+    order: "",
     status: "",
   };
   modalOpen.value = true;
@@ -119,6 +121,7 @@ const handleEdit = (row: MenuItem | any) => {
     nama: row.nama || row.name || "",
     route: routeVal,
     parent_id: parentId,
+    order: row.order ?? row.sort_no ?? "",
     status: row.status ?? 1,
   };
   modalOpen.value = true;
@@ -189,6 +192,10 @@ const handleSave = async () => {
     if (data.parent_id) {
       payload.parent_id = data.parent_id;
     }
+    if (data.order !== "" && data.order !== undefined && data.order !== null) {
+      payload.order = Number(data.order);
+      payload.sort_no = Number(data.order);
+    }
 
     const editId = selectedEditId.value || data.id || detailRecord.value?.id;
     if (modalMode.value === "edit" && editId) {
@@ -213,6 +220,7 @@ const detailDataItems = computed<DetailDataItem[]>(() => {
   return [
     { label: "Nama Menu", value: m.nama || m.name || "-" },
     { label: "URL Route", value: m.route || m.url || "-" },
+    { label: "Urutan Halaman", value: m.order ?? m.sort_no ?? "-" },
     { label: "Status", value: m.status === 1 ? "Aktif" : "Non-Aktif" },
   ];
 });

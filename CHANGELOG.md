@@ -6,24 +6,52 @@ dan proyek ini mematuhi standar [Semantic Versioning](https://semver.org/lang/id
 
 ## [0.7.3] - 2026-09-08
 
-### Remediasi SonarCloud Blocker/Maintainability, Deduplikasi Navigasi & Ekspansi Test Suites 524 Passed
+### Fokus Transaksi Operasi Harian, Eliminasi 5 Modul Transaksi, Remediasi SonarCloud & Sorting Menu Dinamis
 
+- **fokus-transaksi-operasi-harian-dan-eliminasi-modul-lain:**
+  - Mengeliminasi 5 modul transaksi lama yang tidak digunakan: **Pemakaian Bahan Bakar**, **Pembebanan**, **Pagu**, **Prognosa**, dan **NKO** (total 22 berkas mencakup pages, composables, schemas, dan test files).
+  - Menyederhanakan navigasi sidebar [`config/navigation.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/config/navigation.ts) sehingga kategori Transaksi hanya menyisakan menu tunggal **Operasi Harian**.
+  - Mengonfigurasi form dan payload Create/Update Operasi Harian:
+    - Dropdown combo mesin mengambil data dari Master Asset Mesin (`useAsset()`) dan mengirim `id` mesin sebagai `mesin_id`.
+    - Meniadakan `sentral_id` dari formulir dan payload simpan backend (`sentral_id gausah dulu`).
+    - Auto-fill parameter teknis (daya terpasang, daya mampu, bahan bakar) secara cerdas saat mesin pembangkit dipilih.
+  - Menyelaraskan kolom tabel dengan referensi visual UI: `No`, `Tanggal Transaksi` (*Selasa, 30-Juni-2026*), `Nama Mesin` (`${kode_mesin} - ${nama_mesin}`), `Jenis Bahan Bakar` (*BBR - Batubara*), `Produksi (kWh)`, `DMP (kW)`, `DMN (kW)`, dan `Aksi`.
+  - Menerapkan arsitektur SSOT modal detail menggunakan composable standar [`composables/useAsyncDetail.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/composables/useAsyncDetail.ts) dengan fetch detail asinkron (`GET /api/v1/operasi-harian/{id}`), proteksi monotonic request counter anti race-condition, optimistic preview 0ms, dan penyaluran prop `:record` serta `:loading` ke [`components/base/BaseDetailModal.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/BaseDetailModal.vue).
+  - Menyelaraskan seluruh unit test transaksi ([`test/schemas/transaksiSchemas.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/schemas/transaksiSchemas.test.ts), [`test/composables/transaksi.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/composables/transaksi.test.ts), [`test/pages/transaksi/operasiHarian.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/pages/transaksi/operasiHarian.test.ts)) serta konfigurasi auto-import Vitest ([`vitest.config.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/vitest.config.ts)).
+- **sorting-menu-dinamis-backend:**
+  - Mengimplementasikan pengurutan posisi sub-menu secara dinamis mengikuti nilai `sort_no` dari respon API backend (`GET /api/v1/auth/me`).
+  - Membuat modul utilitas baru [`utils/menuSort.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/utils/menuSort.ts) (`getMenuSortNo`, `sortMenuItems`) yang memetakan kode menu (`menuCode`), alias penamaan (plural/singular & konvensi bahasa), serta fallback pencocokan slug rute secara presisi.
+  - Memperbarui komponen navigasi [`components/base/AppSidebar.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/components/base/AppSidebar.vue) agar sub-menu di setiap kategori (Master Data, Transaksi, Konfigurasi Aplikasi) otomatis tersusun rapi sesuai urutan `sort_no` tanpa merusak pengelompokan kategori yang telah ditentukan.
+  - Menambahkan pengujian komprehensif pada [`test/utils/menuSort.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/utils/menuSort.test.ts) (7 tests passed).
+- **manajemen-urutan-halaman-master-menu:**
+  - Menambahkan kolom **Urutan Halaman** (`sort_no`) pada tabel [`pages/home/konfigurasi-aplikasi/menu.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/konfigurasi-aplikasi/menu.vue) dan tampilan modal detail.
+  - Menambahkan input `order` bertipe angka pada formulir skema [`schemas/konfigurasi-aplikasi/menu.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/konfigurasi-aplikasi/menu.schema.ts) dengan layout grid terpadu (colSpan: 6 berdampingan dengan Status).
+  - Menyelaraskan inisialisasi modal tambah, modal ubah, dan payload `order` pada permintaan simpan (`CreateMenuRequest` / `UpdateMenuRequest`).
+- **eliminasi-6-modul-master-unit-pln:**
+  - Menghapus 6 modul Master Unit PLN yang tidak lagi digunakan: **Regional**, **Cabang**, **Ranting**, **Unit Layanan**, **UPK**, dan **UIK** (total 21 file mencakup pages, composables, schemas, dan test files).
+  - Membersihkan menu navigasi pada [`config/navigation.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/config/navigation.ts) sehingga menyisakan 10 modul Master Data aktif.
+  - Menyelaraskan form, skema, dan payload Create/Update:
+    - [`schemas/master/sentral.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/sentral.schema.ts) & [`pages/home/master/sentral.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/sentral.vue): Menghapus dropdown `kode_wilayah` & `kode_ranting`, opsi `regionalOptions`/`rantingOptions`, cascading watcher, kolom tabel, dan payload simpan.
+    - [`schemas/master/system.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/system.schema.ts) & [`pages/home/master/system.vue`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/pages/home/master/system.vue): Menghapus dropdown `upk_id` & `service_unit_ids`, opsi `upkOptions`/`unitLayananOptions`, dan payload simpan.
+  - Membersihkan kontrak DTO dan types pada [`types/master.types.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/types/master.types.ts) dan barrel export [`schemas/master/index.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/index.ts).
+  - Menyelaraskan seluruh unit test terkait (`unitsPln.test.ts`, `sentral.test.ts`, `system.test.ts`, `master_hierarchy.test.ts`, `master_branches.test.ts`, `masterUnitPLN.test.ts`, `crudExtraOperations.test.ts`, `masterSchemas.test.ts`).
 - **remediasi-sonarcloud-maintainability:**
   - Menuntaskan issue SonarCloud Blocker/Maintainability (*"Add at least one assertion to this test case"*) pada berkas pengujian:
+    - [`test/pages/master/asset.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/pages/master/asset.test.ts): menambahkan assertions eksplisit pada alur create, submit form, table actions (view, edit, delete, confirm), dan export.
     - [`test/components/basePagination.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/components/basePagination.test.ts): menambahkan assertion eksplisit pada skenario edge case paginasi.
     - [`test/components/loginComponents.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/components/loginComponents.test.ts): melengkapi assertion pada pengujian rendering komponen login credentials dan typewriter.
     - [`test/composables/crudExtraOperations.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/composables/crudExtraOperations.test.ts): menambahkan assertion state dan error tracking pada operasi ekstra CRUD.
 - **deduplikasi-konfigurasi-navigasi:**
-  - Merefaktor [`config/navigation.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/config/navigation.ts) menggunakan fungsi pembantu (`nav` dan `masterNav`) untuk mengeliminasi duplikasi struktur objek pada 16 modul Master Data dan 6 sub-menu Transaksi, menyederhanakan konfigurasi dan memelihara kepatuhan SonarQube Clean Code.
+  - Merefaktor [`config/navigation.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/config/navigation.ts) menggunakan fungsi pembantu (`nav` dan `masterNav`) untuk mengeliminasi duplikasi struktur objek pada modul Master Data dan sub-menu Transaksi, menyederhanakan konfigurasi dan memelihara kepatuhan SonarQube Clean Code.
 - **penyelarasan-validasi-skema-master:**
   - Memperbarui definisi `required: true` pada field-field wajib di skema formulir master data:
     - [`schemas/master/sentral.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/sentral.schema.ts) (informasi status operasi, kepemilikan, lokasi koordinat, kontak manager, dan narasi profil).
-    - [`schemas/master/system.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/system.schema.ts) (relasi UPK, Unit Layanan, deskripsi, dan pemilih koordinat).
+    - [`schemas/master/system.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/system.schema.ts) (deskripsi dan pemilih koordinat).
     - [`schemas/master/asset.schema.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/schemas/master/asset.schema.ts) (parameter teknis dan kelistrikan mesin).
 - **ekspansi-test-suites-dan-verifikasi:**
-  - Penambahan pengujian komprehensif pada [`test/components/formFieldRenderer.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/components/formFieldRenderer.test.ts), [`test/composables/master_hierarchy.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/composables/master_hierarchy.test.ts), [`test/pages/master/asset.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/pages/master/asset.test.ts), dan [`test/utils/deviceMeta.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/utils/deviceMeta.test.ts).
-  - Total test suite mencapai **524 tests passed across 78 test files (100% pass)**.
-  - Verifikasi pipeline lokal: `npm run lint` (0 error, 0 warning), `npx vitest run` (524 tests passed), dan `npm run build` (sukses tanpa error).
+  - Penambahan pengujian komprehensif pada [`test/components/formFieldRenderer.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/components/formFieldRenderer.test.ts), [`test/pages/master/asset.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/pages/master/asset.test.ts), [`test/utils/deviceMeta.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/utils/deviceMeta.test.ts), [`test/utils/menuSort.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/utils/menuSort.test.ts), serta penataan test suites transaksi ([`test/composables/transaksi.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/composables/transaksi.test.ts), [`test/schemas/transaksiSchemas.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/schemas/transaksiSchemas.test.ts), [`test/pages/transaksi/operasiHarian.test.ts`](file:///c:/Users/andym/Documents/Project%20Vue/tambora-frontend/test/pages/transaksi/operasiHarian.test.ts)).
+  - Total test suite mencapai **498 tests passed across 71 test files (100% pass)** pasca eliminasi 5 modul transaksi lama.
+  - Verifikasi pipeline lokal: `npm run lint` (0 error, 0 warning), `npx vitest run` (498 tests passed, 100% green), dan `npm run build` (sukses tanpa error).
 
 ## [0.7.2] - 2026-09-07
 
