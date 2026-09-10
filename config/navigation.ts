@@ -87,6 +87,7 @@ export const menuItems: MenuItem[] = [
     label: "Transaksi",
     children: [
       nav("operasi-harian", "Operasi Harian", "/home/transaksi/operasi-harian", "OPERASI_HARIAN.VIEW", "MENU_OPERASI_HARIAN", "Operasi Harian Pembangkit"),
+      nav("pagu-anggaran", "Pagu Anggaran", "/home/transaksi/pagu", "PAGU.VIEW", "MENU_PAGU", "Pagu Anggaran Unit & Bidang"),
     ],
   },
 ];

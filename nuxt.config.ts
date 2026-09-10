@@ -11,7 +11,8 @@ export default (defineNuxtConfig as (config: any) => any)({
     layoutTransition: { name: 'layout', mode: 'out-in' },
   },
   runtimeConfig: {
-    backendUrl: process.env.NUXT_BACKEND_URL || 'http://88.222.242.143:9090',
+    // backendUrl: process.env.NUXT_BACKEND_URL || 'http://88.222.242.143:9090',
+     backendUrl: process.env.NUXT_BACKEND_URL || 'http://localhost:9090',
     public: {
       apiBaseUrl: '/api/v1',
       maptilerKey: process.env.NUXT_PUBLIC_MAPTILER_KEY || 'vAiwKNYltLbMYEotSzTT',
